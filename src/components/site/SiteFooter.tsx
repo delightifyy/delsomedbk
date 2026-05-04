@@ -7,27 +7,6 @@ const DOCTOR_PORTAL_PATH = "/doctor-portal";
 export const SiteFooter = () => {
   return (
     <footer className="border-t border-border bg-card mt-16 sm:mt-24">
-      {/* Doctor Portal access strip */}
-      <div className="border-b border-border bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5">
-        <div className="container py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-          <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
-              <Stethoscope className="h-5 w-5" />
-            </span>
-            <div>
-              <p className="font-display text-sm font-semibold leading-tight">Doctor & Patient Portal</p>
-              <p className="text-xs text-muted-foreground leading-tight">Access the multi-tenant clinical platform</p>
-            </div>
-          </div>
-          <Link
-            to={DOCTOR_PORTAL_PATH}
-            className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-card hover:bg-primary/90 transition-colors"
-          >
-            Doctor Portal <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-      </div>
-
       <div className="container py-12 sm:py-16 grid gap-10 grid-cols-2 md:grid-cols-12">
         <div className="col-span-2 md:col-span-4 space-y-4">
           <Link to="/" className="flex items-center gap-3">
