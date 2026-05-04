@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import {
   Stethoscope, Menu, X, Star, Video, ShieldCheck, Clock, CalendarCheck,
-  Brain, Baby, Sparkles, HeartPulse, Pill, FileText, Smartphone, Headphones,
-  Mail, Phone, Facebook, Twitter, Instagram, Linkedin, ArrowRight, Check,
+  Brain, Baby, Sparkles, HeartPulse, Pill, FileText, Headphones, FlaskConical,
+  Mail, Phone, Facebook, Twitter, Instagram, Linkedin, ArrowRight, DollarSign,
+  Globe, Zap, Lock,
 } from "lucide-react";
-import heroImg from "@/assets/medicare-hero.jpg";
+import heroImg from "@/assets/medicare-hero-illu.jpg";
 import doc1 from "@/assets/medicare-doc1.jpg";
 import doc2 from "@/assets/medicare-doc2.jpg";
 import doc3 from "@/assets/medicare-doc3.jpg";
@@ -19,18 +20,19 @@ const tokenStyles = `
   --mc-border: 230 25% 92%;
   --mc-card: 0 0% 100%;
   --mc-primary: 210 90% 50%;
-  --mc-primary-glow: 205 95% 65%;
+  --mc-primary-glow: 188 90% 55%;
   --mc-primary-fg: 0 0% 100%;
   --mc-accent: 160 65% 45%;
   --mc-accent-glow: 160 70% 60%;
   --mc-radius: 1rem;
 
   --mc-grad-primary: linear-gradient(135deg, hsl(var(--mc-primary)), hsl(var(--mc-primary-glow)));
-  --mc-grad-hero: linear-gradient(140deg, hsl(210 100% 97%) 0%, hsl(160 60% 96%) 60%, hsl(220 30% 99%) 100%);
+  --mc-grad-text: linear-gradient(120deg, hsl(var(--mc-primary)) 0%, hsl(var(--mc-primary-glow)) 50%, hsl(var(--mc-accent)) 100%);
+  --mc-grad-hero: linear-gradient(160deg, hsl(210 100% 97%) 0%, hsl(195 80% 96%) 40%, hsl(160 60% 96%) 100%);
   --mc-grad-mesh:
-     radial-gradient(at 20% 20%, hsl(var(--mc-primary)/.18) 0px, transparent 45%),
-     radial-gradient(at 85% 30%, hsl(var(--mc-accent)/.15) 0px, transparent 45%),
-     radial-gradient(at 50% 90%, hsl(var(--mc-primary-glow)/.18) 0px, transparent 50%);
+     radial-gradient(at 20% 20%, hsl(var(--mc-primary)/.15) 0px, transparent 45%),
+     radial-gradient(at 85% 30%, hsl(var(--mc-accent)/.13) 0px, transparent 45%),
+     radial-gradient(at 50% 90%, hsl(var(--mc-primary-glow)/.15) 0px, transparent 50%);
   --mc-grad-accent: linear-gradient(135deg, hsl(var(--mc-accent)), hsl(var(--mc-accent-glow)));
 
   --mc-shadow-card: 0 4px 20px -8px hsl(var(--mc-primary)/.18);
@@ -50,7 +52,7 @@ const tokenStyles = `
 .mc-grad-mesh    { background: var(--mc-grad-mesh); }
 .mc-grad-accent  { background: var(--mc-grad-accent); }
 .mc-grad-text    {
-  background: var(--mc-grad-primary);
+  background: var(--mc-grad-text);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -59,26 +61,26 @@ const tokenStyles = `
 .mc-shadow-elegant { box-shadow: var(--mc-shadow-elegant); }
 .mc-shadow-glow    { box-shadow: var(--mc-shadow-glow); }
 .mc-glass {
-  background: hsl(0 0% 100% / .65);
+  background: hsl(0 0% 100% / .7);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid hsl(0 0% 100% / .6);
+  border: 1px solid hsl(0 0% 100% / .7);
 }
 .mc-grid-pattern {
   background-image:
     linear-gradient(hsl(var(--mc-fg)/.04) 1px, transparent 1px),
     linear-gradient(90deg, hsl(var(--mc-fg)/.04) 1px, transparent 1px);
   background-size: 36px 36px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 50%, transparent 100%);
 }
 @keyframes mc-fade-up { from { opacity:0; transform:translateY(16px);} to {opacity:1; transform:none;} }
 @keyframes mc-float    { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
 @keyframes mc-pulse-glow { 0%,100%{box-shadow:0 0 0 0 hsl(var(--mc-accent)/.55);} 50%{box-shadow:0 0 0 14px hsl(var(--mc-accent)/0);} }
-@keyframes mc-heart  { 0%,100%{transform:scale(1);} 25%{transform:scale(1.15);} 50%{transform:scale(.95);} 75%{transform:scale(1.1);} }
-@keyframes mc-orbit  { from{transform:rotate(0) translateX(60px) rotate(0);} to{transform:rotate(360deg) translateX(60px) rotate(-360deg);} }
+@keyframes mc-pulse-dot  { 0%,100%{opacity:1;} 50%{opacity:.4;} }
 .mc-anim-fade-up   { animation: mc-fade-up .7s cubic-bezier(.4,0,.2,1) both; }
 .mc-anim-float     { animation: mc-float 6s ease-in-out infinite; }
 .mc-anim-pulse-glow{ animation: mc-pulse-glow 2s ease-out infinite; }
-.mc-anim-heart     { animation: mc-heart 1.4s ease-in-out infinite; }
+.mc-anim-pulse-dot { animation: mc-pulse-dot 1.6s ease-in-out infinite; }
 `;
 
 /* ---------- Data ---------- */
@@ -89,39 +91,46 @@ const navLinks = [
   { href: "#reviews", label: "Reviews" },
 ];
 
-const services = [
-  { icon: Stethoscope, title: "General Practice", desc: "Everyday care, checkups and common conditions from licensed GPs." },
-  { icon: Brain, title: "Mental Health", desc: "Confidential therapy and psychiatry sessions, on your schedule." },
-  { icon: Baby, title: "Pediatrics", desc: "Trusted children's care with experienced pediatricians on demand." },
-  { icon: Sparkles, title: "Dermatology", desc: "Skin, hair and acne consultations with board-certified specialists." },
-  { icon: HeartPulse, title: "Chronic Care", desc: "Ongoing management for diabetes, hypertension and heart health." },
-  { icon: Pill, title: "Prescriptions", desc: "Renew medications and get e-prescriptions sent to your pharmacy." },
+const steps = [
+  { n: "01", icon: CalendarCheck, title: "Book Appointment", desc: "Choose your doctor and a time that fits your schedule. Same-day slots available." },
+  { n: "02", icon: Video, title: "Virtual Consultation", desc: "Connect via secure video or chat. Discuss your symptoms with a licensed physician." },
+  { n: "03", icon: FileText, title: "Get Treatment", desc: "Receive a prescription, expert advice, or a referral — sent directly to your phone." },
 ];
 
-const features = [
-  { icon: Video, title: "Secure HD Video Visits", desc: "End-to-end encrypted video consultations from any device." },
-  { icon: FileText, title: "E-Prescriptions", desc: "Doctors send prescriptions directly to your nearest pharmacy." },
-  { icon: ShieldCheck, title: "Medical Records Vault", desc: "All your visits, notes and labs in one HIPAA-secure place." },
-  { icon: Headphones, title: "24/7 Access", desc: "Talk to a doctor any time, day or night — no appointment required." },
+const services = [
+  { icon: Stethoscope, title: "General Consultation", desc: "Everyday illnesses, checkups, and health concerns." },
+  { icon: Brain,       title: "Mental Health Support", desc: "Therapy and counseling from licensed professionals." },
+  { icon: Pill,        title: "Prescription & Refills", desc: "Get prescriptions sent to your local pharmacy." },
+  { icon: FlaskConical,title: "Lab Tests & Referrals", desc: "Order labs and get specialist referrals fast." },
+  { icon: Baby,        title: "Pediatric Care",        desc: "Trusted care for your children, anytime." },
+  { icon: Sparkles,    title: "Dermatology",           desc: "Skin, hair and acne consultations with specialists." },
+];
+
+const reasons = [
+  { icon: Headphones,  title: "24/7 Access to Doctors", desc: "Day or night, weekday or weekend — care is always one tap away." },
+  { icon: Zap,         title: "Fast Response Time",     desc: "Connect with a doctor in under 15 minutes on average." },
+  { icon: Lock,        title: "Secure & Private",       desc: "HIPAA-compliant, end-to-end encrypted consultations." },
+  { icon: DollarSign,  title: "Affordable Care",        desc: "Transparent pricing — no surprise bills, insurance accepted." },
+  { icon: Globe,       title: "Access from Anywhere",   desc: "Home, work, or traveling — quality care follows you." },
 ];
 
 const stats = [
-  { value: "500K+", label: "Patients served" },
-  { value: "240+",  label: "Licensed doctors" },
-  { value: "4.9★",  label: "Average rating" },
-  { value: "<15m",  label: "Avg. wait time" },
+  { value: "100+",    label: "Licensed Doctors" },
+  { value: "10,000+", label: "Patients Served" },
+  { value: "24/7",    label: "Availability" },
+  { value: "<30 min", label: "Avg. Wait Time" },
 ];
 
 const doctors = [
-  { img: doc1, name: "Dr. James Carter", specialty: "General Practitioner", rating: 4.9 },
-  { img: doc2, name: "Dr. Maya Patel",   specialty: "Dermatologist",        rating: 4.8 },
-  { img: doc3, name: "Dr. Sofia Reyes",  specialty: "Pediatrician",         rating: 5.0 },
+  { img: doc1, name: "Dr. James Reyes",  specialty: "Internal Medicine", rating: 4.8 },
+  { img: doc2, name: "Dr. Sarah Chen",   specialty: "Family Medicine",   rating: 4.9 },
+  { img: doc3, name: "Dr. Mei Tanaka",   specialty: "Pediatrics",        rating: 5.0 },
 ];
 
 const reviews = [
-  { name: "Emily R.",   rating: 5, quote: "Booked a video visit at 9pm and spoke to a doctor in 8 minutes. Absolutely game-changing." },
-  { name: "Marcus T.",  rating: 5, quote: "The doctor was kind, thorough, and my prescription was at the pharmacy before I got there." },
-  { name: "Priya S.",   rating: 5, quote: "Finally a healthcare app that feels modern. The interface is so easy for my whole family." },
+  { initials: "ET", name: "Emma Thompson",     loc: "Patient · Seattle, WA", quote: "I got connected with a doctor in 10 minutes from my couch. Got my prescription sent to the pharmacy down the street. Unreal." },
+  { initials: "MR", name: "Michael Rodriguez", loc: "Patient · Austin, TX",  quote: "As a busy parent, being able to consult a pediatrician at 11pm without leaving the house has been a complete game changer for our family." },
+  { initials: "PS", name: "Priya Sharma",      loc: "Patient · Boston, MA",  quote: "The doctors actually listen. The video quality is great, and the follow-up was seamless. I won't go back to the old way." },
 ];
 
 /* ---------- Page ---------- */
@@ -210,105 +219,150 @@ const MediCare = () => {
         )}
       </header>
 
-      {/* HERO */}
-      <section id="top" className="relative pt-28 sm:pt-36 pb-20 sm:pb-28">
+      {/* HERO — centered, with floating side cards */}
+      <section id="top" className="relative pt-28 sm:pt-32 pb-16 sm:pb-24">
         <div className="absolute inset-0 mc-grad-hero" />
         <div className="absolute inset-0 mc-grad-mesh opacity-90" />
-        <div className="absolute inset-0 mc-grid-pattern opacity-40" />
-        <div className="absolute -top-20 -left-20 h-72 w-72 rounded-full mc-grad-primary opacity-20 blur-3xl" />
-        <div className="absolute top-40 -right-24 h-80 w-80 rounded-full mc-grad-accent opacity-20 blur-3xl" />
+        <div className="absolute inset-0 mc-grid-pattern opacity-60" />
 
-        <div className="relative mx-auto max-w-6xl px-4 sm:px-6 grid lg:grid-cols-2 gap-12 lg:gap-10 items-center">
-          <div className="mc-anim-fade-up">
-            <span className="inline-flex items-center gap-2 rounded-full mc-glass px-3.5 py-1.5 text-xs font-semibold">
-              <span className="h-2 w-2 rounded-full bg-[hsl(var(--mc-accent))] mc-anim-pulse-glow" />
+        <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
+          {/* Eyebrow */}
+          <div className="flex justify-center mc-anim-fade-up">
+            <span className="inline-flex items-center gap-2 rounded-full mc-glass px-4 py-1.5 text-xs sm:text-sm font-semibold">
+              <span className="h-2 w-2 rounded-full bg-[hsl(var(--mc-accent))] mc-anim-pulse-dot" />
               240+ doctors online now
-              <span className="mx-1 opacity-30">·</span>
+              <span className="opacity-30">·</span>
               <Star className="h-3.5 w-3.5 fill-[hsl(45_100%_55%)] text-[hsl(45_100%_55%)]" /> 4.9
             </span>
-
-            <h1 className="mt-5 font-display text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.05] text-balance">
-              See a Doctor <span className="mc-grad-text">Anytime, Anywhere</span>
-            </h1>
-            <p className="mt-5 text-base sm:text-lg leading-relaxed text-[hsl(var(--mc-muted))] max-w-xl">
-              Connect with licensed doctors via secure video or chat in minutes. Get diagnoses, prescriptions and trusted advice — without leaving home.
-            </p>
-
-            <div className="mt-7 flex flex-wrap gap-3">
-              <a href="#cta" className="inline-flex items-center gap-2 rounded-full mc-grad-primary text-white px-7 py-3.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
-                Book Appointment <ArrowRight className="h-4 w-4" />
-              </a>
-              <a href="#how" className="inline-flex items-center gap-2 rounded-full mc-glass px-6 py-3.5 text-sm font-semibold hover:bg-white transition">
-                How it works
-              </a>
-            </div>
-
-            <div className="mt-8 text-xs sm:text-sm text-[hsl(var(--mc-muted))]">
-              Trusted by patients in <span className="text-base">🇺🇸 🇬🇧 🇨🇦 🇦🇺 🇩🇪</span>
-            </div>
           </div>
 
-          {/* Hero visual */}
-          <div className="relative mc-anim-fade-up" style={{ animationDelay: ".15s" }}>
-            <div className="relative rounded-[2.5rem] overflow-hidden mc-shadow-elegant mc-glass p-2">
-              <img
-                src={heroImg}
-                alt="Doctor smiling while holding a smartphone for a video consultation"
-                width={1024}
-                height={1024}
-                className="w-full h-auto rounded-[2rem] object-cover"
-              />
-              {/* live join strip */}
-              <div className="absolute left-4 right-4 bottom-4 mc-glass rounded-2xl px-4 py-3 flex items-center gap-3">
-                <div className="relative">
-                  <img src={doc2} alt="" className="h-10 w-10 rounded-full object-cover ring-2 ring-white" />
-                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-[hsl(var(--mc-accent))] ring-2 ring-white" />
+          {/* Headline */}
+          <h1 className="mt-6 text-center font-display text-4xl sm:text-6xl lg:text-7xl font-bold leading-[1.05] text-balance mc-anim-fade-up">
+            See a Doctor <span className="mc-grad-text">Anytime,<br className="hidden sm:block" /> Anywhere</span>
+          </h1>
+
+          <p className="mt-5 sm:mt-6 mx-auto max-w-2xl text-center text-base sm:text-lg leading-relaxed text-[hsl(var(--mc-muted))] mc-anim-fade-up">
+            Connect with licensed doctors via video or chat in minutes. Skip the waiting room — quality care delivered to wherever you are.
+          </p>
+
+          <div className="mt-8 flex justify-center mc-anim-fade-up">
+            <a href="#cta" className="inline-flex items-center gap-2 rounded-full mc-grad-primary text-white px-7 py-3.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
+              Book Appointment <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
+
+          {/* Hero visual + floating cards */}
+          <div className="relative mt-12 sm:mt-16">
+            {/* Center illustration */}
+            <div className="relative mx-auto max-w-lg">
+              <div className="absolute inset-0 -m-10 mc-grad-primary opacity-15 blur-3xl rounded-full" />
+              <div className="relative aspect-square rounded-[2.5rem] overflow-hidden bg-white mc-shadow-elegant">
+                <img
+                  src={heroImg}
+                  alt="Smiling doctor providing virtual consultation via smartphone"
+                  width={1024}
+                  height={1024}
+                  className="w-full h-full object-cover"
+                />
+                {/* Live now strip */}
+                <div className="absolute left-4 top-4 mc-glass rounded-full px-3 py-1.5 flex items-center gap-2 text-xs font-semibold">
+                  <span className="h-2 w-2 rounded-full bg-[hsl(0_85%_60%)] mc-anim-pulse-dot" />
+                  Live now · Dr. Sarah Chen
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate">Dr. Maya Patel is calling</p>
-                  <p className="text-xs text-[hsl(var(--mc-muted))]">Dermatology · Live now</p>
+                <div className="absolute right-4 top-4">
+                  <button className="rounded-full mc-grad-accent text-white text-xs font-semibold px-3.5 py-2 mc-anim-pulse-glow">
+                    Join call
+                  </button>
                 </div>
-                <button className="rounded-full mc-grad-accent text-white text-xs font-semibold px-4 py-2 mc-anim-pulse-glow">
-                  Join call
-                </button>
               </div>
             </div>
 
-            {/* Floating cards */}
-            <div className="hidden sm:flex absolute -left-6 top-10 mc-glass mc-shadow-card rounded-2xl p-3 pr-4 items-center gap-3 mc-anim-float" style={{ animationDelay: ".2s" }}>
-              <span className="grid place-items-center h-9 w-9 rounded-xl mc-grad-primary text-white"><Video className="h-4 w-4" /></span>
-              <div>
-                <p className="text-xs text-[hsl(var(--mc-muted))]">Format</p>
-                <p className="text-sm font-semibold">Video visits</p>
+            {/* Left cards */}
+            <div className="hidden lg:block absolute left-0 top-10 w-64 mc-glass mc-shadow-card rounded-2xl p-4 mc-anim-float" style={{ animationDelay: ".1s" }}>
+              <div className="flex items-center gap-3">
+                <span className="grid place-items-center h-10 w-10 rounded-xl bg-[hsl(var(--mc-accent))/0.12] text-[hsl(var(--mc-accent))]">
+                  <Video className="h-5 w-5" />
+                </span>
+                <p className="font-semibold text-sm">Video visits</p>
               </div>
+              <p className="mt-3 text-xs text-[hsl(var(--mc-muted))] leading-relaxed">HD secure consultations from your phone or laptop.</p>
             </div>
 
-            <div className="hidden sm:flex absolute -left-4 bottom-28 mc-glass mc-shadow-card rounded-2xl p-3 pr-4 items-center gap-3 mc-anim-float" style={{ animationDelay: ".6s" }}>
-              <span className="grid place-items-center h-9 w-9 rounded-xl mc-grad-accent text-white"><ShieldCheck className="h-4 w-4" /></span>
-              <div>
-                <p className="text-xs text-[hsl(var(--mc-muted))]">Privacy</p>
-                <p className="text-sm font-semibold">HIPAA Secure</p>
+            <div className="hidden lg:block absolute left-0 bottom-10 w-64 mc-glass mc-shadow-card rounded-2xl p-4 mc-anim-float" style={{ animationDelay: ".4s" }}>
+              <div className="flex items-center gap-3">
+                <span className="grid place-items-center h-10 w-10 rounded-xl bg-[hsl(var(--mc-primary))/0.12] text-[hsl(var(--mc-primary))]">
+                  <ShieldCheck className="h-5 w-5" />
+                </span>
+                <p className="font-semibold text-sm">HIPAA Secure</p>
               </div>
+              <p className="mt-3 text-xs text-[hsl(var(--mc-muted))] leading-relaxed">End-to-end encrypted records and conversations.</p>
             </div>
 
-            <div className="hidden sm:block absolute -right-4 top-16 w-56 mc-glass mc-shadow-card rounded-2xl p-4 mc-anim-float" style={{ animationDelay: ".4s" }}>
-              <div className="flex items-center gap-2">
+            {/* Right cards */}
+            <div className="hidden lg:block absolute right-0 top-10 w-64 mc-glass mc-shadow-card rounded-2xl p-4 mc-anim-float" style={{ animationDelay: ".25s" }}>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-[hsl(var(--mc-muted))]">Avg. wait time</p>
                 <Clock className="h-4 w-4 text-[hsl(var(--mc-primary))]" />
-                <p className="text-sm font-semibold">Avg. wait time</p>
               </div>
-              <p className="mt-1 text-2xl font-display font-bold">12 min</p>
-              <div className="mt-2 h-1.5 rounded-full bg-[hsl(var(--mc-muted-soft))] overflow-hidden">
+              <p className="mt-1 font-display text-3xl font-bold">12<span className="text-sm font-medium text-[hsl(var(--mc-accent))] ml-1">min</span></p>
+              <div className="mt-3 h-1.5 rounded-full bg-[hsl(var(--mc-muted-soft))] overflow-hidden">
                 <div className="h-full w-3/4 mc-grad-primary rounded-full" />
               </div>
             </div>
 
-            <div className="hidden sm:flex absolute -right-2 bottom-24 mc-glass mc-shadow-card rounded-2xl p-3 pr-4 items-center gap-3 mc-anim-float" style={{ animationDelay: ".8s" }}>
-              <span className="grid place-items-center h-9 w-9 rounded-xl bg-[hsl(var(--mc-primary))/0.1] text-[hsl(var(--mc-primary))]"><CalendarCheck className="h-4 w-4" /></span>
-              <div>
-                <p className="text-xs text-[hsl(var(--mc-muted))]">Next slot</p>
-                <p className="text-sm font-semibold">Today · 2:30 PM</p>
+            <div className="hidden lg:block absolute right-0 bottom-10 w-64 mc-glass mc-shadow-card rounded-2xl p-4 mc-anim-float" style={{ animationDelay: ".55s" }}>
+              <div className="flex items-center gap-3">
+                <span className="grid place-items-center h-10 w-10 rounded-xl bg-[hsl(var(--mc-primary))/0.12] text-[hsl(var(--mc-primary))]">
+                  <CalendarCheck className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-xs text-[hsl(var(--mc-muted))]">Next slot</p>
+                  <p className="text-sm font-semibold">Today, 2:30 PM</p>
+                </div>
+              </div>
+              <button className="mt-3 w-full rounded-full border border-[hsl(var(--mc-border))] bg-white py-2 text-xs font-semibold hover:bg-[hsl(var(--mc-muted-soft))] transition">
+                Reserve now
+              </button>
+            </div>
+
+            {/* Mobile/tablet stacked cards */}
+            <div className="lg:hidden mt-8 grid sm:grid-cols-2 gap-4">
+              <div className="mc-glass mc-shadow-card rounded-2xl p-4">
+                <div className="flex items-center gap-3">
+                  <span className="grid place-items-center h-10 w-10 rounded-xl bg-[hsl(var(--mc-accent))/0.12] text-[hsl(var(--mc-accent))]"><Video className="h-5 w-5" /></span>
+                  <p className="font-semibold text-sm">Video visits</p>
+                </div>
+                <p className="mt-3 text-xs text-[hsl(var(--mc-muted))]">HD secure consultations from your phone or laptop.</p>
+              </div>
+              <div className="mc-glass mc-shadow-card rounded-2xl p-4">
+                <div className="flex items-center gap-3">
+                  <span className="grid place-items-center h-10 w-10 rounded-xl bg-[hsl(var(--mc-primary))/0.12] text-[hsl(var(--mc-primary))]"><ShieldCheck className="h-5 w-5" /></span>
+                  <p className="font-semibold text-sm">HIPAA Secure</p>
+                </div>
+                <p className="mt-3 text-xs text-[hsl(var(--mc-muted))]">End-to-end encrypted records and conversations.</p>
+              </div>
+              <div className="mc-glass mc-shadow-card rounded-2xl p-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-[hsl(var(--mc-muted))]">Avg. wait time</p>
+                  <Clock className="h-4 w-4 text-[hsl(var(--mc-primary))]" />
+                </div>
+                <p className="mt-1 font-display text-3xl font-bold">12<span className="text-sm font-medium text-[hsl(var(--mc-accent))] ml-1">min</span></p>
+              </div>
+              <div className="mc-glass mc-shadow-card rounded-2xl p-4">
+                <div className="flex items-center gap-3">
+                  <span className="grid place-items-center h-10 w-10 rounded-xl bg-[hsl(var(--mc-primary))/0.12] text-[hsl(var(--mc-primary))]"><CalendarCheck className="h-5 w-5" /></span>
+                  <div>
+                    <p className="text-xs text-[hsl(var(--mc-muted))]">Next slot</p>
+                    <p className="text-sm font-semibold">Today, 2:30 PM</p>
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
+
+          {/* Trust strip */}
+          <div className="mt-14 text-center text-sm text-[hsl(var(--mc-muted))]">
+            Trusted by patients in <span className="text-base ml-1">🇺🇸 🇬🇧 🇨🇦 🇦🇺 🇩🇪</span>
           </div>
         </div>
       </section>
@@ -318,23 +372,20 @@ const MediCare = () => {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto">
             <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">How it works</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-4xl font-bold">See a doctor in three simple steps</h2>
-            <p className="mt-3 text-[hsl(var(--mc-muted))]">From specialty to consultation in under 15 minutes — no waiting rooms, no paperwork.</p>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Quality care in three simple steps</h2>
           </div>
 
           <div className="relative mt-14 grid md:grid-cols-3 gap-6">
             <div className="hidden md:block absolute top-12 left-[16%] right-[16%] h-px bg-gradient-to-r from-transparent via-[hsl(var(--mc-primary))/0.4] to-transparent" />
-            {[
-              { icon: Stethoscope, title: "Choose specialty", desc: "Pick from 20+ medical specialties tailored to your needs." },
-              { icon: CalendarCheck, title: "Book appointment", desc: "Pick a slot that fits — instant or scheduled, your choice." },
-              { icon: Video, title: "Start consultation", desc: "Join a secure video call and get personalized care." },
-            ].map((s, i) => (
-              <div key={s.title} className="relative mc-glass mc-shadow-card rounded-3xl p-6 text-center mc-anim-fade-up" style={{ animationDelay: `${i * 0.1}s` }}>
-                <div className="mx-auto h-12 w-12 grid place-items-center rounded-2xl mc-grad-primary text-white mc-shadow-glow">
-                  <s.icon className="h-5 w-5" />
+            {steps.map((s, i) => (
+              <div key={s.n} className="relative mc-glass mc-shadow-card rounded-3xl p-7 mc-anim-fade-up" style={{ animationDelay: `${i * 0.1}s` }}>
+                <div className="flex items-center justify-between">
+                  <span className="grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow">
+                    <s.icon className="h-5 w-5" />
+                  </span>
+                  <span className="font-display text-4xl font-bold mc-grad-text">{s.n}</span>
                 </div>
-                <p className="mt-4 text-xs font-semibold tracking-widest text-[hsl(var(--mc-muted))]">STEP {i + 1}</p>
-                <h3 className="mt-1 font-display text-xl font-bold">{s.title}</h3>
+                <h3 className="mt-5 font-display text-xl font-bold">{s.title}</h3>
                 <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">{s.desc}</p>
               </div>
             ))}
@@ -346,9 +397,8 @@ const MediCare = () => {
       <section id="services" className="py-20 sm:py-28 bg-[hsl(var(--mc-muted-soft))]">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto">
-            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Services</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-4xl font-bold">Care for every moment of life</h2>
-            <p className="mt-3 text-[hsl(var(--mc-muted))]">Whatever your concern, our network of verified specialists is here for you.</p>
+            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Our services</p>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Comprehensive care at your fingertips</h2>
           </div>
 
           <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -365,62 +415,28 @@ const MediCare = () => {
         </div>
       </section>
 
-      {/* PLATFORM FEATURES */}
+      {/* WHY CHOOSE US */}
       <section className="py-20 sm:py-28">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 grid lg:grid-cols-2 gap-12 items-center">
-          <div className="relative order-2 lg:order-1">
-            <div className="absolute -inset-6 mc-grad-primary opacity-15 blur-3xl rounded-[3rem]" />
-            <div className="relative mc-glass mc-shadow-elegant rounded-[2.5rem] p-6">
-              <div className="rounded-3xl bg-[hsl(var(--mc-card))] border border-[hsl(var(--mc-border))] p-5">
-                <div className="flex items-center gap-3">
-                  <Smartphone className="h-5 w-5 text-[hsl(var(--mc-primary))]" />
-                  <p className="text-sm font-semibold">MediCare App</p>
-                </div>
-                <div className="mt-4 grid gap-3">
-                  {[
-                    "Encrypted video & chat",
-                    "Auto-saved medical history",
-                    "Pharmacy delivery in 1 hour",
-                    "Family accounts & dependents",
-                  ].map((t) => (
-                    <div key={t} className="flex items-center gap-3 rounded-2xl bg-[hsl(var(--mc-muted-soft))] px-4 py-3">
-                      <span className="grid place-items-center h-7 w-7 rounded-full mc-grad-accent text-white">
-                        <Check className="h-3.5 w-3.5" />
-                      </span>
-                      <p className="text-sm font-medium">{t}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="order-1 lg:order-2">
-            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Platform</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-4xl font-bold">Everything you need for modern healthcare</h2>
-            <p className="mt-3 text-[hsl(var(--mc-muted))]">Built for patients and doctors with privacy, speed and reliability at the core.</p>
-
-            <div className="mt-8 grid sm:grid-cols-2 gap-5">
-              {features.map((f) => (
-                <div key={f.title} className="flex gap-4">
-                  <span className="shrink-0 grid place-items-center h-11 w-11 rounded-2xl mc-grad-primary text-white mc-shadow-glow">
-                    <f.icon className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <h3 className="font-display text-base font-bold">{f.title}</h3>
-                    <p className="mt-1 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">{f.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* METRICS */}
-      <section className="py-12 sm:py-16">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="rounded-3xl mc-grad-primary text-white p-8 sm:p-10 mc-shadow-elegant grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="text-center max-w-2xl mx-auto">
+            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Why choose us</p>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Healthcare designed around you</h2>
+          </div>
+
+          <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {reasons.map((r) => (
+              <div key={r.title} className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card">
+                <span className="grid place-items-center h-12 w-12 rounded-2xl bg-[hsl(var(--mc-primary))/0.1] text-[hsl(var(--mc-primary))]">
+                  <r.icon className="h-5 w-5" />
+                </span>
+                <h3 className="mt-5 font-display text-lg font-bold">{r.title}</h3>
+                <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">{r.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Stats */}
+          <div className="mt-12 rounded-3xl mc-grad-primary text-white p-8 sm:p-10 mc-shadow-elegant grid grid-cols-2 md:grid-cols-4 gap-6">
             {stats.map((s) => (
               <div key={s.label} className="text-center">
                 <p className="font-display text-3xl sm:text-4xl font-bold tracking-tight">{s.value}</p>
@@ -432,32 +448,37 @@ const MediCare = () => {
       </section>
 
       {/* DOCTORS */}
-      <section id="doctors" className="py-20 sm:py-28">
+      <section id="doctors" className="py-20 sm:py-28 bg-[hsl(var(--mc-muted-soft))]">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto">
-            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Our Doctors</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-4xl font-bold">Meet a few of the specialists ready to help</h2>
-            <p className="mt-3 text-[hsl(var(--mc-muted))]">Every doctor on MediCare is licensed, verified and committed to patient-first care.</p>
+            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Meet our doctors</p>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Trusted physicians, ready when you are</h2>
           </div>
 
           <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {doctors.map((d) => (
               <article key={d.name} className="bg-[hsl(var(--mc-card))] rounded-3xl border border-[hsl(var(--mc-border))] mc-shadow-card overflow-hidden hover:-translate-y-1 hover:mc-shadow-elegant transition-all duration-300">
-                <div className="aspect-[4/3] overflow-hidden bg-[hsl(var(--mc-muted-soft))]">
+                <div className="relative aspect-[4/3] overflow-hidden bg-[hsl(var(--mc-muted-soft))]">
                   <img src={d.img} alt={`Portrait of ${d.name}`} loading="lazy" width={512} height={512} className="w-full h-full object-cover" />
+                  <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 backdrop-blur px-2.5 py-1 text-[11px] font-semibold">
+                    <span className="h-2 w-2 rounded-full bg-[hsl(var(--mc-accent))] mc-anim-pulse-dot" />
+                    Available Now
+                  </span>
                 </div>
                 <div className="p-5">
-                  <h3 className="font-display text-lg font-bold">{d.name}</h3>
-                  <p className="text-sm text-[hsl(var(--mc-muted))]">{d.specialty}</p>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1 text-sm font-semibold">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="font-display text-lg font-bold">{d.name}</h3>
+                      <p className="text-sm text-[hsl(var(--mc-muted))]">{d.specialty}</p>
+                    </div>
+                    <span className="inline-flex items-center gap-1 text-sm font-semibold whitespace-nowrap">
                       <Star className="h-4 w-4 fill-[hsl(45_100%_55%)] text-[hsl(45_100%_55%)]" />
                       {d.rating.toFixed(1)}
                     </span>
-                    <button className="rounded-full mc-grad-primary text-white px-4 py-2 text-xs font-semibold mc-shadow-glow">
-                      Book
-                    </button>
                   </div>
+                  <button className="mt-4 w-full rounded-full mc-grad-primary text-white py-2.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
+                    Book consultation
+                  </button>
                 </div>
               </article>
             ))}
@@ -466,27 +487,30 @@ const MediCare = () => {
       </section>
 
       {/* REVIEWS */}
-      <section id="reviews" className="py-20 sm:py-28 bg-[hsl(var(--mc-muted-soft))]">
+      <section id="reviews" className="py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto">
-            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Reviews</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-4xl font-bold">Loved by patients everywhere</h2>
+            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Patient stories</p>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Loved by thousands of patients</h2>
           </div>
 
           <div className="mt-12 grid md:grid-cols-3 gap-5">
             {reviews.map((r) => (
               <figure key={r.name} className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card">
                 <div className="flex items-center gap-1 text-[hsl(45_100%_55%)]">
-                  {Array.from({ length: r.rating }).map((_, i) => (
+                  {Array.from({ length: 5 }).map((_, i) => (
                     <Star key={i} className="h-4 w-4 fill-current" />
                   ))}
                 </div>
                 <blockquote className="mt-4 text-sm leading-relaxed">"{r.quote}"</blockquote>
                 <figcaption className="mt-5 flex items-center gap-3">
                   <span className="grid place-items-center h-10 w-10 rounded-full mc-grad-primary text-white text-sm font-bold">
-                    {r.name.split(" ").map((n) => n[0]).join("")}
+                    {r.initials}
                   </span>
-                  <p className="text-sm font-semibold">{r.name}</p>
+                  <div>
+                    <p className="text-sm font-semibold">{r.name}</p>
+                    <p className="text-xs text-[hsl(var(--mc-muted))]">{r.loc}</p>
+                  </div>
                 </figcaption>
               </figure>
             ))}
@@ -495,7 +519,7 @@ const MediCare = () => {
       </section>
 
       {/* FINAL CTA */}
-      <section id="cta" className="py-20 sm:py-28">
+      <section id="cta" className="py-16 sm:py-24">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="relative overflow-hidden rounded-[2.5rem] mc-grad-primary text-white p-10 sm:p-16 text-center mc-shadow-elegant">
             <div className="absolute inset-0 opacity-30 mc-grid-pattern" />
@@ -503,10 +527,10 @@ const MediCare = () => {
             <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-white/20 blur-3xl" />
             <div className="relative">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur px-3 py-1 text-xs font-semibold">
-                <HeartPulse className="h-3.5 w-3.5 mc-anim-heart" /> Care that fits your life
+                <HeartPulse className="h-3.5 w-3.5" /> Care that fits your life
               </span>
               <h2 className="mt-4 font-display text-3xl sm:text-5xl font-bold">Start your consultation today</h2>
-              <p className="mt-4 text-white/85 max-w-xl mx-auto">Join over 500,000 patients who trust MediCare for fast, reliable, on-demand healthcare.</p>
+              <p className="mt-4 text-white/85 max-w-xl mx-auto">Join thousands of patients getting trusted medical care without the wait.</p>
               <a href="#top" className="mt-8 inline-flex items-center gap-2 rounded-full bg-white text-[hsl(var(--mc-primary))] px-7 py-3.5 text-sm font-bold hover:bg-white/95 transition">
                 Get Started <ArrowRight className="h-4 w-4" />
               </a>
