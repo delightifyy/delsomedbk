@@ -78,21 +78,25 @@ const BlogPage = () => {
         ) : (
           <ul className="divide-y divide-border">
             {items.map((p) => (
-              <li key={p.id} className="p-4 flex items-center gap-4">
-                {p.cover_image ? (
-                  <img src={p.cover_image} alt="" className="h-12 w-12 rounded object-cover" />
-                ) : (
-                  <div className="h-12 w-12 rounded bg-muted" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{p.title}</p>
-                  <p className="text-xs text-muted-foreground truncate">/{p.slug}</p>
+              <li key={p.id} className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                <div className="flex items-center gap-4 min-w-0 flex-1">
+                  {p.cover_image ? (
+                    <img src={p.cover_image} alt="" className="h-12 w-12 rounded object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="h-12 w-12 rounded bg-muted flex-shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{p.title}</p>
+                    <p className="text-xs text-muted-foreground truncate">/{p.slug}</p>
+                  </div>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full ${p.published ? "bg-primary-soft text-primary" : "bg-muted text-muted-foreground"}`}>
-                  {p.published ? "Published" : "Draft"}
-                </span>
-                <Button size="icon" variant="ghost" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
-                <Button size="icon" variant="ghost" onClick={() => remove(p.id)}><Trash2 className="h-4 w-4" /></Button>
+                <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
+                  <span className={`text-xs px-2 py-1 rounded-full ${p.published ? "bg-primary-soft text-primary" : "bg-muted text-muted-foreground"}`}>
+                    {p.published ? "Published" : "Draft"}
+                  </span>
+                  <Button size="icon" variant="ghost" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => remove(p.id)}><Trash2 className="h-4 w-4" /></Button>
+                </div>
               </li>
             ))}
           </ul>

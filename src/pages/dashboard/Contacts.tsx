@@ -50,16 +50,20 @@ const ContactsPage = () => {
         ) : (
           <ul className="divide-y divide-border">
             {items.map((m) => (
-              <li key={m.id} className="p-4 flex items-center gap-4">
-                <span className={`h-2 w-2 rounded-full ${m.read ? "bg-muted" : "bg-primary"}`} />
-                <button onClick={() => view(m)} className="flex-1 min-w-0 text-left">
-                  <p className={`truncate ${m.read ? "" : "font-semibold"}`}>{m.subject}</p>
-                  <p className="text-xs text-muted-foreground truncate">{m.name} · {m.email}</p>
-                </button>
-                <span className="text-xs text-muted-foreground hidden sm:block">
-                  {new Date(m.created_at).toLocaleDateString()}
-                </span>
-                <Button size="icon" variant="ghost" onClick={() => remove(m.id)}><Trash2 className="h-4 w-4" /></Button>
+              <li key={m.id} className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                <div className="flex items-start gap-3 min-w-0 flex-1">
+                  <span className={`mt-2 h-2 w-2 rounded-full flex-shrink-0 ${m.read ? "bg-muted" : "bg-primary"}`} />
+                  <button onClick={() => view(m)} className="flex-1 min-w-0 text-left">
+                    <p className={`truncate ${m.read ? "" : "font-semibold"}`}>{m.subject}</p>
+                    <p className="text-xs text-muted-foreground truncate">{m.name} · {m.email}</p>
+                  </button>
+                </div>
+                <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
+                  <span className="text-xs text-muted-foreground hidden sm:block">
+                    {new Date(m.created_at).toLocaleDateString()}
+                  </span>
+                  <Button size="icon" variant="ghost" onClick={() => remove(m.id)}><Trash2 className="h-4 w-4" /></Button>
+                </div>
               </li>
             ))}
           </ul>

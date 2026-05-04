@@ -1,11 +1,20 @@
-import { FAQS } from "@/data/faqs";
+import { useEffect, useState } from "react";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
+import { listFaqs, subscribeStore, type LocalFaq } from "@/lib/localStore";
 
 export const FaqSection = () => {
-  const half = Math.ceil(FAQS.length / 2);
-  const cols = [FAQS.slice(0, half), FAQS.slice(half)];
+  const [faqs, setFaqs] = useState<LocalFaq[]>([]);
+
+  useEffect(() => subscribeStore(() => setFaqs(listFaqs())), []);
+
+  const half = Math.ceil(faqs.length / 2);
+  const cols = [faqs.slice(0, half), faqs.slice(half)];
+
+  if (faqs.length === 0) {
+    return <p className="text-sm text-muted-foreground">No FAQs yet.</p>;
+  }
 
   return (
     <div className="grid md:grid-cols-2 gap-x-10 gap-y-2">

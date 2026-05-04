@@ -13,6 +13,7 @@ import DoctorProfile from "./pages/DoctorProfile.tsx";
 import Adverts from "./pages/Adverts.tsx";
 import HealthNews from "./pages/HealthNews.tsx";
 import HealthNewsArticle from "./pages/HealthNewsArticle.tsx";
+import AdvertArticle from "./pages/AdvertArticle.tsx";
 import RegisterPatient from "./pages/RegisterPatient.tsx";
 import Register from "./pages/Register.tsx";
 import { Navigate } from "react-router-dom";
@@ -22,6 +23,10 @@ import DashUsers from "./pages/dashboard/Users.tsx";
 import DashContacts from "./pages/dashboard/Contacts.tsx";
 import DashBlog from "./pages/dashboard/Blog.tsx";
 import DashNotifications from "./pages/dashboard/Notifications.tsx";
+import DashNews from "./pages/dashboard/News.tsx";
+import DashAdverts from "./pages/dashboard/Adverts.tsx";
+import DashFaqs from "./pages/dashboard/Faqs.tsx";
+import DashTestimonials from "./pages/dashboard/Testimonials.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.tsx";
 import TermsAndConditions from "./pages/TermsAndConditions.tsx";
@@ -48,6 +53,7 @@ const App = () => (
             <Route path="/adverts" element={<Adverts />} />
             <Route path="/health-news" element={<HealthNews />} />
             <Route path="/health-news/:slug" element={<HealthNewsArticle />} />
+            <Route path="/adverts/:id" element={<AdvertArticle />} />
             <Route path="/register" element={<Register />} />
             <Route path="/register/doctor" element={<Navigate to="/register?type=doctor" replace />} />
             <Route path="/register/organization" element={<Navigate to="/register?type=organization" replace />} />
@@ -61,6 +67,10 @@ const App = () => (
             <Route path="/dashboard/users" element={<AdminGuard><DashUsers /></AdminGuard>} />
             <Route path="/dashboard/contacts" element={<AdminGuard><DashContacts /></AdminGuard>} />
             <Route path="/dashboard/blog" element={<AdminGuard><DashBlog /></AdminGuard>} />
+            <Route path="/dashboard/news" element={<AdminGuard><DashNews /></AdminGuard>} />
+            <Route path="/dashboard/adverts" element={<AdminGuard><DashAdverts /></AdminGuard>} />
+            <Route path="/dashboard/faqs" element={<AdminGuard><DashFaqs /></AdminGuard>} />
+            <Route path="/dashboard/testimonials" element={<AdminGuard><DashTestimonials /></AdminGuard>} />
             <Route path="/dashboard/notifications" element={<AdminGuard><DashNotifications /></AdminGuard>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

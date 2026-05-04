@@ -1,30 +1,85 @@
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useMemo, useState } from "react";
-import { BLOG_POSTS, BLOG_CATEGORIES } from "@/data/blogs";
+import { useEffect, useMemo, useState } from "react";
 import { Search, Clock, ArrowRight, ArrowUpRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { SectionLabel } from "@/components/site/SectionLabel";
 import { cn } from "@/lib/utils";
+import {
+  listAdverts,
+  subscribeStore,
+  type LocalAdvert,
+} from "@/lib/localStore";
+import blog1 from "@/assets/blog/blog-1.jpg";
+import blog2 from "@/assets/blog/blog-2.jpg";
+import blog3 from "@/assets/blog/blog-3.jpg";
+import blog4 from "@/assets/blog/blog-4.jpg";
+import blog5 from "@/assets/blog/blog-5.jpg";
+import blog6 from "@/assets/blog/blog-6.jpg";
 
 const ALL = "all";
 
+const FALLBACK_IMAGES = [blog1, blog2, blog3, blog4, blog5, blog6];
+
+const imageForAdvert = (item: LocalAdvert, index: number) => {
+  if (item.image) return item.image;
+  return FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
+};
+
+const initialsOf = (name: string) =>
+  name
+    .replace(/^Dr\.\s+/i, "")
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("") || "DM";
+
 const Adverts = () => {
+  const [items, setItems] = useState<LocalAdvert[]>([]);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>(ALL);
 
-  const featured = useMemo(() => BLOG_POSTS.find((p) => p.featured) ?? BLOG_POSTS[0], []);
-
-  const filtered = useMemo(
-    () =>
-      BLOG_POSTS.filter((p) => p.id !== featured.id).filter((p) => {
-        if (cat !== ALL && p.category !== cat) return false;
-        if (q && !`${p.title} ${p.excerpt} ${p.author}`.toLowerCase().includes(q.toLowerCase()))
-          return false;
-        return true;
-      }),
-    [q, cat, featured.id]
+  useEffect(
+    () => subscribeStore(() => setItems(listAdverts().filter((entry) => entry.published))),
+    []
   );
+
+  const categories = useMemo(
+    () => Array.from(new Set(items.map((item) => item.category))).sort((a, b) => a.localeCompare(b)),
+    [items]
+  );
+
+  const publishedStories = useMemo(
+    () =>
+      items.map((item, index) => ({
+        id: item.id,
+        title: item.title,
+        category: item.category,
+        cover: imageForAdvert(item, index),
+        excerpt: item.description,
+        author: item.author || item.sponsor,
+        authorRole: item.author_role || `${item.city}, ${item.state}`,
+        date: item.date_label || new Date(item.created_at).toLocaleDateString(undefined, { month: "short", day: "2-digit", year: "numeric" }),
+        readTime: item.read_time || "6 min read",
+        ctaLabel: item.cta_label || "Read the story",
+      })),
+    [items]
+  );
+
+  const featured = publishedStories[0] ?? null;
+
+  const filtered = useMemo(() => {
+    if (!featured) return [];
+
+    return publishedStories.filter((p) => p.id !== featured.id).filter((p) => {
+      if (cat !== ALL && p.category !== cat) return false;
+      if (q && !`${p.title} ${p.excerpt} ${p.author}`.toLowerCase().includes(q.toLowerCase())) {
+        return false;
+      }
+      return true;
+    });
+  }, [q, cat, publishedStories, featured]);
 
   return (
     <SiteLayout>
@@ -52,49 +107,52 @@ const Adverts = () => {
 
       {/* Featured hero post */}
       <section className="container py-14">
-        <article className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          <div className="lg:col-span-7 relative overflow-hidden rounded-3xl bg-muted aspect-[4/3] lg:aspect-[5/4]">
-            <img
-              src={featured.cover}
-              alt={featured.title}
-              width={1280}
-              height={832}
-              className="w-full h-full object-cover transition-transform duration-700 hover:scale-[1.03]"
-            />
-            <div className="absolute top-5 left-5">
-              <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold tracking-[0.18em] px-3 py-1.5 rounded-full bg-background/95 backdrop-blur text-foreground border border-border">
-                Featured · {featured.category}
-              </span>
-            </div>
-          </div>
-          <div className="lg:col-span-5">
-            <p className="text-xs tracking-[0.2em] text-secondary font-semibold">
-              {featured.date} · {featured.readTime}
-            </p>
-            <h2 className="mt-4 font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-bold leading-[1.1] text-balance">
-              {featured.title}
-            </h2>
-            <p className="mt-5 text-muted-foreground text-lg leading-relaxed">
-              {featured.excerpt}
-            </p>
-            <div className="mt-7 flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-primary text-primary-foreground font-display font-semibold text-sm">
-                {featured.author
-                  .replace("Dr. ", "")
-                  .split(" ")
-                  .map((w) => w[0])
-                  .join("")}
-              </span>
-              <div>
-                <p className="text-sm font-semibold">{featured.author}</p>
-                <p className="text-xs text-muted-foreground">{featured.authorRole}</p>
+        {featured ? (
+          <article className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            <div className="lg:col-span-7 relative overflow-hidden rounded-3xl bg-muted aspect-[4/3] lg:aspect-[5/4]">
+              <img
+                src={featured.cover}
+                alt={featured.title}
+                width={1280}
+                height={832}
+                className="w-full h-full object-cover transition-transform duration-700 hover:scale-[1.03]"
+              />
+              <div className="absolute top-5 left-5">
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold tracking-[0.18em] px-3 py-1.5 rounded-full bg-background/95 backdrop-blur text-foreground border border-border">
+                  Featured · {featured.category}
+                </span>
               </div>
             </div>
-            <Button variant="hero" size="lg" className="mt-8">
-              Read the story <ArrowRight className="h-4 w-4" />
-            </Button>
+            <div className="lg:col-span-5">
+              <p className="text-xs tracking-[0.2em] text-secondary font-semibold">
+                {featured.date} · {featured.readTime}
+              </p>
+              <h2 className="mt-4 font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-bold leading-[1.1] text-balance">
+                {featured.title}
+              </h2>
+              <p className="mt-5 text-muted-foreground text-lg leading-relaxed">
+                {featured.excerpt}
+              </p>
+              <div className="mt-7 flex items-center gap-3">
+                <span className="grid h-10 w-10 place-items-center rounded-full bg-primary text-primary-foreground font-display font-semibold text-sm">
+                  {initialsOf(featured.author)}
+                </span>
+                <div>
+                  <p className="text-sm font-semibold">{featured.author}</p>
+                  <p className="text-xs text-muted-foreground">{featured.authorRole}</p>
+                </div>
+              </div>
+              <Button asChild variant="hero" size="lg" className="mt-8">
+                <Link to={`/adverts/${featured.id}`}>{featured.ctaLabel} <ArrowRight className="h-4 w-4" /></Link>
+              </Button>
+            </div>
+          </article>
+        ) : (
+          <div className="text-center py-24 rounded-2xl border border-dashed border-border">
+            <p className="font-display text-xl font-semibold">No Stories Yet</p>
+            <p className="text-sm text-muted-foreground mt-2">Add adverts from admin to populate this page.</p>
           </div>
-        </article>
+        )}
       </section>
 
       {/* Filter bar */}
@@ -112,7 +170,7 @@ const Adverts = () => {
             >
               All Stories
             </button>
-            {BLOG_CATEGORIES.map((c) => (
+            {categories.map((c) => (
               <button
                 key={c}
                 onClick={() => setCat(c)}
@@ -145,8 +203,8 @@ const Adverts = () => {
           <div className="grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((p) => (
               <article key={p.id} className="group flex flex-col">
-                <a
-                  href="#"
+                <Link
+                  to={`/adverts/${p.id}`}
                   className="relative overflow-hidden rounded-2xl bg-muted aspect-[4/5] block"
                 >
                   <img
@@ -160,7 +218,7 @@ const Adverts = () => {
                   <span className="absolute top-4 left-4 inline-flex items-center gap-1 text-[10px] font-semibold tracking-[0.18em] px-2.5 py-1 rounded-full bg-background/95 backdrop-blur text-foreground border border-border">
                     {p.category}
                   </span>
-                </a>
+                </Link>
                 <div className="mt-5 flex items-center gap-3 text-xs text-muted-foreground tracking-wider">
                   <span>{p.date}</span>
                   <span className="h-1 w-1 rounded-full bg-border" />
@@ -169,10 +227,10 @@ const Adverts = () => {
                   </span>
                 </div>
                 <h3 className="mt-3 font-display text-2xl font-bold leading-[1.2] text-balance group-hover:text-secondary transition-colors">
-                  <a href="#" className="inline-flex items-start gap-1.5">
+                  <Link to={`/adverts/${p.id}`} className="inline-flex items-start gap-1.5">
                     {p.title}
                     <ArrowUpRight className="h-4 w-4 mt-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-                  </a>
+                  </Link>
                 </h3>
                 <p className="mt-3 text-sm text-muted-foreground leading-relaxed line-clamp-3">
                   {p.excerpt}
@@ -194,21 +252,7 @@ const Adverts = () => {
         )}
       </section>
 
-      {/* Newsletter */}
-      <section className="border-t border-border bg-muted/30">
-        <div className="container py-16 grid lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-7">
-            <SectionLabel number="" label="Subscribe" />
-            <h2 className="mt-3 font-display text-3xl sm:text-4xl font-bold leading-tight text-balance">
-              The Journal, in Your Inbox Every Friday.
-            </h2>
-            <p className="mt-3 text-muted-foreground max-w-lg">
-              One thoughtful read on health, written by a Nigerian doctor. No spam, unsubscribe
-              anytime.
-            </p>
-          </div>
-        </div>
-      </section>
+      {/* Newsletter removed per request */}
     </SiteLayout>
   );
 };

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -7,14 +6,39 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Search, Users as UsersIcon, HeartPulse, Stethoscope, Building2, Pill, FlaskConical, Mail, Phone, Calendar, Eye, ShieldCheck, MapPin, Ban, Trash2, ChevronLeft, ChevronRight,
+  Search,
+  Users as UsersIcon,
+  HeartPulse,
+  Stethoscope,
+  Building2,
+  Pill,
+  FlaskConical,
+  Mail,
+  Phone,
+  Calendar,
+  Eye,
+  Ban,
+  Trash2,
+  MapPin,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import type { LucideIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DOCTORS } from "@/data/doctors";
-import { listProfiles, listUserRoles, setUserRole, subscribeStore, type LocalProfile, type LocalUserRole } from "@/lib/localStore";
+import {
+  listProfiles,
+  listUserRoles,
+  setUserRole as setUserRoleInStore,
+  subscribeStore,
+  ensureDemoUsers,
+  type LocalProfile,
+  type LocalUserRole,
+} from "@/lib/localStore";
+
 
 type UserType = "patient" | "doctor" | "organization" | "pharmacy" | "lab-diagnostics";
 type AppRole = "admin" | "user";
@@ -40,47 +64,11 @@ type Row = {
   initials: string;
   user_type: UserType | null;
   created_at?: string;
-  // doctor-specific
-  doctorSlug?: string;
-  // role management — only for real profiles
   manageable: boolean;
   role?: AppRole;
 };
 
 type TabKey = "all" | "patient" | "doctor" | "organization" | "pharmacy" | "lab-diagnostics";
-
-const TABS: { key: TabKey; label: string; icon: any }[] = [
-  { key: "all", label: "All users", icon: UsersIcon },
-  { key: "patient", label: "Patients", icon: HeartPulse },
-  { key: "doctor", label: "Doctors", icon: Stethoscope },
-  { key: "organization", label: "HMO / Organization", icon: Building2 },
-  { key: "pharmacy", label: "Pharmacy", icon: Pill },
-  { key: "lab-diagnostics", label: "Laboratory / Diagnostics", icon: FlaskConical },
-];
-
-const typeLabel: Record<UserType, string> = {
-  patient: "Patient",
-  doctor: "Doctor",
-  organization: "HMO' / Organization",
-  pharmacy: "Pharmacy",
-  "lab-diagnostics": "Laboratory / Diagnostics",
-};
-
-const typeTone: Record<UserType, string> = {
-  patient: "bg-primary-soft text-primary",
-  doctor: "bg-secondary text-secondary-foreground",
-  organization: "bg-accent text-accent-foreground",
-  pharmacy: "bg-accent text-accent-foreground",
-  "lab-diagnostics": "bg-accent text-accent-foreground",
-};
-
-const initialsOf = (name: string) => {
-  const src = (name || "?").trim();
-  return src.split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() || "").join("") || "?";
-};
-
-const fmtDate = (s?: string) =>
-  s ? new Date(s).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "";
 
 type SampleUser = {
   id: string;
@@ -99,6 +87,23 @@ const INITIAL_SAMPLE_USERS: SampleUser[] = [
   { id: "u6", name: "Dr. Funke Adeyemi", email: "funke.adeyemi@example.com", role: "Doctor", status: "Suspended" },
 ];
 
+const TABS: { key: TabKey; label: string; icon: LucideIcon }[] = [
+  { key: "all", label: "All users", icon: UsersIcon },
+  { key: "patient", label: "Patients", icon: HeartPulse },
+  { key: "doctor", label: "Doctors", icon: Stethoscope },
+  { key: "organization", label: "HMO / Organization", icon: Building2 },
+  { key: "pharmacy", label: "Pharmacy", icon: Pill },
+  { key: "lab-diagnostics", label: "Laboratory / Diagnostics", icon: FlaskConical },
+];
+
+const initialsOf = (name: string) => {
+  const src = (name || "?").trim();
+  return src.split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() || "").join("") || "?";
+};
+
+const fmtDate = (s?: string) =>
+  s ? new Date(s).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "";
+
 const UsersPage = () => {
   const { toast } = useToast();
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -111,7 +116,9 @@ const UsersPage = () => {
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 5;
 
-  useEffect(() => { setPage(1); }, [tab, q]);
+  useEffect(() => {
+    setPage(1);
+  }, [tab, q]);
 
   const load = async () => {
     setLoading(true);
@@ -120,7 +127,6 @@ const UsersPage = () => {
     setProfiles(pData as LocalProfile[]);
     const map: Record<string, AppRole> = {};
     (rData ?? []).forEach((r: LocalUserRole) => {
-      // admin wins over user
       if (map[r.user_id] !== "admin") map[r.user_id] = r.role as AppRole;
     });
     setRoles(map);
@@ -129,27 +135,32 @@ const UsersPage = () => {
 
   useEffect(() => subscribeStore(() => { load(); }), []);
 
-  // Build a unified row list. Doctors tab merges static DOCTORS samples + real doctor profiles.
-  const profileRows: Row[] = useMemo(() =>
-    profiles.map((p) => {
-      const display = p.organization_name || p.full_name || p.email || "Unnamed user";
-      return {
-        id: p.id,
-        display,
-        email: p.email,
-        phone: p.phone,
-        avatar_url: p.avatar_url,
-        initials: initialsOf(p.full_name || display),
-        user_type: p.user_type,
-        created_at: p.created_at,
-        manageable: true,
-        role: roles[p.id] ?? "user",
-      } as Row;
-    }), [profiles, roles]);
+  useEffect(() => {
+    ensureDemoUsers();
+  }, []);
+
+  const profileRows: Row[] = useMemo(
+    () =>
+      profiles.map((p) => {
+        const display = p.organization_name || p.full_name || p.email || "Unnamed user";
+        return {
+          id: p.id,
+          display,
+          email: p.email,
+          phone: p.phone,
+          avatar_url: p.avatar_url,
+          initials: initialsOf(p.full_name || display),
+          user_type: p.user_type,
+          created_at: p.created_at,
+          manageable: true,
+          role: roles[p.id] ?? "user",
+        };
+      }).filter((row) => row.role !== "admin"),
+    [profiles, roles]
+  );
 
   const allRows: Row[] = profileRows;
 
-  // Sample doctors — only used for the Doctors tab
   const sampleDoctorRows: Row[] = useMemo(
     () =>
       DOCTORS.map((d) => ({
@@ -161,7 +172,6 @@ const UsersPage = () => {
         avatar_url: null,
         initials: d.initials,
         user_type: "doctor" as UserType,
-        doctorSlug: d.id,
         manageable: false,
       })),
     []
@@ -169,14 +179,16 @@ const UsersPage = () => {
 
   const counts = useMemo(() => {
     const c: Record<TabKey, number> = {
-      all: allRows.length, patient: 0, doctor: 0, organization: 0, pharmacy: 0, diagnostics: 0, laboratory: 0,
+      all: allRows.length,
+      patient: 0,
+      doctor: 0,
+      organization: 0,
+      pharmacy: 0,
+      "lab-diagnostics": 0,
     };
     allRows.forEach((r) => {
-      if (r.user_type && c[r.user_type as TabKey] !== undefined) {
-        c[r.user_type as TabKey]++;
-      }
+      if (r.user_type && c[r.user_type as TabKey] !== undefined) c[r.user_type as TabKey]++;
     });
-    // Add sample doctors only to the Doctors tab count
     c.doctor += sampleDoctorRows.length;
     return c;
   }, [allRows, sampleDoctorRows]);
@@ -190,25 +202,21 @@ const UsersPage = () => {
     }
     if (!q.trim()) return list;
     const needle = q.toLowerCase();
-    return list.filter((r) =>
-      [r.display, r.subtitle, r.email, r.phone].some((v) => v?.toLowerCase().includes(needle))
-    );
+    return list.filter((r) => [r.display, r.subtitle, r.email, r.phone].some((v) => v?.toLowerCase().includes(needle)));
   };
 
-  const setUserRole = async (userId: string, next: AppRole) => {
+  const handleSetUserRole = async (userId: string, next: AppRole) => {
     const prev = roles[userId] ?? "user";
     if (prev === next) return;
     setSavingId(userId);
-    // Optimistic
     setRoles((r) => ({ ...r, [userId]: next }));
     try {
-      // Remove the opposite role, then upsert the new one (table has unique(user_id, role))
-      const opposite: AppRole = next === "admin" ? "user" : "admin";
-      await setUserRole(userId, next);
+      await setUserRoleInStore(userId, next);
       toast({ title: "Role updated", description: `Set to ${next}.` });
-    } catch (e: any) {
+    } catch (e: unknown) {
       setRoles((r) => ({ ...r, [userId]: prev }));
-      toast({ title: "Couldn't update role", description: e.message, variant: "destructive" });
+      const description = e instanceof Error ? e.message : "Unknown error";
+      toast({ title: "Couldn't update role", description, variant: "destructive" });
     } finally {
       setSavingId(null);
     }
@@ -216,14 +224,14 @@ const UsersPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
           <h1 className="font-display text-3xl font-bold">Users</h1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1 max-w-2xl">
             Patients, doctors and organisations registered on Desol<span className="text-secondary">Med</span>.
           </p>
         </div>
-        <div className="relative w-full sm:w-72">
+        <div className="relative w-full lg:w-80">
           <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, email, phone…" className="pl-9" />
         </div>
@@ -248,10 +256,9 @@ const UsersPage = () => {
           const currentPage = Math.min(page, totalPages);
           const pagedList = list.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
           const filteredSample = q.trim()
-            ? sampleUsers.filter((u) =>
-                [u.name, u.email, u.role, u.status].some((v) => v.toLowerCase().includes(q.toLowerCase()))
-              )
+            ? sampleUsers.filter((u) => [u.name, u.email, u.role, u.status].some((v) => v.toLowerCase().includes(q.toLowerCase())))
             : sampleUsers;
+
           return (
             <TabsContent key={t.key} value={t.key} className="mt-4">
               {t.key === "all" && (
@@ -302,9 +309,7 @@ const UsersPage = () => {
                                   size="sm"
                                   variant="outline"
                                   className="h-7 px-2 text-xs [&_svg]:size-3"
-                                  onClick={() =>
-                                    toast({ title: "Viewing user", description: u.name })
-                                  }
+                                  onClick={() => toast({ title: "Viewing user", description: u.name })}
                                 >
                                   <Eye className="h-3 w-3" />
                                   <span className="hidden sm:inline">View</span>
@@ -316,9 +321,7 @@ const UsersPage = () => {
                                   onClick={() => {
                                     setSampleUsers((prev) =>
                                       prev.map((x) =>
-                                        x.id === u.id
-                                          ? { ...x, status: x.status === "Active" ? "Suspended" : "Active" }
-                                          : x
+                                        x.id === u.id ? { ...x, status: x.status === "Active" ? "Suspended" : "Active" } : x
                                       )
                                     );
                                     toast({
@@ -328,7 +331,7 @@ const UsersPage = () => {
                                   }}
                                 >
                                   <Ban className="h-3 w-3" />
-                                  <span className="hidden sm:inline">{u.status === "Active" ? "Suspend" : "Activate"}</span>
+                                  <span className="hidden sm:inline">Suspend</span>
                                 </Button>
                                 <Button
                                   size="sm"
@@ -365,35 +368,32 @@ const UsersPage = () => {
                   <>
                     <ul className="divide-y divide-border">
                       {pagedList.map((r) => (
-                        <li key={r.id} className="p-4 flex items-center gap-4 flex-wrap">
-                          <Avatar className="h-11 w-11">
-                            {r.avatar_url ? <AvatarImage src={r.avatar_url} alt="" /> : null}
-                            <AvatarFallback className="bg-primary-soft text-primary text-sm font-medium">
-                              {r.initials}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <p className="font-medium truncate">{r.display}</p>
-                              {r.manageable && r.role === "admin" && (
-                                <Badge className="bg-foreground text-background gap-1">
-                                  <ShieldCheck className="h-3 w-3" /> Admin
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                              {r.subtitle && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{r.subtitle}</span>}
-                              {r.email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" />{r.email}</span>}
-                              {r.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />{r.phone}</span>}
-                              {r.created_at && <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" />Joined {fmtDate(r.created_at)}</span>}
+                        <li key={r.id} className="p-4 flex flex-col lg:flex-row lg:items-center gap-4">
+                          <div className="flex items-start gap-4 min-w-0 flex-1">
+                            <Avatar className="h-11 w-11 flex-shrink-0">
+                              {r.avatar_url ? <AvatarImage src={r.avatar_url} alt="" /> : null}
+                              <AvatarFallback className="bg-primary-soft text-primary text-sm font-medium">
+                                {r.initials}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="font-medium truncate">{r.display}</p>
+                              </div>
+                              <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                                {r.subtitle && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{r.subtitle}</span>}
+                                {r.email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" />{r.email}</span>}
+                                {r.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />{r.phone}</span>}
+                                {r.created_at && <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" />Joined {fmtDate(r.created_at)}</span>}
+                              </div>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 ml-auto">
+                          <div className="flex items-center justify-between lg:justify-end gap-2 lg:ml-auto w-full lg:w-auto">
                             {r.manageable ? (
                               <Select
                                 value={r.role ?? "user"}
-                                onValueChange={(v) => setUserRole(r.id, v as AppRole)}
+                                onValueChange={(v) => handleSetUserRole(r.id, v as AppRole)}
                                 disabled={savingId === r.id}
                               >
                                 <SelectTrigger className="h-9 w-[120px]">

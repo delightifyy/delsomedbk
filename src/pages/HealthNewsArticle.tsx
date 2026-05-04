@@ -4,11 +4,19 @@ import { SiteFooter } from "@/components/site/SiteFooter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, User } from "lucide-react";
-import { NEWS } from "@/data/news";
+import { useEffect, useMemo, useState } from "react";
+import { listNewsArticles, subscribeStore, type LocalNewsArticle } from "@/lib/localStore";
 
 const HealthNewsArticle = () => {
   const { slug } = useParams();
-  const article = NEWS.find((n) => n.slug === slug);
+  const [items, setItems] = useState<LocalNewsArticle[]>([]);
+
+  useEffect(
+    () => subscribeStore(() => setItems(listNewsArticles().filter((entry) => entry.published))),
+    []
+  );
+
+  const article = useMemo(() => items.find((n) => n.slug === slug), [items, slug]);
 
   if (!article) {
     return (
@@ -26,7 +34,7 @@ const HealthNewsArticle = () => {
     );
   }
 
-  const related = NEWS.filter((n) => n.slug !== article.slug).slice(0, 2);
+  const related = items.filter((n) => n.slug !== article.slug).slice(0, 2);
 
   return (
     <div className="min-h-screen flex flex-col">

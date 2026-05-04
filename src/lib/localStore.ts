@@ -1,5 +1,8 @@
 import { ADVERTS } from "@/data/doctors";
 import { BLOG_POSTS } from "@/data/blogs";
+import { NEWS } from "@/data/news";
+import { FAQS } from "@/data/faqs";
+import { TESTIMONIALS } from "@/data/testimonials";
 
 export type LocalRole = "admin" | "user";
 export type UserType = "patient" | "doctor" | "organization" | "pharmacy" | "lab-diagnostics";
@@ -93,6 +96,43 @@ export type LocalAdvert = {
   state: string;
   city: string;
   description: string;
+  published: boolean;
+  image: string | null;
+  date_label: string | null;
+  read_time: string | null;
+  author: string | null;
+  author_role: string | null;
+  cta_label: string | null;
+  created_at: string;
+};
+
+export type LocalNewsArticle = {
+  id: string;
+  slug: string;
+  title: string;
+  category: string;
+  date: string;
+  excerpt: string;
+  body: string[];
+  author: string | null;
+  published: boolean;
+  created_at: string;
+};
+
+export type LocalFaq = {
+  id: string;
+  q: string;
+  a: string;
+  created_at: string;
+};
+
+export type LocalTestimonial = {
+  id: string;
+  quote: string;
+  name: string;
+  role: string;
+  initials: string;
+  published: boolean;
   created_at: string;
 };
 
@@ -104,6 +144,9 @@ type StoreState = {
   posts: LocalBlogPost[];
   registrations: LocalRegistration[];
   adverts: LocalAdvert[];
+  news: LocalNewsArticle[];
+  faqs: LocalFaq[];
+  testimonials: LocalTestimonial[];
 };
 
 const STORE_KEY = "carehub-local-store";
@@ -123,10 +166,19 @@ const defaultAdmin = (): LocalUser => ({
   created_at: now(),
 });
 
+const defaultDemoUser = (): LocalUser => ({
+  id: "local-demo-user",
+  email: "user@carehub.local",
+  full_name: "Demo User",
+  password: "user1234",
+  created_at: now(),
+});
+
 const seedStore = (): StoreState => {
   const admin = defaultAdmin();
+  const demoUser = defaultDemoUser();
   return {
-    users: [admin],
+    users: [admin, demoUser],
     profiles: [
       {
         id: admin.id,
@@ -138,8 +190,21 @@ const seedStore = (): StoreState => {
         user_type: null,
         created_at: admin.created_at,
       },
+      {
+        id: demoUser.id,
+        full_name: demoUser.full_name,
+        avatar_url: null,
+        email: demoUser.email,
+        phone: "+2348000000000",
+        organization_name: null,
+        user_type: "patient",
+        created_at: demoUser.created_at,
+      },
     ],
-    roles: [{ user_id: admin.id, role: "admin" }],
+    roles: [
+      { user_id: admin.id, role: "admin" },
+      { user_id: demoUser.id, role: "user" },
+    ],
     contacts: [],
     posts: BLOG_POSTS.map((post, index) => ({
       id: post.id,
@@ -162,7 +227,41 @@ const seedStore = (): StoreState => {
       state: advert.state,
       city: advert.city,
       description: advert.description,
+      published: true,
+      image: null,
+      date_label: null,
+      read_time: null,
+      author: null,
+      author_role: null,
+      cta_label: null,
       created_at: new Date(Date.now() - index * 43200000).toISOString(),
+    })),
+    news: NEWS.map((article, index) => ({
+      id: article.slug,
+      slug: article.slug,
+      title: article.title,
+      category: article.category,
+      date: article.date,
+      excerpt: article.excerpt,
+      body: article.body,
+      author: article.author ?? null,
+      published: true,
+      created_at: new Date(Date.now() - index * 43200000).toISOString(),
+    })),
+    faqs: FAQS.map((faq, index) => ({
+      id: `faq-${index + 1}`,
+      q: faq.q,
+      a: faq.a,
+      created_at: new Date(Date.now() - index * 3600000).toISOString(),
+    })),
+    testimonials: TESTIMONIALS.map((item, index) => ({
+      id: item.id,
+      quote: item.quote,
+      name: item.name,
+      role: item.role,
+      initials: item.initials,
+      published: true,
+      created_at: new Date(Date.now() - index * 3600000).toISOString(),
     })),
   };
 };
@@ -187,7 +286,45 @@ const readStore = (): StoreState => {
       contacts: Array.isArray(parsed.contacts) ? parsed.contacts : [],
       posts: Array.isArray(parsed.posts) && parsed.posts.length > 0 ? parsed.posts : fallback.posts,
       registrations: Array.isArray(parsed.registrations) ? parsed.registrations : [],
-      adverts: Array.isArray(parsed.adverts) && parsed.adverts.length > 0 ? parsed.adverts : fallback.adverts,
+      adverts:
+        Array.isArray(parsed.adverts) && parsed.adverts.length > 0
+          ? parsed.adverts.map((entry, index) => ({
+              ...entry,
+              published: typeof entry.published === "boolean" ? entry.published : true,
+              image: entry.image ?? null,
+              date_label: entry.date_label ?? null,
+              read_time: entry.read_time ?? null,
+              author: entry.author ?? null,
+              author_role: entry.author_role ?? null,
+              cta_label: entry.cta_label ?? null,
+              created_at: entry.created_at ?? new Date(Date.now() - index * 43200000).toISOString(),
+            }))
+          : fallback.adverts,
+      news:
+        Array.isArray(parsed.news) && parsed.news.length > 0
+          ? parsed.news.map((entry, index) => ({
+              ...entry,
+              author: entry.author ?? null,
+              body: Array.isArray(entry.body) ? entry.body : [String((entry as { body?: string }).body ?? "")],
+              published: typeof entry.published === "boolean" ? entry.published : true,
+              created_at: entry.created_at ?? new Date(Date.now() - index * 43200000).toISOString(),
+            }))
+          : fallback.news,
+      faqs:
+        Array.isArray(parsed.faqs) && parsed.faqs.length > 0
+          ? parsed.faqs.map((entry, index) => ({
+              ...entry,
+              created_at: entry.created_at ?? new Date(Date.now() - index * 3600000).toISOString(),
+            }))
+          : fallback.faqs,
+      testimonials:
+        Array.isArray(parsed.testimonials) && parsed.testimonials.length > 0
+          ? parsed.testimonials.map((entry, index) => ({
+              ...entry,
+              published: typeof entry.published === "boolean" ? entry.published : true,
+              created_at: entry.created_at ?? new Date(Date.now() - index * 3600000).toISOString(),
+            }))
+          : fallback.testimonials,
     };
     window.localStorage.setItem(STORE_KEY, JSON.stringify(next));
     return next;
@@ -430,6 +567,130 @@ export const deleteBlogPost = async (id: string) => {
   });
 };
 
+export const listAdverts = () => sortNewest(readStore().adverts);
+
+export const upsertAdvert = async (
+  input: Omit<LocalAdvert, "id" | "created_at"> & { id?: string }
+) => {
+  let saved: LocalAdvert | null = null;
+  save((state) => {
+    if (input.id) {
+      const index = state.adverts.findIndex((entry) => entry.id === input.id);
+      if (index >= 0) {
+        saved = { ...state.adverts[index], ...input, id: input.id };
+        state.adverts[index] = saved;
+        return;
+      }
+    }
+    saved = {
+      ...input,
+      id: input.id ?? crypto.randomUUID(),
+      created_at: now(),
+    };
+    state.adverts.unshift(saved);
+  });
+  return saved!;
+};
+
+export const deleteAdvert = async (id: string) => {
+  save((state) => {
+    state.adverts = state.adverts.filter((entry) => entry.id !== id);
+  });
+};
+
+export const listNewsArticles = () => sortNewest(readStore().news);
+
+export const upsertNewsArticle = async (
+  input: Omit<LocalNewsArticle, "id" | "created_at"> & { id?: string }
+) => {
+  let saved: LocalNewsArticle | null = null;
+  save((state) => {
+    if (input.id) {
+      const index = state.news.findIndex((entry) => entry.id === input.id);
+      if (index >= 0) {
+        saved = { ...state.news[index], ...input, id: input.id };
+        state.news[index] = saved;
+        return;
+      }
+    }
+    saved = {
+      ...input,
+      id: input.id ?? crypto.randomUUID(),
+      created_at: now(),
+    };
+    state.news.unshift(saved);
+  });
+  return saved!;
+};
+
+export const deleteNewsArticle = async (id: string) => {
+  save((state) => {
+    state.news = state.news.filter((entry) => entry.id !== id);
+  });
+};
+
+export const listFaqs = () => sortNewest(readStore().faqs);
+
+export const upsertFaq = async (
+  input: Omit<LocalFaq, "id" | "created_at"> & { id?: string }
+) => {
+  let saved: LocalFaq | null = null;
+  save((state) => {
+    if (input.id) {
+      const index = state.faqs.findIndex((entry) => entry.id === input.id);
+      if (index >= 0) {
+        saved = { ...state.faqs[index], ...input, id: input.id };
+        state.faqs[index] = saved;
+        return;
+      }
+    }
+    saved = {
+      ...input,
+      id: input.id ?? crypto.randomUUID(),
+      created_at: now(),
+    };
+    state.faqs.unshift(saved);
+  });
+  return saved!;
+};
+
+export const deleteFaq = async (id: string) => {
+  save((state) => {
+    state.faqs = state.faqs.filter((entry) => entry.id !== id);
+  });
+};
+
+export const listTestimonials = () => sortNewest(readStore().testimonials);
+
+export const upsertTestimonial = async (
+  input: Omit<LocalTestimonial, "id" | "created_at"> & { id?: string }
+) => {
+  let saved: LocalTestimonial | null = null;
+  save((state) => {
+    if (input.id) {
+      const index = state.testimonials.findIndex((entry) => entry.id === input.id);
+      if (index >= 0) {
+        saved = { ...state.testimonials[index], ...input, id: input.id };
+        state.testimonials[index] = saved;
+        return;
+      }
+    }
+    saved = {
+      ...input,
+      id: input.id ?? crypto.randomUUID(),
+      created_at: now(),
+    };
+    state.testimonials.unshift(saved);
+  });
+  return saved!;
+};
+
+export const deleteTestimonial = async (id: string) => {
+  save((state) => {
+    state.testimonials = state.testimonials.filter((entry) => entry.id !== id);
+  });
+};
+
 export const listRegistrations = () => sortNewest(readStore().registrations);
 
 export const countPendingRegistrations = () => readStore().registrations.filter((entry) => entry.status === "pending").length;
@@ -531,9 +792,114 @@ export const getDashboardStats = () => ({
   adverts: readStore().adverts.length,
   contacts: readStore().contacts.length,
   posts: readStore().posts.length,
+  news: readStore().news.length,
+  faqs: readStore().faqs.length,
+  testimonials: readStore().testimonials.length,
   registrations: readStore().registrations.length,
   pendingRegistrations: countPendingRegistrations(),
 });
+
+export const ensureDemoUsers = () => {
+  save((state) => {
+    const hasAdmin = state.users.some((u) => u.email === "admin@carehub.local" || u.id === "local-admin");
+    const hasDemo = state.users.some((u) => u.email === "user@carehub.local" || u.id === "local-demo-user");
+    if (!hasAdmin) {
+      const admin = defaultAdmin();
+      state.users.unshift(admin);
+      state.profiles.unshift({
+        id: admin.id,
+        full_name: admin.full_name,
+        avatar_url: null,
+        email: admin.email,
+        phone: null,
+        organization_name: null,
+        user_type: null,
+        created_at: admin.created_at,
+      });
+      state.roles.unshift({ user_id: admin.id, role: "admin" });
+    }
+    if (!hasDemo) {
+      const demo = defaultDemoUser();
+      state.users.unshift(demo);
+      state.profiles.unshift({
+        id: demo.id,
+        full_name: demo.full_name,
+        avatar_url: null,
+        email: demo.email,
+        phone: "+2348000000000",
+        organization_name: null,
+        user_type: "patient",
+        created_at: demo.created_at,
+      });
+      state.roles.unshift({ user_id: demo.id, role: "user" });
+    }
+  });
+};
+
+export const ensureDemoRegistrations = () => {
+  save((state) => {
+    if (state.registrations.length > 0) return;
+    const nowTs = new Date().toISOString();
+    const samples: LocalRegistration[] = [
+      {
+        id: crypto.randomUUID(),
+        applicant_type: "doctor",
+        status: "pending",
+        full_name: "Dr. Kemi Adebayo",
+        organization_name: null,
+        email: "kemi.adebayo@example.com",
+        phone: "+2348012345678",
+        city: "Lagos",
+        state: "Lagos",
+        zone: "Ikeja",
+        specialty: "Cardiology",
+        details: { clinic_name: "Sunrise Cardio" },
+        documents: [],
+        reviewer_notes: null,
+        reviewed_at: null,
+        created_at: nowTs,
+      },
+      {
+        id: crypto.randomUUID(),
+        applicant_type: "patient",
+        status: "approved",
+        full_name: "Amaka Nwosu",
+        organization_name: null,
+        email: "amaka.nwosu@example.com",
+        phone: "+2348098765432",
+        city: "Enugu",
+        state: "Enugu",
+        zone: null,
+        specialty: null,
+        details: { reason: "Patient registration for bookings" },
+        documents: [],
+        reviewer_notes: "Approved for patient portal",
+        reviewed_at: nowTs,
+        created_at: nowTs,
+      },
+      {
+        id: crypto.randomUUID(),
+        applicant_type: "organization",
+        status: "rejected",
+        full_name: null,
+        organization_name: "HealthCorp HMO",
+        email: "contact@healthcorp.example.com",
+        phone: "+2348033334444",
+        city: "Abuja",
+        state: "FCT",
+        zone: null,
+        specialty: null,
+        details: { notes: "Missing documentation" },
+        documents: [],
+        reviewer_notes: "Incomplete docs",
+        reviewed_at: nowTs,
+        created_at: nowTs,
+      },
+    ];
+
+    for (const s of samples) state.registrations.unshift(s);
+  });
+};
 
 export const readFileAsDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {

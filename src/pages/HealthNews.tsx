@@ -4,9 +4,17 @@ import { SiteFooter } from "@/components/site/SiteFooter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Newspaper, Calendar, ArrowRight } from "lucide-react";
-import { NEWS } from "@/data/news";
+import { useEffect, useState } from "react";
+import { listNewsArticles, subscribeStore, type LocalNewsArticle } from "@/lib/localStore";
 
 const HealthNews = () => {
+  const [items, setItems] = useState<LocalNewsArticle[]>([]);
+
+  useEffect(
+    () => subscribeStore(() => setItems(listNewsArticles().filter((entry) => entry.published))),
+    []
+  );
+
   return (
     <div className="min-h-screen flex flex-col">
       <SiteHeader />
@@ -25,7 +33,7 @@ const HealthNews = () => {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
-            {NEWS.map((n) => (
+            {items.map((n) => (
               <Link key={n.slug} to={`/health-news/${n.slug}`} className="group">
                 <Card className="h-full hover:shadow-lg hover:border-primary/40 transition-all">
                   <CardHeader className="space-y-3">

@@ -19,7 +19,7 @@ import {
   CheckCircle2, XCircle, Clock, Mail, Phone, MapPin, FileText, Download, ExternalLink, Calendar, Loader2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { listRegistrations, subscribeStore, updateRegistration, type LocalRegistration } from "@/lib/localStore";
+import { listRegistrations, subscribeStore, updateRegistration, ensureDemoRegistrations, type LocalRegistration } from "@/lib/localStore";
 
 type ApplicantType = "doctor" | "organization" | "pharmacy" | "lab-diagnostics" | "patient";
 type Status = "pending" | "approved" | "rejected";
@@ -98,6 +98,11 @@ const NotificationsPageInner = () => {
   };
 
   useEffect(() => subscribeStore(() => { load(); }), []);
+
+  // Ensure demo registrations exist so the list shows entries by default
+  useEffect(() => {
+    ensureDemoRegistrations();
+  }, []);
 
   // Generate signed URLs whenever a registration is opened
   useEffect(() => {
