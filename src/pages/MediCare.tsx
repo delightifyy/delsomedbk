@@ -237,26 +237,29 @@ const MediCare = () => {
           </div>
 
           {/* Headline */}
-          <h1 className="mt-6 text-center font-display text-4xl sm:text-6xl lg:text-7xl font-bold leading-[1.05] text-balance mc-anim-fade-up">
-            See a Doctor <span className="mc-grad-text">Anytime,<br className="hidden sm:block" /> Anywhere</span>
+          <h1 className="mt-6 mx-auto max-w-3xl text-center font-display text-[2.5rem] leading-[1.05] sm:text-5xl md:text-6xl lg:text-[4rem] font-bold text-balance mc-anim-fade-up">
+            See a Doctor <span className="mc-grad-text">Anytime, Anywhere</span>
           </h1>
 
-          <p className="mt-5 sm:mt-6 mx-auto max-w-2xl text-center text-base sm:text-lg leading-relaxed text-[hsl(var(--mc-muted))] mc-anim-fade-up">
+          <p className="mt-5 sm:mt-6 mx-auto max-w-xl text-center text-base sm:text-lg leading-relaxed text-[hsl(var(--mc-muted))] mc-anim-fade-up">
             Connect with licensed doctors via video or chat in minutes. Skip the waiting room — quality care delivered to wherever you are.
           </p>
 
-          <div className="mt-8 flex justify-center mc-anim-fade-up">
-            <a href="#cta" className="inline-flex items-center gap-2 rounded-full mc-grad-primary text-white px-7 py-3.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center items-center mc-anim-fade-up">
+            <a href="#cta" className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full mc-grad-primary text-white px-7 py-3.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
               Book Appointment <ArrowRight className="h-4 w-4" />
+            </a>
+            <a href="#how" className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full mc-glass px-7 py-3.5 text-sm font-semibold hover:bg-white transition">
+              How it works
             </a>
           </div>
 
           {/* Hero visual + floating cards */}
-          <div className="relative mt-12 sm:mt-16">
+          <div className="relative mt-14 sm:mt-20 mx-auto max-w-5xl">
             {/* Center illustration */}
-            <div className="relative mx-auto max-w-lg">
+            <div className="relative mx-auto max-w-[22rem] sm:max-w-md">
               <div className="absolute inset-0 -m-10 mc-grad-primary opacity-15 blur-3xl rounded-full" />
-              <div className="relative aspect-square rounded-[2.5rem] overflow-hidden bg-white mc-shadow-elegant">
+              <div className="relative aspect-square rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden bg-white mc-shadow-elegant ring-1 ring-white">
                 <img
                   src={heroImg}
                   alt="Smiling doctor providing virtual consultation via smartphone"
@@ -265,41 +268,40 @@ const MediCare = () => {
                   className="w-full h-full object-cover"
                 />
                 {/* Live now strip */}
-                <div className="absolute left-4 top-4 mc-glass rounded-full px-3 py-1.5 flex items-center gap-2 text-xs font-semibold">
+                <div className="absolute left-3 top-3 sm:left-4 sm:top-4 mc-glass rounded-full px-3 py-1.5 flex items-center gap-2 text-[11px] sm:text-xs font-semibold">
                   <span className="h-2 w-2 rounded-full bg-[hsl(0_85%_60%)] mc-anim-pulse-dot" />
-                  Live now · Dr. Sarah Chen
+                  Live · Dr. Sarah Chen
                 </div>
-                <div className="absolute right-4 top-4">
-                  <button className="rounded-full mc-grad-accent text-white text-xs font-semibold px-3.5 py-2 mc-anim-pulse-glow">
+                <div className="absolute right-3 top-3 sm:right-4 sm:top-4">
+                  <button className="rounded-full mc-grad-accent text-white text-[11px] sm:text-xs font-semibold px-3 py-1.5 sm:px-3.5 sm:py-2 mc-anim-pulse-glow">
                     Join call
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Left cards */}
-            <div className="hidden lg:block absolute left-0 top-10 w-64 mc-glass mc-shadow-card rounded-2xl p-4 mc-anim-float" style={{ animationDelay: ".1s" }}>
+            {/* Floating cards — desktop */}
+            <div className="hidden lg:block absolute left-0 top-6 w-60 mc-glass mc-shadow-card rounded-2xl p-4 mc-anim-float" style={{ animationDelay: ".1s" }}>
               <div className="flex items-center gap-3">
                 <span className="grid place-items-center h-10 w-10 rounded-xl bg-[hsl(var(--mc-accent))/0.12] text-[hsl(var(--mc-accent))]">
                   <Video className="h-5 w-5" />
                 </span>
                 <p className="font-semibold text-sm">Video visits</p>
               </div>
-              <p className="mt-3 text-xs text-[hsl(var(--mc-muted))] leading-relaxed">HD secure consultations from your phone or laptop.</p>
+              <p className="mt-3 text-xs text-[hsl(var(--mc-muted))] leading-relaxed">HD secure consultations from any device.</p>
             </div>
 
-            <div className="hidden lg:block absolute left-0 bottom-10 w-64 mc-glass mc-shadow-card rounded-2xl p-4 mc-anim-float" style={{ animationDelay: ".4s" }}>
+            <div className="hidden lg:block absolute left-4 bottom-6 w-60 mc-glass mc-shadow-card rounded-2xl p-4 mc-anim-float" style={{ animationDelay: ".4s" }}>
               <div className="flex items-center gap-3">
                 <span className="grid place-items-center h-10 w-10 rounded-xl bg-[hsl(var(--mc-primary))/0.12] text-[hsl(var(--mc-primary))]">
                   <ShieldCheck className="h-5 w-5" />
                 </span>
                 <p className="font-semibold text-sm">HIPAA Secure</p>
               </div>
-              <p className="mt-3 text-xs text-[hsl(var(--mc-muted))] leading-relaxed">End-to-end encrypted records and conversations.</p>
+              <p className="mt-3 text-xs text-[hsl(var(--mc-muted))] leading-relaxed">End-to-end encrypted records.</p>
             </div>
 
-            {/* Right cards */}
-            <div className="hidden lg:block absolute right-0 top-10 w-64 mc-glass mc-shadow-card rounded-2xl p-4 mc-anim-float" style={{ animationDelay: ".25s" }}>
+            <div className="hidden lg:block absolute right-0 top-6 w-60 mc-glass mc-shadow-card rounded-2xl p-4 mc-anim-float" style={{ animationDelay: ".25s" }}>
               <div className="flex items-center justify-between">
                 <p className="text-xs text-[hsl(var(--mc-muted))]">Avg. wait time</p>
                 <Clock className="h-4 w-4 text-[hsl(var(--mc-primary))]" />
@@ -310,7 +312,7 @@ const MediCare = () => {
               </div>
             </div>
 
-            <div className="hidden lg:block absolute right-0 bottom-10 w-64 mc-glass mc-shadow-card rounded-2xl p-4 mc-anim-float" style={{ animationDelay: ".55s" }}>
+            <div className="hidden lg:block absolute right-4 bottom-6 w-60 mc-glass mc-shadow-card rounded-2xl p-4 mc-anim-float" style={{ animationDelay: ".55s" }}>
               <div className="flex items-center gap-3">
                 <span className="grid place-items-center h-10 w-10 rounded-xl bg-[hsl(var(--mc-primary))/0.12] text-[hsl(var(--mc-primary))]">
                   <CalendarCheck className="h-5 w-5" />
@@ -320,13 +322,10 @@ const MediCare = () => {
                   <p className="text-sm font-semibold">Today, 2:30 PM</p>
                 </div>
               </div>
-              <button className="mt-3 w-full rounded-full border border-[hsl(var(--mc-border))] bg-white py-2 text-xs font-semibold hover:bg-[hsl(var(--mc-muted-soft))] transition">
-                Reserve now
-              </button>
             </div>
 
             {/* Mobile/tablet stacked cards */}
-            <div className="lg:hidden mt-8 grid sm:grid-cols-2 gap-4">
+            <div className="lg:hidden mt-8 grid grid-cols-2 gap-3 sm:gap-4">
               <div className="mc-glass mc-shadow-card rounded-2xl p-4">
                 <div className="flex items-center gap-3">
                   <span className="grid place-items-center h-10 w-10 rounded-xl bg-[hsl(var(--mc-accent))/0.12] text-[hsl(var(--mc-accent))]"><Video className="h-5 w-5" /></span>
