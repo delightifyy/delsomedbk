@@ -237,10 +237,8 @@ const MediCare = () => {
           </div>
 
           {/* Headline */}
-          <h1 className="mt-6 text-center font-display text-[2.5rem] leading-[1.05] sm:text-5xl md:text-6xl lg:text-[4.5rem] font-bold text-balance mc-anim-fade-up">
-            See a Doctor{" "}
-            <span className="mc-grad-text whitespace-nowrap">Anytime,</span>{" "}
-            <span className="mc-grad-text whitespace-nowrap">Anywhere</span>
+          <h1 className="mt-6 mx-auto max-w-3xl text-center font-display text-[2.5rem] leading-[1.05] sm:text-5xl md:text-6xl lg:text-[4rem] font-bold text-balance mc-anim-fade-up">
+            See a Doctor <span className="mc-grad-text">Anytime, Anywhere</span>
           </h1>
 
           <p className="mt-5 sm:mt-6 mx-auto max-w-xl text-center text-base sm:text-lg leading-relaxed text-[hsl(var(--mc-muted))] mc-anim-fade-up">
