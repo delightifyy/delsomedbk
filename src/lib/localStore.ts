@@ -305,7 +305,7 @@ const readStore = (): StoreState => {
           ? parsed.news.map((entry, index) => ({
               ...entry,
               author: entry.author ?? null,
-              body: Array.isArray(entry.body) ? entry.body : [String((entry as { body?: string }).body ?? "")],
+              body: Array.isArray(entry.body) ? entry.body : [String((entry as unknown as { body?: string }).body ?? "")],
               published: typeof entry.published === "boolean" ? entry.published : true,
               created_at: entry.created_at ?? new Date(Date.now() - index * 43200000).toISOString(),
             }))
