@@ -31,6 +31,7 @@ type DocEntry = {
   name: string;
   size: number;
   type: string;
+  dataUrl: string;
 };
 
 type Registration = {
