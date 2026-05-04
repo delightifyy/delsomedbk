@@ -71,6 +71,7 @@ export const SiteFooter = () => {
             <li><Link to="/adverts" className="hover:text-foreground transition-colors">Health Adverts</Link></li>
             <li><Link to="/about" className="hover:text-foreground transition-colors">About DesolMed</Link></li>
             <li><Link to="/contact" className="hover:text-foreground transition-colors">Talk to our team</Link></li>
+            <li><a href={DOCTOR_PORTAL_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary font-semibold hover:text-secondary transition-colors">Doctor Portal <ExternalLink className="h-3 w-3" /></a></li>
           </ul>
         </div>
 
