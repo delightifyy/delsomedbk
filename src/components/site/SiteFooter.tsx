@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
-import { Mail, Phone, MapPin, MessageCircle, Stethoscope, ExternalLink } from "lucide-react";
+import { Mail, Phone, MapPin, MessageCircle, Stethoscope, ArrowRight } from "lucide-react";
 import desolmedLogo from "@/assets/desolmed-logo.png";
 
-const DOCTOR_PORTAL_URL = "https://portal.desolmed.com";
+const DOCTOR_PORTAL_PATH = "/doctor-portal";
 
 export const SiteFooter = () => {
   return (
