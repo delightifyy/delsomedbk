@@ -14,6 +14,7 @@ import Adverts from "./pages/Adverts.tsx";
 import HealthNews from "./pages/HealthNews.tsx";
 import HealthNewsArticle from "./pages/HealthNewsArticle.tsx";
 import AdvertArticle from "./pages/AdvertArticle.tsx";
+import DoctorPortal from "./pages/DoctorPortal.tsx";
 import RegisterPatient from "./pages/RegisterPatient.tsx";
 import Register from "./pages/Register.tsx";
 import { Navigate } from "react-router-dom";
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/health-news" element={<HealthNews />} />
             <Route path="/health-news/:slug" element={<HealthNewsArticle />} />
             <Route path="/adverts/:id" element={<AdvertArticle />} />
+            <Route path="/doctor-portal" element={<DoctorPortal />} />
             <Route path="/register" element={<Register />} />
             <Route path="/register/doctor" element={<Navigate to="/register?type=doctor" replace />} />
             <Route path="/register/organization" element={<Navigate to="/register?type=organization" replace />} />
