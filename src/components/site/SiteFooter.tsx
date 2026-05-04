@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
-import { Mail, Phone, MapPin, MessageCircle, Stethoscope, ExternalLink } from "lucide-react";
+import { Mail, Phone, MapPin, MessageCircle, Stethoscope, ArrowRight } from "lucide-react";
 import desolmedLogo from "@/assets/desolmed-logo.png";
 
-const DOCTOR_PORTAL_URL = "https://portal.desolmed.com";
+const DOCTOR_PORTAL_PATH = "/doctor-portal";
 
 export const SiteFooter = () => {
   return (
@@ -19,14 +19,12 @@ export const SiteFooter = () => {
               <p className="text-xs text-muted-foreground leading-tight">Access the multi-tenant clinical platform</p>
             </div>
           </div>
-          <a
-            href={DOCTOR_PORTAL_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            to={DOCTOR_PORTAL_PATH}
             className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-card hover:bg-primary/90 transition-colors"
           >
-            Doctor Portal <ExternalLink className="h-4 w-4" />
-          </a>
+            Doctor Portal <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       </div>
 
@@ -71,7 +69,7 @@ export const SiteFooter = () => {
             <li><Link to="/adverts" className="hover:text-foreground transition-colors">Health Adverts</Link></li>
             <li><Link to="/about" className="hover:text-foreground transition-colors">About DesolMed</Link></li>
             <li><Link to="/contact" className="hover:text-foreground transition-colors">Talk to our team</Link></li>
-            <li><a href={DOCTOR_PORTAL_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary font-semibold hover:text-secondary transition-colors">Doctor Portal <ExternalLink className="h-3 w-3" /></a></li>
+            <li><Link to={DOCTOR_PORTAL_PATH} className="inline-flex items-center gap-1 text-primary font-semibold hover:text-secondary transition-colors">Doctor Portal <ArrowRight className="h-3 w-3" /></Link></li>
           </ul>
         </div>
 
