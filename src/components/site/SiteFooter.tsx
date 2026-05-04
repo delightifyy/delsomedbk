@@ -1,10 +1,35 @@
 import { Link } from "react-router-dom";
-import { Mail, Phone, MapPin, MessageCircle } from "lucide-react";
+import { Mail, Phone, MapPin, MessageCircle, Stethoscope, ExternalLink } from "lucide-react";
 import desolmedLogo from "@/assets/desolmed-logo.png";
+
+const DOCTOR_PORTAL_URL = "https://portal.desolmed.com";
 
 export const SiteFooter = () => {
   return (
     <footer className="border-t border-border bg-card mt-16 sm:mt-24">
+      {/* Doctor Portal access strip */}
+      <div className="border-b border-border bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5">
+        <div className="container py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+          <div className="flex items-center gap-3">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary">
+              <Stethoscope className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="font-display text-sm font-semibold leading-tight">Doctor & Patient Portal</p>
+              <p className="text-xs text-muted-foreground leading-tight">Access the multi-tenant clinical platform</p>
+            </div>
+          </div>
+          <a
+            href={DOCTOR_PORTAL_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-card hover:bg-primary/90 transition-colors"
+          >
+            Doctor Portal <ExternalLink className="h-4 w-4" />
+          </a>
+        </div>
+      </div>
+
       <div className="container py-12 sm:py-16 grid gap-10 grid-cols-2 md:grid-cols-12">
         <div className="col-span-2 md:col-span-4 space-y-4">
           <Link to="/" className="flex items-center gap-3">
@@ -46,6 +71,7 @@ export const SiteFooter = () => {
             <li><Link to="/adverts" className="hover:text-foreground transition-colors">Health Adverts</Link></li>
             <li><Link to="/about" className="hover:text-foreground transition-colors">About DesolMed</Link></li>
             <li><Link to="/contact" className="hover:text-foreground transition-colors">Talk to our team</Link></li>
+            <li><a href={DOCTOR_PORTAL_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary font-semibold hover:text-secondary transition-colors">Doctor Portal <ExternalLink className="h-3 w-3" /></a></li>
           </ul>
         </div>
 
