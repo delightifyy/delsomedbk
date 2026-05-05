@@ -238,7 +238,7 @@ const MediCare = () => {
           <div className="flex justify-center mc-anim-fade-up">
             <span className="inline-flex items-center gap-2 rounded-full mc-glass px-4 py-1.5 text-xs sm:text-sm font-semibold">
               <span className="h-2 w-2 rounded-full bg-[hsl(var(--mc-accent))] mc-anim-pulse-dot" />
-              240+ doctors online now
+              {settings.hero.eyebrow}
               <span className="opacity-30">·</span>
               <Star className="h-3.5 w-3.5 fill-[hsl(45_100%_55%)] text-[hsl(45_100%_55%)]" /> 4.9
             </span>
@@ -246,16 +246,16 @@ const MediCare = () => {
 
           {/* Headline */}
           <h1 className="mt-6 mx-auto max-w-3xl text-center font-display text-[2.5rem] leading-[1.05] sm:text-5xl md:text-6xl lg:text-[4rem] font-bold text-balance mc-anim-fade-up">
-            See a Doctor <span className="mc-grad-text">Anytime, Anywhere</span>
+            {settings.hero.titleLead} <span className="mc-grad-text">{settings.hero.titleHighlight}</span>
           </h1>
 
           <p className="mt-5 sm:mt-6 mx-auto max-w-xl text-center text-base sm:text-lg leading-relaxed text-[hsl(var(--mc-muted))] mc-anim-fade-up">
-            Connect with licensed doctors via video or chat in minutes. Skip the waiting room — quality care delivered to wherever you are.
+            {settings.hero.subtitle}
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center items-center mc-anim-fade-up">
             <a href="#cta" className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full mc-grad-primary text-white px-7 py-3.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
-              Book Appointment <ArrowRight className="h-4 w-4" />
+              {settings.hero.ctaLabel} <ArrowRight className="h-4 w-4" />
             </a>
           </div>
 
