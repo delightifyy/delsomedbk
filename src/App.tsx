@@ -57,6 +57,7 @@ const App = () => (
             <Route path="/health-news/:slug" element={<HealthNewsArticle />} />
             <Route path="/adverts/:id" element={<AdvertArticle />} />
             <Route path="/doctor-portal" element={<DoctorPortal />} />
+            <Route path="/doctor-portal/admin" element={<MediCareAdmin />} />
             <Route path="/register" element={<Register />} />
             <Route path="/register/doctor" element={<Navigate to="/register?type=doctor" replace />} />
             <Route path="/register/organization" element={<Navigate to="/register?type=organization" replace />} />
