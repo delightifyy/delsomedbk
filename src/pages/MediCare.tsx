@@ -209,11 +209,6 @@ const MediCare = () => {
                   <a href={l.href} onClick={() => setOpen(false)} className="block py-2">{l.label}</a>
                 </li>
               ))}
-              <li>
-                <a href="#cta" onClick={() => setOpen(false)} className="mt-2 inline-flex w-full justify-center items-center gap-2 rounded-full mc-grad-primary text-white px-5 py-3 text-sm font-semibold">
-                  Book now
-                </a>
-              </li>
             </ul>
           </div>
         )}
