@@ -23,6 +23,7 @@ import { Navigate } from "react-router-dom";
 import Auth from "./pages/Auth.tsx";
 import DashOverview from "./pages/dashboard/Overview.tsx";
 import DashUsers from "./pages/dashboard/Users.tsx";
+import DashDoctors from "./pages/dashboard/Doctors.tsx";
 import DashContacts from "./pages/dashboard/Contacts.tsx";
 import DashBlog from "./pages/dashboard/Blog.tsx";
 import DashNotifications from "./pages/dashboard/Notifications.tsx";
@@ -71,6 +72,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<AdminGuard><DashOverview /></AdminGuard>} />
             <Route path="/dashboard/users" element={<AdminGuard><DashUsers /></AdminGuard>} />
+            <Route path="/dashboard/doctors" element={<AdminGuard><DashDoctors /></AdminGuard>} />
             <Route path="/dashboard/contacts" element={<AdminGuard><DashContacts /></AdminGuard>} />
             <Route path="/dashboard/blog" element={<AdminGuard><DashBlog /></AdminGuard>} />
             <Route path="/dashboard/news" element={<AdminGuard><DashNews /></AdminGuard>} />

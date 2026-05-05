@@ -21,10 +21,15 @@ const ContactsPage = () => {
   const [items, setItems] = useState<Msg[]>([]);
   const [open, setOpen] = useState<Msg | null>(null);
 
-  const load = async () => {
+  const load = () => {
     setItems(listContactMessages() as LocalContactMessage[]);
   };
-  useEffect(() => subscribeStore(() => { load(); }), []);
+  useEffect(() => {
+    const unsubscribe = subscribeStore(() => {
+      load();
+    });
+    return unsubscribe;
+  }, []);
 
   const view = async (m: Msg) => {
     setOpen(m);

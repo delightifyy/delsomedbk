@@ -10,7 +10,6 @@ import {
   hexToHslString,
   defaultSettings,
   useMediCareSettings,
-  type DoctorEntry,
   type HowItWorksStep,
   type Testimonial,
   type Partner,
@@ -94,15 +93,14 @@ const tokenStyles = `
 const navLinks = [
   { href: "#how", label: "How it works" },
   { href: "#services", label: "Services" },
-  { href: "#doctors", label: "Doctors" },
   { href: "#about", label: "About" },
   { href: "#contact", label: "Contact" },
 ];
 
 const steps = [
-  { n: "01", icon: CalendarCheck, title: "Book Appointment", desc: "Choose your doctor and a time that fits your schedule. Same-day slots available." },
-  { n: "02", icon: Video, title: "Virtual Consultation", desc: "Connect via secure video or chat. Discuss your symptoms with a licensed physician." },
-  { n: "03", icon: FileText, title: "Get Treatment", desc: "Receive a prescription, expert advice, or a referral — sent directly to your phone." },
+  { n: "01", icon: CalendarCheck, title: "Prepare your practice", desc: "Set up the owner profile, brand details, and consultation flow in one place." },
+  { n: "02", icon: Video, title: "Meet patients securely", desc: "Use a simple video or chat workflow that works for one owner-led clinic." },
+  { n: "03", icon: FileText, title: "Follow up fast", desc: "Save notes, share instructions, and keep care moving without extra clutter." },
 ];
 
 const services = [
@@ -115,15 +113,15 @@ const services = [
 ];
 
 const reasons = [
-  { icon: Headphones,  title: "24/7 Access to Doctors", desc: "Day or night, weekday or weekend — care is always one tap away." },
-  { icon: Zap,         title: "Fast Response Time",     desc: "Connect with a doctor in under 15 minutes on average." },
+  { icon: Headphones,  title: "24/7 Practice Access", desc: "Day or night, weekday or weekend — the owner’s setup stays ready." },
+  { icon: Zap,         title: "Fast Response Time",     desc: "Connect with the clinic quickly and keep response times low." },
   { icon: Lock,        title: "Secure & Private",       desc: "HIPAA-compliant, end-to-end encrypted consultations." },
   { icon: DollarSign,  title: "Affordable Care",        desc: "Transparent pricing — no surprise bills, insurance accepted." },
   { icon: Globe,       title: "Access from Anywhere",   desc: "Home, work, or traveling — quality care follows you." },
 ];
 
 const stats = [
-  { value: "100+",    label: "Licensed Doctors" },
+  { value: "1",       label: "Owner-led practice" },
   { value: "10,000+", label: "Patients Served" },
   { value: "24/7",    label: "Availability" },
   { value: "<30 min", label: "Avg. Wait Time" },
@@ -134,8 +132,6 @@ const defaultSteps: Array<HowItWorksStep & { n: string; icon: typeof CalendarChe
   { n: "02", icon: Video, id: "step-2", title: "Virtual Consultation", body: "Connect via secure video or chat. Discuss your symptoms with a licensed physician." },
   { n: "03", icon: FileText, id: "step-3", title: "Get Treatment", body: "Receive a prescription, expert advice, or a referral — sent directly to your phone." },
 ];
-
-const defaultDoctors: DoctorEntry[] = defaultSettings.doctors;
 
 const defaultTestimonials: Array<Testimonial & { initials: string; loc: string }> = [
   { id: "t-1", quote: "I got connected with a doctor in 10 minutes from my couch. Got my prescription sent to the pharmacy down the street. Unreal.", name: "Emma Thompson", role: "Patient · Seattle, WA", initials: "ET", loc: "Patient · Seattle, WA" },
@@ -163,27 +159,26 @@ const MediCare = () => {
   const [open, setOpen] = useState(false);
   const settings = useMediCareSettings();
   const howItWorks = settings.howItWorks.length > 0 ? settings.howItWorks : defaultSteps;
-  const doctors = settings.doctors.length > 0 ? settings.doctors : defaultDoctors;
   const testimonials = settings.testimonials.length > 0 ? settings.testimonials : defaultTestimonials;
   const partners = settings.partners.length > 0 ? settings.partners : defaultPartners;
 
   const themeStyle = useMemo(
     () =>
       ({
-        ["--mc-primary" as any]: hexToHslString(settings.primaryColor),
-        ["--mc-primary-glow" as any]: hexToHslString(settings.primaryColor),
-        ["--mc-accent" as any]: hexToHslString(settings.accentColor),
-        ["--mc-accent-glow" as any]: hexToHslString(settings.accentColor),
+        ["--mc-primary" as string]: hexToHslString(settings.primaryColor),
+        ["--mc-primary-glow" as string]: hexToHslString(settings.primaryColor),
+        ["--mc-accent" as string]: hexToHslString(settings.accentColor),
+        ["--mc-accent-glow" as string]: hexToHslString(settings.accentColor),
       }) as React.CSSProperties,
     [settings.primaryColor, settings.accentColor],
   );
 
   useEffect(() => {
-    document.title = `${settings.siteName} — See a Doctor Anytime, Anywhere`;
+    document.title = `${settings.siteName} — Owner-led Practice Portal`;
     const meta = document.querySelector('meta[name="description"]') || (() => {
       const m = document.createElement("meta"); m.setAttribute("name", "description"); document.head.appendChild(m); return m;
     })();
-    meta.setAttribute("content", "MediCare connects you with licensed doctors via secure video or chat in minutes. 24/7 telemedicine, e-prescriptions and trusted care.");
+    meta.setAttribute("content", "MediCare is an owner-led practice portal for managing a single doctor's telemedicine brand, content, and patient journey.");
 
     const ld = document.createElement("script");
     ld.type = "application/ld+json";
@@ -191,7 +186,7 @@ const MediCare = () => {
       "@context": "https://schema.org",
       "@type": "MedicalBusiness",
       name: "MediCare",
-      description: "On-demand telemedicine consultations with licensed doctors.",
+      description: "Owner-led telemedicine practice management.",
       url: typeof window !== "undefined" ? window.location.href : "",
       telephone: "+1-800-MEDICARE",
       medicalSpecialty: ["GeneralPractice", "Dermatology", "Pediatrics", "Psychiatry"],
@@ -199,7 +194,7 @@ const MediCare = () => {
     });
     document.head.appendChild(ld);
     return () => { document.head.removeChild(ld); };
-  }, []);
+  }, [settings.siteName]);
 
   return (
     <div className="medicare-root min-h-screen relative overflow-x-hidden" style={themeStyle}>
@@ -264,7 +259,7 @@ const MediCare = () => {
           <div className="flex justify-center mc-anim-fade-up">
             <span className="inline-flex items-center gap-2 rounded-full mc-glass px-4 py-1.5 text-xs sm:text-sm font-semibold">
               <span className="h-2 w-2 rounded-full bg-[hsl(var(--mc-accent))] mc-anim-pulse-dot" />
-              {settings.hero.eyebrow}
+              {settings.hero.eyebrow.replace(/\b\d+\+?\s+doctors?\b/i, "Owner-led practice")}
               <span className="opacity-30">·</span>
               <Star className="h-3.5 w-3.5 fill-[hsl(45_100%_55%)] text-[hsl(45_100%_55%)]" /> 4.9
             </span>
@@ -301,7 +296,7 @@ const MediCare = () => {
                 {/* Live now strip */}
                 <div className="absolute left-3 top-3 sm:left-4 sm:top-4 mc-glass rounded-full px-3 py-1.5 flex items-center gap-2 text-[11px] sm:text-xs font-semibold">
                   <span className="h-2 w-2 rounded-full bg-[hsl(0_85%_60%)] mc-anim-pulse-dot" />
-                  Live · Dr. Sarah Chen
+                  Live · Owner practice
                 </div>
                 <div className="absolute right-3 top-3 sm:right-4 sm:top-4">
                   <button className="rounded-full mc-grad-accent text-white text-[11px] sm:text-xs font-semibold px-3 py-1.5 sm:px-3.5 sm:py-2 mc-anim-pulse-glow">
@@ -392,7 +387,7 @@ const MediCare = () => {
 
           {/* Trust strip */}
           <div className="mt-14 text-center text-sm text-[hsl(var(--mc-muted))]">
-            <div className="mb-3">Trusted by patients in</div>
+            <div className="mb-3">Trusted by patients across</div>
             <div className="flex flex-wrap justify-center items-center gap-x-5 gap-y-2">
               {[
                 { code: "us", name: "United States" },
@@ -425,7 +420,7 @@ const MediCare = () => {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto">
             <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">How it works</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Quality care in three simple steps</h2>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Set up the practice in three simple steps</h2>
           </div>
 
           <div className="relative mt-14 grid md:grid-cols-3 gap-6">
@@ -451,7 +446,7 @@ const MediCare = () => {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto">
             <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Our services</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Comprehensive care at your fingertips</h2>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Practice tools at your fingertips</h2>
           </div>
 
           <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -473,7 +468,7 @@ const MediCare = () => {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto">
             <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Why choose us</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Healthcare designed around you</h2>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Built for a single owner-led practice</h2>
           </div>
 
           <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -507,7 +502,7 @@ const MediCare = () => {
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Partners</p>
-                <h2 className="mt-2 font-display text-2xl sm:text-3xl font-bold">Organizations that support the network</h2>
+                <h2 className="mt-2 font-display text-2xl sm:text-3xl font-bold">Organizations that support the practice</h2>
               </div>
               <p className="text-sm text-[hsl(var(--mc-muted))] max-w-xl">These names are editable from the admin panel, so the public page reflects the same partnership list without a backend.</p>
             </div>
@@ -522,56 +517,12 @@ const MediCare = () => {
         </div>
       </section>
 
-      {/* DOCTORS */}
-      <section id="doctors" className="py-20 sm:py-28 bg-[hsl(var(--mc-muted-soft))]">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="text-center max-w-2xl mx-auto">
-            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Meet our doctors</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Trusted physicians, ready when you are</h2>
-          </div>
-
-          <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {doctors.map((doctor) => (
-              <article key={doctor.id} className="bg-[hsl(var(--mc-card))] rounded-3xl border border-[hsl(var(--mc-border))] mc-shadow-card overflow-hidden hover:-translate-y-1 hover:mc-shadow-elegant transition-all duration-300">
-                <div className="relative aspect-[4/3] overflow-hidden bg-[hsl(var(--mc-muted-soft))]">
-                  {doctor.photoDataUrl ? (
-                    <img src={doctor.photoDataUrl} alt={`Portrait of ${doctor.name}`} loading="lazy" width={512} height={512} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="h-full w-full grid place-items-center bg-gradient-to-br from-[hsl(var(--mc-primary))/0.14] via-white to-[hsl(var(--mc-accent))/0.14]">
-                      <div className="grid place-items-center h-28 w-28 rounded-full bg-white/90 text-[hsl(var(--mc-primary))] shadow-lg">
-                        <span className="font-display text-3xl font-bold">{getInitials(doctor.name)}</span>
-                      </div>
-                    </div>
-                  )}
-                  <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 backdrop-blur px-2.5 py-1 text-[11px] font-semibold">
-                    <span className="h-2 w-2 rounded-full bg-[hsl(var(--mc-accent))] mc-anim-pulse-dot" />
-                    Available Now
-                  </span>
-                </div>
-                <div className="p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="font-display text-lg font-bold">{doctor.name}</h3>
-                      <p className="text-sm text-[hsl(var(--mc-muted))]">{doctor.specialty || "General Practice"}</p>
-                    </div>
-                  </div>
-                  {doctor.bio && <p className="mt-3 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">{doctor.bio}</p>}
-                  <Link to={`/medicare/${doctor.id}`} className="mt-4 inline-block w-full text-center rounded-full mc-grad-primary text-white py-2.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
-                    Book Appointment
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* REVIEWS */}
       <section id="reviews" className="py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto">
             <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Patient stories</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Loved by thousands of patients</h2>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Loved by patients</h2>
           </div>
 
           <div className="mt-12 grid md:grid-cols-3 gap-5">
@@ -648,7 +599,7 @@ const MediCare = () => {
                 <HeartPulse className="h-3.5 w-3.5" /> Care that fits your life
               </span>
               <h2 className="mt-4 font-display text-3xl sm:text-5xl font-bold">Start your consultation today</h2>
-              <p className="mt-4 text-white/85 max-w-xl mx-auto">Join thousands of patients getting trusted medical care without the wait.</p>
+              <p className="mt-4 text-white/85 max-w-xl mx-auto">Keep your practice simple, clear, and ready for patients without extra clutter.</p>
               <a href="#top" className="mt-8 inline-flex items-center gap-2 rounded-full bg-white text-[hsl(var(--mc-primary))] px-7 py-3.5 text-sm font-bold hover:bg-white/95 transition">
                 Get Started <ArrowRight className="h-4 w-4" />
               </a>
@@ -685,7 +636,6 @@ const MediCare = () => {
             { title: "Explore", items: [
               { label: "How it works", href: "#how" },
               { label: "Services", href: "#services" },
-              { label: "Doctors", href: "#doctors" },
               { label: "Reviews", href: "#reviews" },
             ]},
             { title: "Site", items: [

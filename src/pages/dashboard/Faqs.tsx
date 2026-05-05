@@ -18,7 +18,10 @@ const FaqsPage = () => {
   const [editing, setEditing] = useState<LocalFaq | null>(null);
   const [form, setForm] = useState(empty);
 
-  useEffect(() => subscribeStore(() => setItems(listFaqs())), []);
+  useEffect(() => {
+    const unsubscribe = subscribeStore(() => setItems(listFaqs()));
+    return unsubscribe;
+  }, []);
 
   const openNew = () => {
     setEditing(null);

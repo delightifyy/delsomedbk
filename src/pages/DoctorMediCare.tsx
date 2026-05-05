@@ -90,6 +90,7 @@ const DoctorMediCare = () => {
     if (doctor) document.title = `Book ${doctor.name} · MediCare`;
   }, [doctor]);
 
+
   const submitBooking = (event: React.FormEvent) => {
     event.preventDefault();
     if (!bookingDate || !bookingTime || !patient.fullName.trim() || !patient.phone.trim() || !patient.email.trim()) {
@@ -182,6 +183,16 @@ const DoctorMediCare = () => {
               <Badge variant="secondary" className="bg-secondary/15 text-secondary">
                 <Wallet className="h-3.5 w-3.5 mr-1" />₦{doctor.consultationFee.toLocaleString()} / consult
               </Badge>
+            </div>
+
+            <div className="mt-6">
+              <Button
+                type="button"
+                variant="hero"
+                onClick={() => bookingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              >
+                Book Appointment
+              </Button>
             </div>
           </div>
         </div>

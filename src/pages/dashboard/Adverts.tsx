@@ -51,7 +51,10 @@ const AdvertsPage = () => {
   const [editing, setEditing] = useState<LocalAdvert | null>(null);
   const [form, setForm] = useState<FormState>(empty);
 
-  useEffect(() => subscribeStore(() => setItems(listAdverts())), []);
+  useEffect(() => {
+    const unsubscribe = subscribeStore(() => setItems(listAdverts()));
+    return unsubscribe;
+  }, []);
 
   const openNew = () => {
     setEditing(null);

@@ -47,7 +47,10 @@ const TestimonialsPage = () => {
   const [editing, setEditing] = useState<LocalTestimonial | null>(null);
   const [form, setForm] = useState<FormState>(empty);
 
-  useEffect(() => subscribeStore(() => setItems(listTestimonials())), []);
+  useEffect(() => {
+    const unsubscribe = subscribeStore(() => setItems(listTestimonials()));
+    return unsubscribe;
+  }, []);
 
   const openNew = () => {
     setEditing(null);

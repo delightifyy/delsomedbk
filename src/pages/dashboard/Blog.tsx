@@ -34,10 +34,15 @@ const BlogPage = () => {
   const [editing, setEditing] = useState<Post | null>(null);
   const [form, setForm] = useState<typeof empty>(empty);
 
-  const load = async () => {
+  const load = () => {
     setItems(listBlogPosts() as LocalBlogPost[]);
   };
-  useEffect(() => subscribeStore(() => { load(); }), []);
+  useEffect(() => {
+    const unsubscribe = subscribeStore(() => {
+      load();
+    });
+    return unsubscribe;
+  }, []);
 
   const openNew = () => { setEditing(null); setForm(empty); setOpen(true); };
   const openEdit = (p: Post) => {

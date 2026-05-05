@@ -13,6 +13,7 @@ import {
   CircleHelp,
   MessageCircleHeart,
   Menu,
+  Stethoscope,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +26,7 @@ const items = [
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard, end: true },
   { to: "/dashboard/notifications", label: "New Registrations", icon: Bell },
   { to: "/dashboard/users", label: "Users", icon: Users },
+  { to: "/dashboard/doctors", label: "Doctors", icon: Stethoscope },
   { to: "/dashboard/contacts", label: "Contact Messages", icon: MessageSquare },
   { to: "/dashboard/blog", label: "Blogs", icon: FileText },
   { to: "/dashboard/news", label: "News", icon: Newspaper },
@@ -40,7 +42,8 @@ export const DashboardLayout = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const load = () => setPendingCount(countPendingRegistrations());
-    return subscribeStore(load);
+    const unsubscribe = subscribeStore(load);
+    return unsubscribe;
   }, []);
 
   const isActive = (to: string, end?: boolean) =>

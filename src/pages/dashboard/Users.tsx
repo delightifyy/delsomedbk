@@ -120,7 +120,7 @@ const UsersPage = () => {
     setPage(1);
   }, [tab, q]);
 
-  const load = async () => {
+  const load = () => {
     setLoading(true);
     const pData = listProfiles();
     const rData = listUserRoles();
@@ -133,7 +133,12 @@ const UsersPage = () => {
     setLoading(false);
   };
 
-  useEffect(() => subscribeStore(() => { load(); }), []);
+  useEffect(() => {
+    const unsubscribe = subscribeStore(() => {
+      load();
+    });
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     ensureDemoUsers();

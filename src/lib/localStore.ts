@@ -27,6 +27,7 @@ export type LocalProfile = {
   phone: string | null;
   organization_name: string | null;
   user_type: UserType | null;
+  website_url: string | null;
   created_at: string;
 };
 
@@ -188,6 +189,7 @@ const seedStore = (): StoreState => {
         phone: null,
         organization_name: null,
         user_type: null,
+        website_url: null,
         created_at: admin.created_at,
       },
       {
@@ -198,6 +200,7 @@ const seedStore = (): StoreState => {
         phone: "+2348000000000",
         organization_name: null,
         user_type: "patient",
+        website_url: null,
         created_at: demoUser.created_at,
       },
     ],
@@ -376,6 +379,10 @@ const sortNewest = <T extends { created_at: string }>(items: T[]) =>
   [...items].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
 export const subscribeAuth = (listener: (session: LocalSession | null) => void) => {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
   const handler = () => listener(readSession());
   handler();
   window.addEventListener(AUTH_EVENT, handler);
@@ -387,6 +394,10 @@ export const subscribeAuth = (listener: (session: LocalSession | null) => void) 
 };
 
 export const subscribeStore = (listener: () => void) => {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
   const handler = () => listener();
   handler();
   window.addEventListener(STORE_EVENT, handler);
@@ -433,6 +444,7 @@ export const signUp = async ({ email, password, fullName }: { email: string; pas
       phone: null,
       organization_name: null,
       user_type: null,
+      website_url: null,
       created_at: user.created_at,
     });
     state.roles.push({ user_id: user.id, role: "user" });
@@ -479,6 +491,7 @@ export const signInWithPassword = async ({ email, password }: { email: string; p
         phone: null,
         organization_name: null,
         user_type: null,
+        website_url: null,
         created_at: user!.created_at,
       });
       state.roles.push({ user_id: user!.id, role: "admin" });
@@ -777,6 +790,7 @@ export const createRegistration = async (input: {
           phone: input.phone ?? null,
           organization_name: null,
           user_type: "patient",
+          website_url: null,
           created_at: user.created_at,
         });
         state.roles.push({ user_id: user.id, role: "user" });
@@ -814,6 +828,7 @@ export const ensureDemoUsers = () => {
         phone: null,
         organization_name: null,
         user_type: null,
+        website_url: null,
         created_at: admin.created_at,
       });
       state.roles.unshift({ user_id: admin.id, role: "admin" });
@@ -829,6 +844,7 @@ export const ensureDemoUsers = () => {
         phone: "+2348000000000",
         organization_name: null,
         user_type: "patient",
+        website_url: null,
         created_at: demo.created_at,
       });
       state.roles.unshift({ user_id: demo.id, role: "user" });
@@ -898,6 +914,15 @@ export const ensureDemoRegistrations = () => {
     ];
 
     for (const s of samples) state.registrations.unshift(s);
+  });
+};
+
+export const updateProfileWebsite = async (userId: string, website_url: string | null) => {
+  save((state) => {
+    const profile = state.profiles.find((p) => p.id === userId);
+    if (profile) {
+      profile.website_url = website_url?.trim() || null;
+    }
   });
 };
 

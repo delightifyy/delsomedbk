@@ -14,11 +14,10 @@ import {
   Settings,
   MessageSquare,
   Users,
-  // Newspaper,
-  // BookOpen,
   HeartHandshake,
   Zap,
   Home,
+  type LucideIcon,
 } from "lucide-react";
 import {
   defaultSettings,
@@ -29,7 +28,6 @@ import {
   type Faq,
   type Testimonial,
   type Partner,
-  type DoctorEntry,
   type HowItWorksStep,
 } from "@/lib/medicareSettings";
 
@@ -69,7 +67,6 @@ type Tab =
   | "faqs"
   | "testimonials"
   | "partners"
-  | "doctors"
   | "howitworks";
 
 const NavItem = ({
@@ -79,7 +76,7 @@ const NavItem = ({
   active,
   onClick,
 }: {
-  icon: any;
+  icon: LucideIcon;
   label: string;
   tab: Tab;
   active: boolean;
@@ -110,9 +107,6 @@ const MediCareAdmin = () => {
   const [newTestimonial, setNewTestimonial] = useState<Partial<Testimonial>>({});
   const [editingTestimonial, setEditingTestimonial] = useState<string | null>(null);
   const [newPartner, setNewPartner] = useState("");
-  // Doctors
-  const [newDoctor, setNewDoctor] = useState<Partial<DoctorEntry>>({});
-  const [editingDoctor, setEditingDoctor] = useState<string | null>(null);
   // How it works steps
   const [newStep, setNewStep] = useState<Partial<HowItWorksStep>>({});
   const [editingStep, setEditingStep] = useState<string | null>(null);
@@ -130,14 +124,6 @@ const MediCareAdmin = () => {
     const reader = new FileReader();
     reader.onload = () =>
       update({ logoDataUrl: reader.result as string });
-    reader.readAsDataURL(file);
-  };
-
-  const onDoctorPhoto = (file?: File | null) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () =>
-      setNewDoctor((prev) => ({ ...prev, photoDataUrl: reader.result as string }));
     reader.readAsDataURL(file);
   };
 
@@ -241,39 +227,6 @@ const MediCareAdmin = () => {
       partners: prev.partners.filter((p) => p.id !== id),
     }));
   };
-  // Doctors handlers
-  const addOrUpdateDoctor = () => {
-    if (!newDoctor.name?.trim()) return;
-    if (editingDoctor) {
-      setS((prev) => ({
-        ...prev,
-        doctors: prev.doctors.map((d) =>
-          d.id === editingDoctor ? (newDoctor as any) : d
-        ),
-      }));
-      setEditingDoctor(null);
-    } else {
-      setS((prev) => ({
-        ...prev,
-        doctors: [
-          ...prev.doctors,
-          {
-            id: Date.now().toString(),
-            name: newDoctor.name!,
-            specialty: newDoctor.specialty || "",
-            bio: newDoctor.bio || "",
-            photoDataUrl: (newDoctor as any).photoDataUrl || null,
-          },
-        ],
-      }));
-    }
-    setNewDoctor({});
-  };
-
-  const deleteDoctor = (id: string) => {
-    setS((prev) => ({ ...prev, doctors: prev.doctors.filter((d) => d.id !== id) }));
-  };
-
   // How it works handlers
   const addOrUpdateStep = () => {
     if (!newStep.title?.trim() || !newStep.body?.trim()) return;
@@ -281,7 +234,7 @@ const MediCareAdmin = () => {
       setS((prev) => ({
         ...prev,
         howItWorks: prev.howItWorks.map((h) =>
-          h.id === editingStep ? (newStep as any) : h
+          h.id === editingStep ? ({ ...h, ...newStep } as HowItWorksStep) : h
         ),
       }));
       setEditingStep(null);
@@ -438,16 +391,6 @@ const MediCareAdmin = () => {
                 }}
               />
               <NavItem
-                icon={Users}
-                label="Doctors"
-                tab="doctors"
-                active={activeTab === "doctors"}
-                onClick={() => {
-                  setActiveTab("doctors");
-                  setSidebarOpen(false);
-                }}
-              />
-              <NavItem
                 icon={Settings}
                 label="How It Works"
                 tab="howitworks"
@@ -505,19 +448,6 @@ const MediCareAdmin = () => {
                 setNewPartner={setNewPartner}
                 addPartner={addPartner}
                 deletePartner={deletePartner}
-              />
-            )}
-            {activeTab === "doctors" && (
-              <DoctorsSection
-                doctors={s.doctors}
-                newDoctor={newDoctor}
-                setNewDoctor={setNewDoctor}
-                onDoctorPhoto={onDoctorPhoto}
-                clearDoctorPhoto={() => setNewDoctor((prev) => ({ ...prev, photoDataUrl: null }))}
-                addOrUpdateDoctor={addOrUpdateDoctor}
-                deleteDoctor={deleteDoctor}
-                editingDoctor={editingDoctor}
-                setEditingDoctor={setEditingDoctor}
               />
             )}
             {activeTab === "howitworks" && (
@@ -642,7 +572,7 @@ const HeroSection = ({
           onChange={(e) =>
             update({ hero: { ...s.hero, eyebrow: e.target.value } })
           }
-          placeholder="e.g. 240+ doctors online now"
+          placeholder="e.g. Owner-led practice portal"
         />
       </Field>
       <Field label="CTA Button Label">
@@ -652,7 +582,7 @@ const HeroSection = ({
           onChange={(e) =>
             update({ hero: { ...s.hero, ctaLabel: e.target.value } })
           }
-          placeholder="e.g. Book Appointment"
+          placeholder="e.g. Open Dashboard"
         />
       </Field>
     </div>
@@ -663,7 +593,7 @@ const HeroSection = ({
         onChange={(e) =>
           update({ hero: { ...s.hero, titleLead: e.target.value } })
         }
-        placeholder="e.g. See a Doctor"
+        placeholder="e.g. Run your practice"
       />
     </Field>
     <Field label="Headline (Highlight)">
@@ -673,7 +603,7 @@ const HeroSection = ({
         onChange={(e) =>
           update({ hero: { ...s.hero, titleHighlight: e.target.value } })
         }
-        placeholder="e.g. Anytime, Anywhere"
+        placeholder="e.g. in one place"
       />
     </Field>
     <Field label="Subtitle">
@@ -1001,144 +931,6 @@ const PartnersSection = ({
           >
             <Trash2 className="h-4 w-4" />
           </button>
-        </div>
-      ))}
-    </div>
-  </section>
-);
-
-const DoctorsSection = ({
-  doctors,
-  newDoctor,
-  setNewDoctor,
-  onDoctorPhoto,
-  clearDoctorPhoto,
-  addOrUpdateDoctor,
-  deleteDoctor,
-  editingDoctor,
-  setEditingDoctor,
-}: {
-  doctors: DoctorEntry[];
-  newDoctor: Partial<DoctorEntry>;
-  setNewDoctor: (d: Partial<DoctorEntry>) => void;
-  onDoctorPhoto: (file?: File | null) => void;
-  clearDoctorPhoto: () => void;
-  addOrUpdateDoctor: () => void;
-  deleteDoctor: (id: string) => void;
-  editingDoctor: string | null;
-  setEditingDoctor: (id: string | null) => void;
-}) => (
-  <section className="space-y-6">
-    <div className="bg-white rounded-2xl border border-slate-200 p-6">
-      <h2 className="text-2xl font-bold text-slate-900 mb-6">Doctors</h2>
-      <div className="space-y-4">
-        <Field label="Name">
-          <input
-            className={inputCls}
-            value={newDoctor.name || ""}
-            onChange={(e) => setNewDoctor({ ...newDoctor, name: e.target.value })}
-            placeholder="Dr. Jane Doe"
-          />
-        </Field>
-        <Field label="Specialty">
-          <input
-            className={inputCls}
-            value={newDoctor.specialty || ""}
-            onChange={(e) => setNewDoctor({ ...newDoctor, specialty: e.target.value })}
-            placeholder="e.g. Cardiology"
-          />
-        </Field>
-        <Field label="Bio">
-          <textarea
-            rows={3}
-            className={inputCls}
-            value={newDoctor.bio || ""}
-            onChange={(e) => setNewDoctor({ ...newDoctor, bio: e.target.value })}
-            placeholder="Short bio"
-          />
-        </Field>
-        <Field label="Photo">
-          <div className="space-y-3">
-            {newDoctor.photoDataUrl ? (
-              <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <img
-                  src={newDoctor.photoDataUrl}
-                  alt="Doctor preview"
-                  className="h-16 w-16 rounded-full object-cover border border-white shadow-sm"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-slate-900">Photo preview</p>
-                  <p className="text-xs text-slate-500">Shown on the public doctor cards.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={clearDoctorPhoto}
-                  className={`${btnSmall} text-rose-600 hover:bg-rose-50`}
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : null}
-            <input
-              type="file"
-              accept="image/*"
-              className={inputCls}
-              onChange={(e) => onDoctorPhoto(e.target.files?.[0])}
-            />
-          </div>
-        </Field>
-        <button onClick={addOrUpdateDoctor} className={btnPrimary}>
-          <Plus className="h-4 w-4" />
-          {editingDoctor ? "Update Doctor" : "Add Doctor"}
-        </button>
-      </div>
-    </div>
-
-    <div className="space-y-3">
-      {doctors.map((doc) => (
-        <div key={doc.id} className="bg-white rounded-lg border border-slate-200 p-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3 flex-1 min-w-0">
-              {doc.photoDataUrl ? (
-                <img
-                  src={doc.photoDataUrl}
-                  alt={`Portrait of ${doc.name}`}
-                  className="h-14 w-14 rounded-full object-cover border border-slate-200 flex-shrink-0"
-                />
-              ) : (
-                <div className="h-14 w-14 rounded-full bg-slate-100 text-slate-500 grid place-items-center text-sm font-semibold flex-shrink-0">
-                  {doc.name
-                    .split(/\s+/)
-                    .filter(Boolean)
-                    .slice(0, 2)
-                    .map((part) => part[0]?.toUpperCase() ?? "")
-                    .join("") || "DR"}
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-slate-900">{doc.name}</p>
-                <p className="text-sm text-slate-600">{doc.specialty}</p>
-                <p className="text-xs text-slate-500 mt-2">{doc.bio}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                onClick={() => {
-                  setNewDoctor(doc);
-                  setEditingDoctor(doc.id);
-                }}
-                className={`${btnSmall} text-blue-600 hover:bg-blue-50`}
-              >
-                <Edit2 className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => deleteDoctor(doc.id)}
-                className={`${btnSmall} text-rose-600 hover:bg-rose-50`}
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
         </div>
       ))}
     </div>

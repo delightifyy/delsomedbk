@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { MapPin, ShieldCheck, ArrowUpRight } from "lucide-react";
 import type { Doctor } from "@/data/doctors";
+import { Link } from "react-router-dom";
 
 export const DoctorCard = ({ doctor, featured = false }: { doctor: Doctor; featured?: boolean }) => {
   return (
@@ -41,7 +42,7 @@ export const DoctorCard = ({ doctor, featured = false }: { doctor: Doctor; featu
         <p className="mt-5 text-sm text-muted-foreground leading-relaxed line-clamp-3">{doctor.bio}</p>
       )}
 
-      <dl className="mt-4 sm:mt-5 pt-4 sm:pt-5 border-t border-border grid grid-cols-2 gap-3 text-xs mt-auto">
+      <dl className="mt-auto pt-4 sm:pt-5 border-t border-border grid grid-cols-2 gap-3 text-xs">
         <div className="min-w-0">
           <dt className="text-muted-foreground tracking-wider text-[10px]">Location</dt>
           <dd className="mt-1 flex items-center gap-1 font-medium truncate">
@@ -55,8 +56,10 @@ export const DoctorCard = ({ doctor, featured = false }: { doctor: Doctor; featu
         </div>
       </dl>
 
-      <Button variant="soft" size="sm" className="w-full mt-5">
-        Visit Website <ArrowUpRight className="h-4 w-4" />
+      <Button asChild variant="soft" size="sm" className="w-full mt-5">
+        <Link to={`/medicare/${doctor.id}`}>
+          Visit Website <ArrowUpRight className="h-4 w-4" />
+        </Link>
       </Button>
     </article>
   );

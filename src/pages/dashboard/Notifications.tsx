@@ -92,13 +92,18 @@ const NotificationsPageInner = () => {
   const [reviewerNotes, setReviewerNotes] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const load = async () => {
+  const load = () => {
     setLoading(true);
     setItems(listRegistrations() as LocalRegistration[]);
     setLoading(false);
   };
 
-  useEffect(() => subscribeStore(() => { load(); }), []);
+  useEffect(() => {
+    const unsubscribe = subscribeStore(() => {
+      load();
+    });
+    return unsubscribe;
+  }, []);
 
   // Ensure demo registrations exist so the list shows entries by default
   useEffect(() => {
