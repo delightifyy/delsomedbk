@@ -347,7 +347,15 @@ const MediCare = () => {
 
           {/* Trust strip */}
           <div className="mt-14 text-center text-sm text-[hsl(var(--mc-muted))]">
-            Trusted by patients in <span className="text-base ml-1">🇺🇸 🇬🇧 🇨🇦 🇦🇺 🇩🇪</span>
+            Trusted by patients in
+            <span className="block sm:inline mt-2 sm:mt-0 sm:ml-2">
+              <span className="inline-flex items-center gap-1 mx-1.5"><span className="text-base">🇺🇸</span> United States</span>
+              <span className="inline-flex items-center gap-1 mx-1.5"><span className="text-base">🇬🇧</span> United Kingdom</span>
+              <span className="inline-flex items-center gap-1 mx-1.5"><span className="text-base">🇨🇦</span> Canada</span>
+              <span className="inline-flex items-center gap-1 mx-1.5"><span className="text-base">🇦🇺</span> Australia</span>
+              <span className="inline-flex items-center gap-1 mx-1.5"><span className="text-base">🇩🇪</span> Germany</span>
+              <span className="inline-flex items-center gap-1 mx-1.5"><span className="text-base">🇳🇬</span> Nigeria</span>
+            </span>
           </div>
         </div>
       </section>
