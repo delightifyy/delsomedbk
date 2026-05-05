@@ -238,9 +238,6 @@ const MediCare = () => {
             <a href="#cta" className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full mc-grad-primary text-white px-7 py-3.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
               Book Appointment <ArrowRight className="h-4 w-4" />
             </a>
-            <a href="#how" className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full mc-glass px-7 py-3.5 text-sm font-semibold hover:bg-white transition">
-              How it works
-            </a>
           </div>
 
           {/* Hero visual + floating cards */}
