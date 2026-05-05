@@ -15,6 +15,7 @@ import HealthNews from "./pages/HealthNews.tsx";
 import HealthNewsArticle from "./pages/HealthNewsArticle.tsx";
 import AdvertArticle from "./pages/AdvertArticle.tsx";
 import DoctorPortal from "./pages/MediCare.tsx";
+import MediCareAdmin from "./pages/MediCareAdmin.tsx";
 import RegisterPatient from "./pages/RegisterPatient.tsx";
 import Register from "./pages/Register.tsx";
 import { Navigate } from "react-router-dom";
