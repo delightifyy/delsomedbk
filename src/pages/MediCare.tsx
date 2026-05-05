@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Stethoscope, Menu, X, Star, Video, ShieldCheck, Clock, CalendarCheck,
   Brain, Baby, Sparkles, HeartPulse, Pill, FileText, Headphones, FlaskConical,
-  Mail, Phone, Facebook, Twitter, Instagram, Linkedin, ArrowRight, DollarSign,
-  Globe, Zap, Lock,
+  Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, ArrowRight, DollarSign,
+  Globe, Zap, Lock, Settings,
 } from "lucide-react";
+import { hexToHslString, useMediCareSettings } from "@/lib/medicareSettings";
 import heroImg from "@/assets/medicare-hero-illu.jpg";
 import doc1 from "@/assets/medicare-doc1.jpg";
 import doc2 from "@/assets/medicare-doc2.jpg";
@@ -88,7 +90,8 @@ const navLinks = [
   { href: "#how", label: "How it works" },
   { href: "#services", label: "Services" },
   { href: "#doctors", label: "Doctors" },
-  { href: "#reviews", label: "Reviews" },
+  { href: "#about", label: "About" },
+  { href: "#contact", label: "Contact" },
 ];
 
 const steps = [
@@ -136,9 +139,21 @@ const reviews = [
 /* ---------- Page ---------- */
 const MediCare = () => {
   const [open, setOpen] = useState(false);
+  const settings = useMediCareSettings();
+
+  const themeStyle = useMemo(
+    () =>
+      ({
+        ["--mc-primary" as any]: hexToHslString(settings.primaryColor),
+        ["--mc-primary-glow" as any]: hexToHslString(settings.primaryColor),
+        ["--mc-accent" as any]: hexToHslString(settings.accentColor),
+        ["--mc-accent-glow" as any]: hexToHslString(settings.accentColor),
+      }) as React.CSSProperties,
+    [settings.primaryColor, settings.accentColor],
+  );
 
   useEffect(() => {
-    document.title = "MediCare — See a Doctor Anytime, Anywhere";
+    document.title = `${settings.siteName} — See a Doctor Anytime, Anywhere`;
     const meta = document.querySelector('meta[name="description"]') || (() => {
       const m = document.createElement("meta"); m.setAttribute("name", "description"); document.head.appendChild(m); return m;
     })();
@@ -161,7 +176,7 @@ const MediCare = () => {
   }, []);
 
   return (
-    <div className="medicare-root min-h-screen relative overflow-x-hidden">
+    <div className="medicare-root min-h-screen relative overflow-x-hidden" style={themeStyle}>
       <style>{tokenStyles}</style>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
@@ -171,10 +186,14 @@ const MediCare = () => {
       <header className="fixed top-3 sm:top-5 inset-x-0 z-50 px-3 sm:px-6">
         <nav className="mx-auto max-w-6xl mc-glass mc-shadow-card rounded-full px-4 sm:px-6 py-3 flex items-center justify-between">
           <a href="#top" className="flex items-center gap-2.5">
-            <span className="grid place-items-center h-9 w-9 rounded-xl mc-grad-primary mc-shadow-glow">
-              <Stethoscope className="h-5 w-5 text-white" />
+            <span className="grid place-items-center h-9 w-9 rounded-xl mc-grad-primary mc-shadow-glow overflow-hidden">
+              {settings.logoDataUrl ? (
+                <img src={settings.logoDataUrl} alt={`${settings.siteName} logo`} className="h-full w-full object-cover" />
+              ) : (
+                <Stethoscope className="h-5 w-5 text-white" />
+              )}
             </span>
-            <span className="font-display font-bold text-lg tracking-tight">MediCare</span>
+            <span className="font-display font-bold text-lg tracking-tight">{settings.siteName}</span>
           </a>
 
           <ul className="hidden md:flex items-center gap-7 text-sm font-medium">
@@ -219,7 +238,7 @@ const MediCare = () => {
           <div className="flex justify-center mc-anim-fade-up">
             <span className="inline-flex items-center gap-2 rounded-full mc-glass px-4 py-1.5 text-xs sm:text-sm font-semibold">
               <span className="h-2 w-2 rounded-full bg-[hsl(var(--mc-accent))] mc-anim-pulse-dot" />
-              240+ doctors online now
+              {settings.hero.eyebrow}
               <span className="opacity-30">·</span>
               <Star className="h-3.5 w-3.5 fill-[hsl(45_100%_55%)] text-[hsl(45_100%_55%)]" /> 4.9
             </span>
@@ -227,16 +246,16 @@ const MediCare = () => {
 
           {/* Headline */}
           <h1 className="mt-6 mx-auto max-w-3xl text-center font-display text-[2.5rem] leading-[1.05] sm:text-5xl md:text-6xl lg:text-[4rem] font-bold text-balance mc-anim-fade-up">
-            See a Doctor <span className="mc-grad-text">Anytime, Anywhere</span>
+            {settings.hero.titleLead} <span className="mc-grad-text">{settings.hero.titleHighlight}</span>
           </h1>
 
           <p className="mt-5 sm:mt-6 mx-auto max-w-xl text-center text-base sm:text-lg leading-relaxed text-[hsl(var(--mc-muted))] mc-anim-fade-up">
-            Connect with licensed doctors via video or chat in minutes. Skip the waiting room — quality care delivered to wherever you are.
+            {settings.hero.subtitle}
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center items-center mc-anim-fade-up">
             <a href="#cta" className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full mc-grad-primary text-white px-7 py-3.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
-              Book Appointment <ArrowRight className="h-4 w-4" />
+              {settings.hero.ctaLabel} <ArrowRight className="h-4 w-4" />
             </a>
           </div>
 
@@ -526,6 +545,44 @@ const MediCare = () => {
         </div>
       </section>
 
+      {/* ABOUT */}
+      <section id="about" className="py-20 sm:py-28 bg-[hsl(var(--mc-muted-soft))]">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
+          <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">About us</p>
+          <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">{settings.about.title}</h2>
+          <p className="mt-6 text-base sm:text-lg text-[hsl(var(--mc-muted))] leading-relaxed whitespace-pre-line">
+            {settings.about.body}
+          </p>
+        </div>
+      </section>
+
+      {/* CONTACT */}
+      <section id="contact" className="py-20 sm:py-28">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="text-center max-w-2xl mx-auto">
+            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Contact</p>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Get in touch</h2>
+          </div>
+          <div className="mt-12 grid sm:grid-cols-3 gap-5">
+            <a href={`mailto:${settings.contact.email}`} className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card hover:-translate-y-1 transition">
+              <span className="grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow"><Mail className="h-5 w-5" /></span>
+              <h3 className="mt-5 font-display text-lg font-bold">Email</h3>
+              <p className="mt-1 text-sm text-[hsl(var(--mc-muted))] break-all">{settings.contact.email}</p>
+            </a>
+            <a href={`tel:${settings.contact.phone}`} className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card hover:-translate-y-1 transition">
+              <span className="grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow"><Phone className="h-5 w-5" /></span>
+              <h3 className="mt-5 font-display text-lg font-bold">Phone</h3>
+              <p className="mt-1 text-sm text-[hsl(var(--mc-muted))]">{settings.contact.phone}</p>
+            </a>
+            <div className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card">
+              <span className="grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow"><MapPin className="h-5 w-5" /></span>
+              <h3 className="mt-5 font-display text-lg font-bold">Location</h3>
+              <p className="mt-1 text-sm text-[hsl(var(--mc-muted))]">{settings.contact.address}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* FINAL CTA */}
       <section id="cta" className="py-16 sm:py-24">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -552,12 +609,16 @@ const MediCare = () => {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-14 grid gap-10 md:grid-cols-4">
           <div>
             <a href="#top" className="flex items-center gap-2.5">
-              <span className="grid place-items-center h-9 w-9 rounded-xl mc-grad-primary mc-shadow-glow">
-                <Stethoscope className="h-5 w-5 text-white" />
+              <span className="grid place-items-center h-9 w-9 rounded-xl mc-grad-primary mc-shadow-glow overflow-hidden">
+                {settings.logoDataUrl ? (
+                  <img src={settings.logoDataUrl} alt={`${settings.siteName} logo`} className="h-full w-full object-cover" />
+                ) : (
+                  <Stethoscope className="h-5 w-5 text-white" />
+                )}
               </span>
-              <span className="font-display font-bold text-lg">MediCare</span>
+              <span className="font-display font-bold text-lg">{settings.siteName}</span>
             </a>
-            <p className="mt-4 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">Modern telemedicine for everyday people. Trusted, secure, available 24/7.</p>
+            <p className="mt-4 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">{settings.footerTagline}</p>
             <div className="mt-5 flex gap-3">
               {[Facebook, Twitter, Instagram, Linkedin].map((I, i) => (
                 <a key={i} href="#" aria-label="Social link" className="grid place-items-center h-9 w-9 rounded-full bg-[hsl(var(--mc-muted-soft))] hover:mc-grad-primary hover:text-white transition">
@@ -568,13 +629,21 @@ const MediCare = () => {
           </div>
 
           {[
-            { title: "About",    items: ["Our story", "Careers", "Press", "Partners"] },
-            { title: "Services", items: ["General Care", "Mental Health", "Pediatrics", "Dermatology"] },
+            { title: "Explore", items: [
+              { label: "How it works", href: "#how" },
+              { label: "Services", href: "#services" },
+              { label: "Doctors", href: "#doctors" },
+              { label: "Reviews", href: "#reviews" },
+            ]},
+            { title: "Site", items: [
+              { label: "About", href: "#about" },
+              { label: "Contact", href: "#contact" },
+            ]},
           ].map((c) => (
             <div key={c.title}>
               <h3 className="font-display text-sm font-bold uppercase tracking-wider">{c.title}</h3>
               <ul className="mt-4 space-y-2.5 text-sm text-[hsl(var(--mc-muted))]">
-                {c.items.map((it) => (<li key={it}><a href="#" className="hover:text-[hsl(var(--mc-primary))] transition">{it}</a></li>))}
+                {c.items.map((it) => (<li key={it.label}><a href={it.href} className="hover:text-[hsl(var(--mc-primary))] transition">{it.label}</a></li>))}
               </ul>
             </div>
           ))}
@@ -582,17 +651,19 @@ const MediCare = () => {
           <div>
             <h3 className="font-display text-sm font-bold uppercase tracking-wider">Contact</h3>
             <ul className="mt-4 space-y-2.5 text-sm text-[hsl(var(--mc-muted))]">
-              <li className="flex items-center gap-2"><Mail className="h-4 w-4" /> hello@medicare.app</li>
-              <li className="flex items-center gap-2"><Phone className="h-4 w-4" /> +1 (800) 633-4227</li>
-              <li><a href="#" className="hover:text-[hsl(var(--mc-primary))] transition">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-[hsl(var(--mc-primary))] transition">Terms of Service</a></li>
+              <li className="flex items-center gap-2"><Mail className="h-4 w-4" /> {settings.contact.email}</li>
+              <li className="flex items-center gap-2"><Phone className="h-4 w-4" /> {settings.contact.phone}</li>
+              <li className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {settings.contact.address}</li>
             </ul>
           </div>
         </div>
         <div className="border-t border-[hsl(var(--mc-border))]">
-          <p className="mx-auto max-w-6xl px-4 sm:px-6 py-5 text-xs text-[hsl(var(--mc-muted))] text-center">
-            © {new Date().getFullYear()} MediCare. All rights reserved.
-          </p>
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[hsl(var(--mc-muted))]">
+            <p>© {new Date().getFullYear()} {settings.siteName}. All rights reserved.</p>
+            <Link to="/doctor-portal/admin" className="inline-flex items-center gap-1.5 rounded-full border border-[hsl(var(--mc-border))] px-3 py-1.5 hover:text-[hsl(var(--mc-primary))] hover:border-[hsl(var(--mc-primary))] transition">
+              <Settings className="h-3.5 w-3.5" /> Admin
+            </Link>
+          </div>
         </div>
       </footer>
     </div>
