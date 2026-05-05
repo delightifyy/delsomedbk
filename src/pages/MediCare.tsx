@@ -90,7 +90,8 @@ const navLinks = [
   { href: "#how", label: "How it works" },
   { href: "#services", label: "Services" },
   { href: "#doctors", label: "Doctors" },
-  { href: "#reviews", label: "Reviews" },
+  { href: "#about", label: "About" },
+  { href: "#contact", label: "Contact" },
 ];
 
 const steps = [
