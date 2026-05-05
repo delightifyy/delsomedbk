@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import {
   hexToHslString,
+  defaultSettings,
   useMediCareSettings,
   type DoctorEntry,
   type HowItWorksStep,
@@ -134,11 +135,7 @@ const defaultSteps: Array<HowItWorksStep & { n: string; icon: typeof CalendarChe
   { n: "03", icon: FileText, id: "step-3", title: "Get Treatment", body: "Receive a prescription, expert advice, or a referral — sent directly to your phone." },
 ];
 
-const defaultDoctors: Array<DoctorEntry & { imageLabel: string }> = [
-  { id: "doc-1", name: "Dr. James Reyes", specialty: "Internal Medicine", bio: "Experienced in general internal medicine and preventive care.", photoDataUrl: null, imageLabel: "JR" },
-  { id: "doc-2", name: "Dr. Sarah Chen", specialty: "Family Medicine", bio: "Compassionate family doctor focused on accessible primary care.", photoDataUrl: null, imageLabel: "SC" },
-  { id: "doc-3", name: "Dr. Mei Tanaka", specialty: "Pediatrics", bio: "Pediatric care with a calm, reassuring approach for families.", photoDataUrl: null, imageLabel: "MT" },
-];
+const defaultDoctors: DoctorEntry[] = defaultSettings.doctors;
 
 const defaultTestimonials: Array<Testimonial & { initials: string; loc: string }> = [
   { id: "t-1", quote: "I got connected with a doctor in 10 minutes from my couch. Got my prescription sent to the pharmacy down the street. Unreal.", name: "Emma Thompson", role: "Patient · Seattle, WA", initials: "ET", loc: "Patient · Seattle, WA" },
@@ -559,9 +556,9 @@ const MediCare = () => {
                     </div>
                   </div>
                   {doctor.bio && <p className="mt-3 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">{doctor.bio}</p>}
-                  <button className="mt-4 w-full rounded-full mc-grad-primary text-white py-2.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
-                    Book consultation
-                  </button>
+                  <Link to={`/medicare/${doctor.id}`} className="mt-4 inline-block w-full text-center rounded-full mc-grad-primary text-white py-2.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
+                    Book Appointment
+                  </Link>
                 </div>
               </article>
             ))}

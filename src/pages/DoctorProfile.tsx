@@ -5,42 +5,34 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SectionLabel } from "@/components/site/SectionLabel";
 import { DoctorCard } from "@/components/site/DoctorCard";
-import { PrescribeForm } from "@/components/site/PrescribeForm";
 import {
   MapPin, ShieldCheck, ArrowLeft, Stethoscope, CalendarClock,
   Phone, Mail, Globe, Star, Wallet, Clock,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 const DoctorProfile = () => {
   const { id } = useParams<{ id: string }>();
-  const doctor = DOCTORS.find((d) => d.id === id);
+  const { doctor, missingDoctor } = useMemo(() => {
+    const found = DOCTORS.find((d) => d.id === id);
+    return { doctor: found ?? DOCTORS[0], missingDoctor: !found };
+  }, [id]);
 
   useEffect(() => {
     if (doctor) document.title = `${doctor.name} · DesolMed`;
   }, [doctor]);
 
-  if (!doctor) {
-    return (
-      <SiteLayout>
-        <section className="container py-20 text-center">
-          <SectionLabel number="" label="Doctor Profile" />
-          <h1 className="mt-3 font-display text-3xl sm:text-4xl font-bold">Doctor Not Found</h1>
-          <p className="mt-3 text-muted-foreground">
-            We couldn't find a doctor matching that profile.
-          </p>
-          <Button asChild variant="hero" className="mt-6">
-            <Link to="/doctors"><ArrowLeft className="h-4 w-4" /> Back to Directory</Link>
-          </Button>
-        </section>
-      </SiteLayout>
-    );
-  }
-
   const related = DOCTORS.filter((d) => d.id !== doctor.id && d.specialty === doctor.specialty).slice(0, 3);
 
   return (
     <SiteLayout>
+      {missingDoctor && (
+        <div className="container py-6">
+          <div className="rounded-xl border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
+            Requested doctor not found — showing an example profile so booking works.
+          </div>
+        </div>
+      )}
       {/* Back link */}
       <div className="container pt-6">
         <Button asChild variant="ghost" size="sm" className="-ml-3">
@@ -100,7 +92,11 @@ const DoctorProfile = () => {
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <Button variant="hero" size="lg">Book Consultation</Button>
+              <Button variant="hero" size="lg" asChild>
+                <Link to={`/medicare/${doctor.id}`}>
+                  <Globe className="h-4 w-4 mr-2" /> Visit Website
+                </Link>
+              </Button>
               <Button variant="outline" size="lg">
                 <Mail className="h-4 w-4" /> Message
               </Button>
@@ -159,8 +155,6 @@ const DoctorProfile = () => {
               ))}
             </div>
           </div>
-
-          <PrescribeForm doctor={doctor} />
 
           <div>
             <h2 className="font-display text-2xl font-bold">Patient Reviews</h2>
@@ -225,12 +219,18 @@ const DoctorProfile = () => {
           </div>
 
           <div className="rounded-2xl border border-border bg-primary-soft p-5">
-            <h3 className="font-display text-base font-semibold">Need an Appointment?</h3>
-            <p className="mt-2 text-sm text-muted-foreground">Book through DesolMed for verified scheduling and follow-up care.</p>
-            <Button variant="hero" className="w-full mt-4">Book Consultation</Button>
+            <h3 className="font-display text-base font-semibold">Schedule an Appointment</h3>
+            <p className="mt-2 text-sm text-muted-foreground">Book a consultation with {doctor.name} on their booking page.</p>
+            <Button variant="hero" className="w-full mt-4" asChild>
+              <Link to={`/medicare/${doctor.id}`}>
+                <Globe className="h-4 w-4 mr-2" /> Visit Website
+              </Link>
+            </Button>
           </div>
         </aside>
       </section>
+
+
 
       {/* Related */}
       {related.length > 0 && (

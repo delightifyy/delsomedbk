@@ -13,6 +13,33 @@ export type DoctorEntry = {
 
 export type HowItWorksStep = { id: string; title: string; body: string };
 
+const makeDoctorPortrait = (name: string, accent: string, fill: string) => {
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || "DR";
+
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Portrait of ${name}">
+      <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="${fill}" />
+          <stop offset="100%" stop-color="${accent}" />
+        </linearGradient>
+      </defs>
+      <rect width="512" height="512" rx="72" fill="url(#bg)" />
+      <circle cx="256" cy="188" r="92" fill="rgba(255,255,255,0.84)" />
+      <path d="M120 416c18-74 72-112 136-112s118 38 136 112" fill="rgba(255,255,255,0.84)" />
+      <rect x="172" y="282" width="168" height="18" rx="9" fill="rgba(255,255,255,0.55)" />
+      <rect x="198" y="316" width="116" height="18" rx="9" fill="rgba(255,255,255,0.38)" />
+      <text x="50%" y="270" text-anchor="middle" font-family="Arial, sans-serif" font-size="76" font-weight="700" fill="${accent}">${initials}</text>
+    </svg>`;
+
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+};
+
 export type MediCareSettings = {
   siteName: string;
   logoDataUrl: string | null;
@@ -86,10 +113,24 @@ export const defaultSettings: MediCareSettings = {
   doctors: [
     {
       id: "d-1",
+      name: "Dr. Amina Yusuf",
+      specialty: "Family Medicine",
+      bio: "Warm, practical primary care for adults and children.",
+      photoDataUrl: makeDoctorPortrait("Dr. Amina Yusuf", "#22c55e", "#0f766e"),
+    },
+    {
+      id: "d-2",
       name: "Dr. Tunde Akinwale",
-      specialty: "General Practice",
-      bio: "Experienced GP offering teleconsultations.",
-      photoDataUrl: null,
+      specialty: "Internal Medicine",
+      bio: "Experienced GP offering teleconsultations and follow-up care.",
+      photoDataUrl: makeDoctorPortrait("Dr. Tunde Akinwale", "#38bdf8", "#2563eb"),
+    },
+    {
+      id: "d-3",
+      name: "Dr. Zainab Bello",
+      specialty: "Pediatrics",
+      bio: "Calm, reassuring pediatric care for growing families.",
+      photoDataUrl: makeDoctorPortrait("Dr. Zainab Bello", "#f59e0b", "#db2777"),
     },
   ],
   howItWorks: [

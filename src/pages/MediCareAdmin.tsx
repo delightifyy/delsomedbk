@@ -133,6 +133,14 @@ const MediCareAdmin = () => {
     reader.readAsDataURL(file);
   };
 
+  const onDoctorPhoto = (file?: File | null) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () =>
+      setNewDoctor((prev) => ({ ...prev, photoDataUrl: reader.result as string }));
+    reader.readAsDataURL(file);
+  };
+
   const onSave = () => {
     saveSettings(s);
     setSaved(true);
@@ -504,6 +512,8 @@ const MediCareAdmin = () => {
                 doctors={s.doctors}
                 newDoctor={newDoctor}
                 setNewDoctor={setNewDoctor}
+                onDoctorPhoto={onDoctorPhoto}
+                clearDoctorPhoto={() => setNewDoctor((prev) => ({ ...prev, photoDataUrl: null }))}
                 addOrUpdateDoctor={addOrUpdateDoctor}
                 deleteDoctor={deleteDoctor}
                 editingDoctor={editingDoctor}
@@ -1001,6 +1011,8 @@ const DoctorsSection = ({
   doctors,
   newDoctor,
   setNewDoctor,
+  onDoctorPhoto,
+  clearDoctorPhoto,
   addOrUpdateDoctor,
   deleteDoctor,
   editingDoctor,
@@ -1009,6 +1021,8 @@ const DoctorsSection = ({
   doctors: DoctorEntry[];
   newDoctor: Partial<DoctorEntry>;
   setNewDoctor: (d: Partial<DoctorEntry>) => void;
+  onDoctorPhoto: (file?: File | null) => void;
+  clearDoctorPhoto: () => void;
   addOrUpdateDoctor: () => void;
   deleteDoctor: (id: string) => void;
   editingDoctor: string | null;
@@ -1043,6 +1057,36 @@ const DoctorsSection = ({
             placeholder="Short bio"
           />
         </Field>
+        <Field label="Photo">
+          <div className="space-y-3">
+            {newDoctor.photoDataUrl ? (
+              <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <img
+                  src={newDoctor.photoDataUrl}
+                  alt="Doctor preview"
+                  className="h-16 w-16 rounded-full object-cover border border-white shadow-sm"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-slate-900">Photo preview</p>
+                  <p className="text-xs text-slate-500">Shown on the public doctor cards.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={clearDoctorPhoto}
+                  className={`${btnSmall} text-rose-600 hover:bg-rose-50`}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : null}
+            <input
+              type="file"
+              accept="image/*"
+              className={inputCls}
+              onChange={(e) => onDoctorPhoto(e.target.files?.[0])}
+            />
+          </div>
+        </Field>
         <button onClick={addOrUpdateDoctor} className={btnPrimary}>
           <Plus className="h-4 w-4" />
           {editingDoctor ? "Update Doctor" : "Add Doctor"}
@@ -1054,10 +1098,28 @@ const DoctorsSection = ({
       {doctors.map((doc) => (
         <div key={doc.id} className="bg-white rounded-lg border border-slate-200 p-4">
           <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-slate-900">{doc.name}</p>
-              <p className="text-sm text-slate-600">{doc.specialty}</p>
-              <p className="text-xs text-slate-500 mt-2">{doc.bio}</p>
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              {doc.photoDataUrl ? (
+                <img
+                  src={doc.photoDataUrl}
+                  alt={`Portrait of ${doc.name}`}
+                  className="h-14 w-14 rounded-full object-cover border border-slate-200 flex-shrink-0"
+                />
+              ) : (
+                <div className="h-14 w-14 rounded-full bg-slate-100 text-slate-500 grid place-items-center text-sm font-semibold flex-shrink-0">
+                  {doc.name
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((part) => part[0]?.toUpperCase() ?? "")
+                    .join("") || "DR"}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-slate-900">{doc.name}</p>
+                <p className="text-sm text-slate-600">{doc.specialty}</p>
+                <p className="text-xs text-slate-500 mt-2">{doc.bio}</p>
+              </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <button

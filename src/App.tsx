@@ -16,6 +16,7 @@ import HealthNewsArticle from "./pages/HealthNewsArticle.tsx";
 import AdvertArticle from "./pages/AdvertArticle.tsx";
 import DoctorPortal from "./pages/MediCare.tsx";
 import MediCareAdmin from "./pages/MediCareAdmin.tsx";
+import DoctorMediCare from "./pages/DoctorMediCare.tsx";
 import RegisterPatient from "./pages/RegisterPatient.tsx";
 import Register from "./pages/Register.tsx";
 import { Navigate } from "react-router-dom";
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/cookies" element={<CookiePolicy />} />
             <Route path="/doctors" element={<Doctors />} />
             <Route path="/doctors/:id" element={<DoctorProfile />} />
+            <Route path="/medicare/:doctorId" element={<DoctorMediCare />} />
             <Route path="/adverts" element={<Adverts />} />
             <Route path="/health-news" element={<HealthNews />} />
             <Route path="/health-news/:slug" element={<HealthNewsArticle />} />
