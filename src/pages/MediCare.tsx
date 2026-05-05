@@ -347,15 +347,30 @@ const MediCare = () => {
 
           {/* Trust strip */}
           <div className="mt-14 text-center text-sm text-[hsl(var(--mc-muted))]">
-            Trusted by patients in
-            <span className="block sm:inline mt-2 sm:mt-0 sm:ml-2">
-              <span className="inline-flex items-center gap-1 mx-1.5"><span className="text-base">🇺🇸</span> United States</span>
-              <span className="inline-flex items-center gap-1 mx-1.5"><span className="text-base">🇬🇧</span> United Kingdom</span>
-              <span className="inline-flex items-center gap-1 mx-1.5"><span className="text-base">🇨🇦</span> Canada</span>
-              <span className="inline-flex items-center gap-1 mx-1.5"><span className="text-base">🇦🇺</span> Australia</span>
-              <span className="inline-flex items-center gap-1 mx-1.5"><span className="text-base">🇩🇪</span> Germany</span>
-              <span className="inline-flex items-center gap-1 mx-1.5"><span className="text-base">🇳🇬</span> Nigeria</span>
-            </span>
+            <div className="mb-3">Trusted by patients in</div>
+            <div className="flex flex-wrap justify-center items-center gap-x-5 gap-y-2">
+              {[
+                { code: "us", name: "United States" },
+                { code: "gb", name: "United Kingdom" },
+                { code: "ca", name: "Canada" },
+                { code: "au", name: "Australia" },
+                { code: "de", name: "Germany" },
+                { code: "ng", name: "Nigeria" },
+              ].map((c) => (
+                <span key={c.code} className="inline-flex items-center gap-2">
+                  <img
+                    src={`https://flagcdn.com/24x18/${c.code}.png`}
+                    srcSet={`https://flagcdn.com/48x36/${c.code}.png 2x`}
+                    width={24}
+                    height={18}
+                    alt={`${c.name} flag`}
+                    loading="lazy"
+                    className="rounded-sm shadow-sm"
+                  />
+                  <span>{c.name}</span>
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </section>
