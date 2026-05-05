@@ -185,12 +185,6 @@ const MediCare = () => {
             ))}
           </ul>
 
-          <div className="hidden md:block">
-            <a href="#cta" className="inline-flex items-center gap-2 rounded-full mc-grad-primary text-white px-5 py-2.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
-              Book now <ArrowRight className="h-4 w-4" />
-            </a>
-          </div>
-
           <button
             type="button"
             aria-label={open ? "Close menu" : "Open menu"}
