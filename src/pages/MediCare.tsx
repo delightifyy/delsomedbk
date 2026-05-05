@@ -176,7 +176,7 @@ const MediCare = () => {
   }, []);
 
   return (
-    <div className="medicare-root min-h-screen relative overflow-x-hidden">
+    <div className="medicare-root min-h-screen relative overflow-x-hidden" style={themeStyle}>
       <style>{tokenStyles}</style>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
@@ -186,10 +186,14 @@ const MediCare = () => {
       <header className="fixed top-3 sm:top-5 inset-x-0 z-50 px-3 sm:px-6">
         <nav className="mx-auto max-w-6xl mc-glass mc-shadow-card rounded-full px-4 sm:px-6 py-3 flex items-center justify-between">
           <a href="#top" className="flex items-center gap-2.5">
-            <span className="grid place-items-center h-9 w-9 rounded-xl mc-grad-primary mc-shadow-glow">
-              <Stethoscope className="h-5 w-5 text-white" />
+            <span className="grid place-items-center h-9 w-9 rounded-xl mc-grad-primary mc-shadow-glow overflow-hidden">
+              {settings.logoDataUrl ? (
+                <img src={settings.logoDataUrl} alt={`${settings.siteName} logo`} className="h-full w-full object-cover" />
+              ) : (
+                <Stethoscope className="h-5 w-5 text-white" />
+              )}
             </span>
-            <span className="font-display font-bold text-lg tracking-tight">MediCare</span>
+            <span className="font-display font-bold text-lg tracking-tight">{settings.siteName}</span>
           </a>
 
           <ul className="hidden md:flex items-center gap-7 text-sm font-medium">
