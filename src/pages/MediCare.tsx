@@ -139,9 +139,21 @@ const reviews = [
 /* ---------- Page ---------- */
 const MediCare = () => {
   const [open, setOpen] = useState(false);
+  const settings = useMediCareSettings();
+
+  const themeStyle = useMemo(
+    () =>
+      ({
+        ["--mc-primary" as any]: hexToHslString(settings.primaryColor),
+        ["--mc-primary-glow" as any]: hexToHslString(settings.primaryColor),
+        ["--mc-accent" as any]: hexToHslString(settings.accentColor),
+        ["--mc-accent-glow" as any]: hexToHslString(settings.accentColor),
+      }) as React.CSSProperties,
+    [settings.primaryColor, settings.accentColor],
+  );
 
   useEffect(() => {
-    document.title = "MediCare — See a Doctor Anytime, Anywhere";
+    document.title = `${settings.siteName} — See a Doctor Anytime, Anywhere`;
     const meta = document.querySelector('meta[name="description"]') || (() => {
       const m = document.createElement("meta"); m.setAttribute("name", "description"); document.head.appendChild(m); return m;
     })();
