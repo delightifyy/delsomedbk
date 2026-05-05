@@ -1,5 +1,18 @@
 import { useEffect, useState } from "react";
 
+export type Faq = { id: string; q: string; a: string };
+export type Testimonial = { id: string; quote: string; name: string; role: string };
+export type Partner = { id: string; name: string };
+export type DoctorEntry = {
+  id: string;
+  name: string;
+  specialty?: string;
+  bio?: string;
+  photoDataUrl?: string | null;
+};
+
+export type HowItWorksStep = { id: string; title: string; body: string };
+
 export type MediCareSettings = {
   siteName: string;
   logoDataUrl: string | null;
@@ -22,6 +35,11 @@ export type MediCareSettings = {
     address: string;
   };
   footerTagline: string;
+  faqs: Faq[];
+  testimonials: Testimonial[];
+  partners: Partner[];
+  doctors: DoctorEntry[];
+  howItWorks: HowItWorksStep[];
 };
 
 const KEY = "medicare:settings:v1";
@@ -49,6 +67,36 @@ export const defaultSettings: MediCareSettings = {
     address: "Available worldwide",
   },
   footerTagline: "Modern telemedicine for everyday people. Trusted, secure, available 24/7.",
+  faqs: [
+    {
+      id: "faq-1",
+      q: "What is MediCare?",
+      a: "MediCare is a modern telemedicine platform connecting patients with licensed doctors for fast, secure and affordable virtual care.",
+    },
+  ],
+  testimonials: [
+    {
+      id: "t-1",
+      quote: "MediCare makes it easy to connect with verified healthcare professionals.",
+      name: "John Doe",
+      role: "Patient · Lagos",
+    },
+  ],
+  partners: [{ id: "p-1", name: "Hallmark" }],
+  doctors: [
+    {
+      id: "d-1",
+      name: "Dr. Tunde Akinwale",
+      specialty: "General Practice",
+      bio: "Experienced GP offering teleconsultations.",
+      photoDataUrl: null,
+    },
+  ],
+  howItWorks: [
+    { id: "h-1", title: "Find a Doctor", body: "Search and filter by specialty and location." },
+    { id: "h-2", title: "Book a Consultation", body: "Choose a time and connect via video or chat." },
+    { id: "h-3", title: "Receive Care", body: "Get prescriptions, advice, and follow-ups." },
+  ],
 };
 
 export function loadSettings(): MediCareSettings {

@@ -6,11 +6,15 @@ import {
   Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, ArrowRight, DollarSign,
   Globe, Zap, Lock, Settings,
 } from "lucide-react";
-import { hexToHslString, useMediCareSettings } from "@/lib/medicareSettings";
+import {
+  hexToHslString,
+  useMediCareSettings,
+  type DoctorEntry,
+  type HowItWorksStep,
+  type Testimonial,
+  type Partner,
+} from "@/lib/medicareSettings";
 import heroImg from "@/assets/medicare-hero-illu.jpg";
-import doc1 from "@/assets/medicare-doc1.jpg";
-import doc2 from "@/assets/medicare-doc2.jpg";
-import doc3 from "@/assets/medicare-doc3.jpg";
 
 /* ---------- Local design tokens (scoped to this page) ---------- */
 const tokenStyles = `
@@ -124,22 +128,47 @@ const stats = [
   { value: "<30 min", label: "Avg. Wait Time" },
 ];
 
-const doctors = [
-  { img: doc1, name: "Dr. James Reyes",  specialty: "Internal Medicine", rating: 4.8 },
-  { img: doc2, name: "Dr. Sarah Chen",   specialty: "Family Medicine",   rating: 4.9 },
-  { img: doc3, name: "Dr. Mei Tanaka",   specialty: "Pediatrics",        rating: 5.0 },
+const defaultSteps: Array<HowItWorksStep & { n: string; icon: typeof CalendarCheck }> = [
+  { n: "01", icon: CalendarCheck, id: "step-1", title: "Book Appointment", body: "Choose your doctor and a time that fits your schedule. Same-day slots available." },
+  { n: "02", icon: Video, id: "step-2", title: "Virtual Consultation", body: "Connect via secure video or chat. Discuss your symptoms with a licensed physician." },
+  { n: "03", icon: FileText, id: "step-3", title: "Get Treatment", body: "Receive a prescription, expert advice, or a referral — sent directly to your phone." },
 ];
 
-const reviews = [
-  { initials: "ET", name: "Emma Thompson",     loc: "Patient · Seattle, WA", quote: "I got connected with a doctor in 10 minutes from my couch. Got my prescription sent to the pharmacy down the street. Unreal." },
-  { initials: "MR", name: "Michael Rodriguez", loc: "Patient · Austin, TX",  quote: "As a busy parent, being able to consult a pediatrician at 11pm without leaving the house has been a complete game changer for our family." },
-  { initials: "PS", name: "Priya Sharma",      loc: "Patient · Boston, MA",  quote: "The doctors actually listen. The video quality is great, and the follow-up was seamless. I won't go back to the old way." },
+const defaultDoctors: Array<DoctorEntry & { imageLabel: string }> = [
+  { id: "doc-1", name: "Dr. James Reyes", specialty: "Internal Medicine", bio: "Experienced in general internal medicine and preventive care.", photoDataUrl: null, imageLabel: "JR" },
+  { id: "doc-2", name: "Dr. Sarah Chen", specialty: "Family Medicine", bio: "Compassionate family doctor focused on accessible primary care.", photoDataUrl: null, imageLabel: "SC" },
+  { id: "doc-3", name: "Dr. Mei Tanaka", specialty: "Pediatrics", bio: "Pediatric care with a calm, reassuring approach for families.", photoDataUrl: null, imageLabel: "MT" },
 ];
+
+const defaultTestimonials: Array<Testimonial & { initials: string; loc: string }> = [
+  { id: "t-1", quote: "I got connected with a doctor in 10 minutes from my couch. Got my prescription sent to the pharmacy down the street. Unreal.", name: "Emma Thompson", role: "Patient · Seattle, WA", initials: "ET", loc: "Patient · Seattle, WA" },
+  { id: "t-2", quote: "As a busy parent, being able to consult a pediatrician at 11pm without leaving the house has been a complete game changer for our family.", name: "Michael Rodriguez", role: "Patient · Austin, TX", initials: "MR", loc: "Patient · Austin, TX" },
+  { id: "t-3", quote: "The doctors actually listen. The video quality is great, and the follow-up was seamless. I won't go back to the old way.", name: "Priya Sharma", role: "Patient · Boston, MA", initials: "PS", loc: "Patient · Boston, MA" },
+];
+
+const defaultPartners: Partner[] = [
+  { id: "p-1", name: "Hallmark" },
+  { id: "p-2", name: "Hygeia" },
+  { id: "p-3", name: "Bastion" },
+  { id: "p-4", name: "Ilera Eko" },
+];
+
+const getInitials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || "DR";
 
 /* ---------- Page ---------- */
 const MediCare = () => {
   const [open, setOpen] = useState(false);
   const settings = useMediCareSettings();
+  const howItWorks = settings.howItWorks.length > 0 ? settings.howItWorks : defaultSteps;
+  const doctors = settings.doctors.length > 0 ? settings.doctors : defaultDoctors;
+  const testimonials = settings.testimonials.length > 0 ? settings.testimonials : defaultTestimonials;
+  const partners = settings.partners.length > 0 ? settings.partners : defaultPartners;
 
   const themeStyle = useMemo(
     () =>
@@ -404,16 +433,16 @@ const MediCare = () => {
 
           <div className="relative mt-14 grid md:grid-cols-3 gap-6">
             <div className="hidden md:block absolute top-12 left-[16%] right-[16%] h-px bg-gradient-to-r from-transparent via-[hsl(var(--mc-primary))/0.4] to-transparent" />
-            {steps.map((s, i) => (
-              <div key={s.n} className="relative mc-glass mc-shadow-card rounded-3xl p-7 mc-anim-fade-up" style={{ animationDelay: `${i * 0.1}s` }}>
+            {howItWorks.map((step, i) => (
+              <div key={step.id} className="relative mc-glass mc-shadow-card rounded-3xl p-7 mc-anim-fade-up" style={{ animationDelay: `${i * 0.1}s` }}>
                 <div className="flex items-center justify-between">
                   <span className="grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow">
-                    <s.icon className="h-5 w-5" />
+                    <CalendarCheck className="h-5 w-5" />
                   </span>
-                  <span className="font-display text-4xl font-bold mc-grad-text">{s.n}</span>
+                  <span className="font-display text-4xl font-bold mc-grad-text">{String(i + 1).padStart(2, "0")}</span>
                 </div>
-                <h3 className="mt-5 font-display text-xl font-bold">{s.title}</h3>
-                <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">{s.desc}</p>
+                <h3 className="mt-5 font-display text-xl font-bold">{step.title}</h3>
+                <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">{step.body}</p>
               </div>
             ))}
           </div>
@@ -474,6 +503,28 @@ const MediCare = () => {
         </div>
       </section>
 
+      {/* PARTNERS */}
+      <section className="py-8 sm:py-12">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="rounded-3xl border border-[hsl(var(--mc-border))] bg-[hsl(var(--mc-card))] p-6 sm:p-8 mc-shadow-card">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Partners</p>
+                <h2 className="mt-2 font-display text-2xl sm:text-3xl font-bold">Organizations that support the network</h2>
+              </div>
+              <p className="text-sm text-[hsl(var(--mc-muted))] max-w-xl">These names are editable from the admin panel, so the public page reflects the same partnership list without a backend.</p>
+            </div>
+            <div className="mt-6 flex flex-wrap gap-3">
+              {partners.map((partner) => (
+                <span key={partner.id} className="inline-flex items-center rounded-full border border-[hsl(var(--mc-border))] bg-[hsl(var(--mc-muted-soft))] px-4 py-2 text-sm font-medium text-[hsl(var(--mc-fg))]">
+                  {partner.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* DOCTORS */}
       <section id="doctors" className="py-20 sm:py-28 bg-[hsl(var(--mc-muted-soft))]">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -483,10 +534,18 @@ const MediCare = () => {
           </div>
 
           <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {doctors.map((d) => (
-              <article key={d.name} className="bg-[hsl(var(--mc-card))] rounded-3xl border border-[hsl(var(--mc-border))] mc-shadow-card overflow-hidden hover:-translate-y-1 hover:mc-shadow-elegant transition-all duration-300">
+            {doctors.map((doctor) => (
+              <article key={doctor.id} className="bg-[hsl(var(--mc-card))] rounded-3xl border border-[hsl(var(--mc-border))] mc-shadow-card overflow-hidden hover:-translate-y-1 hover:mc-shadow-elegant transition-all duration-300">
                 <div className="relative aspect-[4/3] overflow-hidden bg-[hsl(var(--mc-muted-soft))]">
-                  <img src={d.img} alt={`Portrait of ${d.name}`} loading="lazy" width={512} height={512} className="w-full h-full object-cover" />
+                  {doctor.photoDataUrl ? (
+                    <img src={doctor.photoDataUrl} alt={`Portrait of ${doctor.name}`} loading="lazy" width={512} height={512} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="h-full w-full grid place-items-center bg-gradient-to-br from-[hsl(var(--mc-primary))/0.14] via-white to-[hsl(var(--mc-accent))/0.14]">
+                      <div className="grid place-items-center h-28 w-28 rounded-full bg-white/90 text-[hsl(var(--mc-primary))] shadow-lg">
+                        <span className="font-display text-3xl font-bold">{getInitials(doctor.name)}</span>
+                      </div>
+                    </div>
+                  )}
                   <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-white/90 backdrop-blur px-2.5 py-1 text-[11px] font-semibold">
                     <span className="h-2 w-2 rounded-full bg-[hsl(var(--mc-accent))] mc-anim-pulse-dot" />
                     Available Now
@@ -495,14 +554,11 @@ const MediCare = () => {
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h3 className="font-display text-lg font-bold">{d.name}</h3>
-                      <p className="text-sm text-[hsl(var(--mc-muted))]">{d.specialty}</p>
+                      <h3 className="font-display text-lg font-bold">{doctor.name}</h3>
+                      <p className="text-sm text-[hsl(var(--mc-muted))]">{doctor.specialty || "General Practice"}</p>
                     </div>
-                    <span className="inline-flex items-center gap-1 text-sm font-semibold whitespace-nowrap">
-                      <Star className="h-4 w-4 fill-[hsl(45_100%_55%)] text-[hsl(45_100%_55%)]" />
-                      {d.rating.toFixed(1)}
-                    </span>
                   </div>
+                  {doctor.bio && <p className="mt-3 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">{doctor.bio}</p>}
                   <button className="mt-4 w-full rounded-full mc-grad-primary text-white py-2.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
                     Book consultation
                   </button>
@@ -522,21 +578,21 @@ const MediCare = () => {
           </div>
 
           <div className="mt-12 grid md:grid-cols-3 gap-5">
-            {reviews.map((r) => (
-              <figure key={r.name} className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card">
+            {testimonials.map((testimonial) => (
+              <figure key={testimonial.id} className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card">
                 <div className="flex items-center gap-1 text-[hsl(45_100%_55%)]">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star key={i} className="h-4 w-4 fill-current" />
                   ))}
                 </div>
-                <blockquote className="mt-4 text-sm leading-relaxed">"{r.quote}"</blockquote>
+                <blockquote className="mt-4 text-sm leading-relaxed">"{testimonial.quote}"</blockquote>
                 <figcaption className="mt-5 flex items-center gap-3">
                   <span className="grid place-items-center h-10 w-10 rounded-full mc-grad-primary text-white text-sm font-bold">
-                    {r.initials}
+                    {getInitials(testimonial.name)}
                   </span>
                   <div>
-                    <p className="text-sm font-semibold">{r.name}</p>
-                    <p className="text-xs text-[hsl(var(--mc-muted))]">{r.loc}</p>
+                    <p className="text-sm font-semibold">{testimonial.name}</p>
+                    <p className="text-xs text-[hsl(var(--mc-muted))]">{testimonial.role}</p>
                   </div>
                 </figcaption>
               </figure>
