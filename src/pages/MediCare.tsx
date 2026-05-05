@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Stethoscope, Menu, X, Star, Video, ShieldCheck, Clock, CalendarCheck,
   Brain, Baby, Sparkles, HeartPulse, Pill, FileText, Headphones, FlaskConical,
-  Mail, Phone, Facebook, Twitter, Instagram, Linkedin, ArrowRight, DollarSign,
-  Globe, Zap, Lock,
+  Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, ArrowRight, DollarSign,
+  Globe, Zap, Lock, Settings,
 } from "lucide-react";
+import { hexToHslString, useMediCareSettings } from "@/lib/medicareSettings";
 import heroImg from "@/assets/medicare-hero-illu.jpg";
 import doc1 from "@/assets/medicare-doc1.jpg";
 import doc2 from "@/assets/medicare-doc2.jpg";
