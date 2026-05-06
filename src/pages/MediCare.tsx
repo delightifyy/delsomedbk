@@ -3,46 +3,46 @@ import { Link } from "react-router-dom";
 import {
   Stethoscope, Menu, X, Star, Video, ShieldCheck, Clock, CalendarCheck,
   Brain, Baby, Sparkles, HeartPulse, Pill, FileText, Headphones, FlaskConical,
-  Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, ArrowRight, DollarSign,
-  Globe, Zap, Lock, Settings,
+  Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, ArrowRight,
+  Search, ChevronDown, Settings, Bone, Eye, Activity, Microscope, Syringe,
+  Ambulance, MessageSquare, BellRing, Bot, Smartphone, Apple, Play, Quote,
+  CheckCircle2, Award, Globe2, Languages, Building2, MonitorSmartphone,
 } from "lucide-react";
 import {
   hexToHslString,
-  defaultSettings,
   useMediCareSettings,
-  type HowItWorksStep,
-  type Testimonial,
-  type Partner,
 } from "@/lib/medicareSettings";
-import heroImg from "@/assets/medicare-hero-illu.jpg";
 
-/* ---------- Local design tokens (scoped to this page) ---------- */
+/* ---------- Scoped design tokens & styles ---------- */
 const tokenStyles = `
 .medicare-root {
-  --mc-bg: 220 30% 99%;
-  --mc-fg: 230 40% 10%;
-  --mc-muted: 230 15% 45%;
-  --mc-muted-soft: 230 20% 96%;
-  --mc-border: 230 25% 92%;
+  --mc-bg: 210 40% 99%;
+  --mc-fg: 222 47% 11%;
+  --mc-muted: 215 16% 47%;
+  --mc-muted-soft: 210 30% 96%;
+  --mc-border: 215 25% 91%;
   --mc-card: 0 0% 100%;
-  --mc-primary: 210 90% 50%;
-  --mc-primary-glow: 188 90% 55%;
+  --mc-primary: 212 88% 32%;        /* deep healthcare blue */
+  --mc-primary-glow: 200 95% 48%;
   --mc-primary-fg: 0 0% 100%;
-  --mc-accent: 160 65% 45%;
-  --mc-accent-glow: 160 70% 60%;
-  --mc-radius: 1rem;
+  --mc-accent: 174 72% 42%;         /* teal */
+  --mc-accent-glow: 174 80% 55%;
+  --mc-violet: 252 70% 60%;
+  --mc-dark: 222 47% 9%;
+  --mc-radius: 1.25rem;
 
-  --mc-grad-primary: linear-gradient(135deg, hsl(var(--mc-primary)), hsl(var(--mc-primary-glow)));
-  --mc-grad-text: linear-gradient(120deg, hsl(var(--mc-primary)) 0%, hsl(var(--mc-primary-glow)) 50%, hsl(var(--mc-accent)) 100%);
-  --mc-grad-hero: linear-gradient(160deg, hsl(210 100% 97%) 0%, hsl(195 80% 96%) 40%, hsl(160 60% 96%) 100%);
+  --mc-grad-primary: linear-gradient(135deg, hsl(var(--mc-primary)) 0%, hsl(var(--mc-primary-glow)) 60%, hsl(var(--mc-accent)) 100%);
+  --mc-grad-text: linear-gradient(120deg, hsl(var(--mc-primary)) 0%, hsl(var(--mc-accent)) 100%);
+  --mc-grad-soft: linear-gradient(180deg, hsl(210 100% 98%) 0%, hsl(174 50% 97%) 100%);
   --mc-grad-mesh:
-     radial-gradient(at 20% 20%, hsl(var(--mc-primary)/.15) 0px, transparent 45%),
-     radial-gradient(at 85% 30%, hsl(var(--mc-accent)/.13) 0px, transparent 45%),
-     radial-gradient(at 50% 90%, hsl(var(--mc-primary-glow)/.15) 0px, transparent 50%);
-  --mc-grad-accent: linear-gradient(135deg, hsl(var(--mc-accent)), hsl(var(--mc-accent-glow)));
+     radial-gradient(at 18% 22%, hsl(var(--mc-primary)/.18) 0px, transparent 45%),
+     radial-gradient(at 82% 28%, hsl(var(--mc-accent)/.16) 0px, transparent 45%),
+     radial-gradient(at 50% 92%, hsl(var(--mc-violet)/.12) 0px, transparent 50%);
+  --mc-grad-dark: linear-gradient(160deg, hsl(222 47% 9%) 0%, hsl(220 47% 14%) 60%, hsl(212 60% 18%) 100%);
+  --mc-grad-cta-overlay: linear-gradient(120deg, hsl(212 88% 14% / .85) 0%, hsl(174 70% 18% / .55) 100%);
 
-  --mc-shadow-card: 0 4px 20px -8px hsl(var(--mc-primary)/.18);
-  --mc-shadow-elegant: 0 30px 60px -30px hsl(var(--mc-primary)/.35);
+  --mc-shadow-card: 0 6px 24px -10px hsl(var(--mc-primary)/.18);
+  --mc-shadow-elegant: 0 30px 60px -28px hsl(var(--mc-primary)/.4);
   --mc-shadow-glow: 0 0 40px -8px hsl(var(--mc-primary-glow)/.55);
 
   background: hsl(var(--mc-bg));
@@ -54,9 +54,9 @@ const tokenStyles = `
   letter-spacing: -0.02em;
 }
 .mc-grad-primary { background: var(--mc-grad-primary); }
-.mc-grad-hero    { background: var(--mc-grad-hero); }
+.mc-grad-soft    { background: var(--mc-grad-soft); }
 .mc-grad-mesh    { background: var(--mc-grad-mesh); }
-.mc-grad-accent  { background: var(--mc-grad-accent); }
+.mc-grad-dark    { background: var(--mc-grad-dark); }
 .mc-grad-text    {
   background: var(--mc-grad-text);
   -webkit-background-clip: text;
@@ -67,134 +67,215 @@ const tokenStyles = `
 .mc-shadow-elegant { box-shadow: var(--mc-shadow-elegant); }
 .mc-shadow-glow    { box-shadow: var(--mc-shadow-glow); }
 .mc-glass {
-  background: hsl(0 0% 100% / .7);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid hsl(0 0% 100% / .7);
+  background: hsl(0 0% 100% / .72);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid hsl(0 0% 100% / .55);
+}
+.mc-glass-dark {
+  background: hsl(222 47% 10% / .55);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid hsl(0 0% 100% / .12);
 }
 .mc-grid-pattern {
   background-image:
-    linear-gradient(hsl(var(--mc-fg)/.04) 1px, transparent 1px),
-    linear-gradient(90deg, hsl(var(--mc-fg)/.04) 1px, transparent 1px);
+    linear-gradient(hsl(var(--mc-fg)/.05) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--mc-fg)/.05) 1px, transparent 1px);
   background-size: 36px 36px;
   mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 50%, transparent 100%);
 }
-@keyframes mc-fade-up { from { opacity:0; transform:translateY(16px);} to {opacity:1; transform:none;} }
-@keyframes mc-float    { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
-@keyframes mc-pulse-glow { 0%,100%{box-shadow:0 0 0 0 hsl(var(--mc-accent)/.55);} 50%{box-shadow:0 0 0 14px hsl(var(--mc-accent)/0);} }
+.mc-noise::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .04;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.6'/></svg>");
+}
+@keyframes mc-fade-up { from { opacity:0; transform:translateY(20px);} to {opacity:1; transform:none;} }
+@keyframes mc-float    { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-12px);} }
+@keyframes mc-pulse-glow { 0%,100%{box-shadow:0 0 0 0 hsl(var(--mc-accent)/.5);} 50%{box-shadow:0 0 0 16px hsl(var(--mc-accent)/0);} }
 @keyframes mc-pulse-dot  { 0%,100%{opacity:1;} 50%{opacity:.4;} }
-.mc-anim-fade-up   { animation: mc-fade-up .7s cubic-bezier(.4,0,.2,1) both; }
+@keyframes mc-marquee    { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes mc-shine      { from { transform: translateX(-120%); } to { transform: translateX(220%); } }
+.mc-anim-fade-up   { animation: mc-fade-up .8s cubic-bezier(.4,0,.2,1) both; }
 .mc-anim-float     { animation: mc-float 6s ease-in-out infinite; }
-.mc-anim-pulse-glow{ animation: mc-pulse-glow 2s ease-out infinite; }
+.mc-anim-pulse-glow{ animation: mc-pulse-glow 2.2s ease-out infinite; }
 .mc-anim-pulse-dot { animation: mc-pulse-dot 1.6s ease-in-out infinite; }
+.mc-marquee        { animation: mc-marquee 28s linear infinite; }
+.mc-shine::before  {
+  content:""; position:absolute; inset:0; background: linear-gradient(110deg, transparent 30%, hsl(0 0% 100% / .35) 50%, transparent 70%);
+  transform: translateX(-120%); animation: mc-shine 4s ease-in-out infinite;
+}
+.mc-card-hover { transition: transform .35s cubic-bezier(.4,0,.2,1), box-shadow .35s ease; }
+.mc-card-hover:hover { transform: translateY(-6px); box-shadow: var(--mc-shadow-elegant); }
 `;
 
 /* ---------- Data ---------- */
+const HERO_VIDEO = "https://videos.pexels.com/video-files/4124426/4124426-uhd_2560_1440_25fps.mp4";
+const CTA_VIDEO  = "https://videos.pexels.com/video-files/7088526/7088526-uhd_2560_1440_25fps.mp4";
+
 const navLinks = [
-  { href: "#how", label: "How it works" },
+  { href: "#top", label: "Home" },
+  { href: "#doctors", label: "Find Doctor" },
+  { href: "#specialties", label: "Specialties", hasMenu: true },
   { href: "#services", label: "Services" },
+  { href: "#telemedicine", label: "Telemedicine" },
   { href: "#about", label: "About" },
   { href: "#contact", label: "Contact" },
 ];
 
-const steps = [
-  { n: "01", icon: CalendarCheck, title: "Prepare your practice", desc: "Set up the owner profile, brand details, and consultation flow in one place." },
-  { n: "02", icon: Video, title: "Meet patients securely", desc: "Use a simple video or chat workflow that works for one owner-led clinic." },
-  { n: "03", icon: FileText, title: "Follow up fast", desc: "Save notes, share instructions, and keep care moving without extra clutter." },
+const quickAccess = [
+  { icon: Ambulance,  title: "Emergency Care",     desc: "24/7 immediate medical support",      tone: "from-rose-500 to-orange-500" },
+  { icon: Search,     title: "Find a Doctor",      desc: "Search verified specialists",         tone: "from-sky-500 to-cyan-500" },
+  { icon: CalendarCheck, title: "Book Consultation", desc: "Same-day virtual appointments",     tone: "from-teal-500 to-emerald-500" },
+  { icon: FlaskConical, title: "Laboratory Tests", desc: "Order labs & get results online",     tone: "from-violet-500 to-indigo-500" },
+  { icon: FileText,   title: "Medical Records",    desc: "Access your secure health history",   tone: "from-blue-600 to-blue-400" },
+  { icon: Pill,       title: "Online Pharmacy",    desc: "Prescriptions delivered to you",      tone: "from-amber-500 to-pink-500" },
+];
+
+const specialties = [
+  { icon: HeartPulse, name: "Cardiology",        img: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&auto=format&fit=crop&q=80" },
+  { icon: Brain,      name: "Neurology",         img: "https://images.unsplash.com/photo-1559757175-5700dde675bc?w=800&auto=format&fit=crop&q=80" },
+  { icon: Bone,       name: "Orthopedics",       img: "https://images.unsplash.com/photo-1530497610245-94d3c16cda28?w=800&auto=format&fit=crop&q=80" },
+  { icon: Baby,       name: "Pediatrics",        img: "https://images.unsplash.com/photo-1581056771107-24ca5f033842?w=800&auto=format&fit=crop&q=80" },
+  { icon: Sparkles,   name: "Dermatology",       img: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=800&auto=format&fit=crop&q=80" },
+  { icon: Microscope, name: "Oncology",          img: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=800&auto=format&fit=crop&q=80" },
+  { icon: Syringe,    name: "Gynecology",        img: "https://images.unsplash.com/photo-1631815589968-fdb09a223b1e?w=800&auto=format&fit=crop&q=80" },
+  { icon: Stethoscope,name: "General Medicine",  img: "https://images.unsplash.com/photo-1666214280391-8ff5bd3c0bf0?w=800&auto=format&fit=crop&q=80" },
 ];
 
 const services = [
-  { icon: Stethoscope, title: "General Consultation", desc: "Everyday illnesses, checkups, and health concerns." },
-  { icon: Brain,       title: "Mental Health Support", desc: "Therapy and counseling from licensed professionals." },
-  { icon: Pill,        title: "Prescription & Refills", desc: "Get prescriptions sent to your local pharmacy." },
-  { icon: FlaskConical,title: "Lab Tests & Referrals", desc: "Order labs and get specialist referrals fast." },
-  { icon: Baby,        title: "Pediatric Care",        desc: "Trusted care for your children, anytime." },
-  { icon: Sparkles,    title: "Dermatology",           desc: "Skin, hair and acne consultations with specialists." },
+  { icon: Stethoscope,  title: "General Consultation", desc: "Everyday illnesses, checkups, and concerns from licensed GPs." },
+  { icon: Brain,        title: "Mental Health Support", desc: "Therapy and counseling from accredited professionals." },
+  { icon: Pill,         title: "Prescription & Refills", desc: "Digital prescriptions sent to your local pharmacy." },
+  { icon: FlaskConical, title: "Lab Tests & Referrals", desc: "Order labs and access specialist referrals fast." },
+  { icon: Eye,          title: "Vision & Optical",      desc: "Eye exams and optical care from board-certified doctors." },
+  { icon: Activity,     title: "Chronic Care",          desc: "Continuous monitoring for diabetes, BP and more." },
 ];
 
 const reasons = [
-  { icon: Headphones,  title: "24/7 Practice Access", desc: "Day or night, weekday or weekend — the owner’s setup stays ready." },
-  { icon: Zap,         title: "Fast Response Time",     desc: "Connect with the clinic quickly and keep response times low." },
-  { icon: Lock,        title: "Secure & Private",       desc: "HIPAA-compliant, end-to-end encrypted consultations." },
-  { icon: DollarSign,  title: "Affordable Care",        desc: "Transparent pricing — no surprise bills, insurance accepted." },
-  { icon: Globe,       title: "Access from Anywhere",   desc: "Home, work, or traveling — quality care follows you." },
+  { icon: ShieldCheck, title: "Certified Specialists", desc: "Every doctor is board-licensed and verified." },
+  { icon: Bot,         title: "Advanced Technology",   desc: "AI-assisted triage and modern clinical tools." },
+  { icon: Clock,       title: "Fast Scheduling",       desc: "Book a doctor in under 60 seconds." },
+  { icon: FileText,    title: "Digital Records",       desc: "Your full medical history, encrypted and accessible." },
+  { icon: Headphones,  title: "24/7 Patient Support",  desc: "Real humans available day and night." },
+  { icon: Globe2,      title: "International Standards", desc: "Care that meets global healthcare benchmarks." },
 ];
 
 const stats = [
-  { value: "1",       label: "Owner-led practice" },
-  { value: "10,000+", label: "Patients Served" },
-  { value: "24/7",    label: "Availability" },
-  { value: "<30 min", label: "Avg. Wait Time" },
+  { value: "150+",    label: "Specialists" },
+  { value: "98%",     label: "Patient Satisfaction" },
+  { value: "1M+",     label: "Consultations" },
+  { value: "24/7",    label: "Live Care" },
 ];
 
-const defaultSteps: Array<HowItWorksStep & { n: string; icon: typeof CalendarCheck }> = [
-  { n: "01", icon: CalendarCheck, id: "step-1", title: "Book Appointment", body: "Choose your doctor and a time that fits your schedule. Same-day slots available." },
-  { n: "02", icon: Video, id: "step-2", title: "Virtual Consultation", body: "Connect via secure video or chat. Discuss your symptoms with a licensed physician." },
-  { n: "03", icon: FileText, id: "step-3", title: "Get Treatment", body: "Receive a prescription, expert advice, or a referral — sent directly to your phone." },
+const doctors = [
+  {
+    name: "Dr. Amara Okafor",
+    specialty: "Cardiologist",
+    years: 12,
+    rating: 4.9,
+    fee: 75,
+    next: "Today, 2:30 PM",
+    img: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=600&auto=format&fit=crop&q=80",
+  },
+  {
+    name: "Dr. Daniel Carter",
+    specialty: "Neurologist",
+    years: 15,
+    rating: 4.8,
+    fee: 90,
+    next: "Tomorrow, 10:00 AM",
+    img: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=600&auto=format&fit=crop&q=80",
+  },
+  {
+    name: "Dr. Priya Sharma",
+    specialty: "Pediatrician",
+    years: 9,
+    rating: 5.0,
+    fee: 60,
+    next: "Today, 4:15 PM",
+    img: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=600&auto=format&fit=crop&q=80",
+  },
+  {
+    name: "Dr. Tunde Bello",
+    specialty: "General Practice",
+    years: 11,
+    rating: 4.9,
+    fee: 55,
+    next: "Today, 6:00 PM",
+    img: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=600&auto=format&fit=crop&q=80",
+  },
 ];
 
-const defaultTestimonials: Array<Testimonial & { initials: string; loc: string }> = [
-  { id: "t-1", quote: "I got connected with a doctor in 10 minutes from my couch. Got my prescription sent to the pharmacy down the street. Unreal.", name: "Emma Thompson", role: "Patient · Seattle, WA", initials: "ET", loc: "Patient · Seattle, WA" },
-  { id: "t-2", quote: "As a busy parent, being able to consult a pediatrician at 11pm without leaving the house has been a complete game changer for our family.", name: "Michael Rodriguez", role: "Patient · Austin, TX", initials: "MR", loc: "Patient · Austin, TX" },
-  { id: "t-3", quote: "The doctors actually listen. The video quality is great, and the follow-up was seamless. I won't go back to the old way.", name: "Priya Sharma", role: "Patient · Boston, MA", initials: "PS", loc: "Patient · Boston, MA" },
+const testimonials = [
+  {
+    quote: "I consulted a cardiologist from my living room within 12 minutes. Prescription delivered the same evening. Truly futuristic care.",
+    name: "Emma Thompson",
+    loc: "Patient · Seattle, WA",
+    img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80",
+  },
+  {
+    quote: "As a busy parent, having a pediatrician available at 11 PM for my daughter changed how I think about healthcare.",
+    name: "Michael Rodriguez",
+    loc: "Patient · Austin, TX",
+    img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80",
+  },
+  {
+    quote: "The doctors actually listen. The follow-up is seamless and my full record is in one place. I won't go back.",
+    name: "Adaeze Nwosu",
+    loc: "Patient · Lagos, NG",
+    img: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=200&auto=format&fit=crop&q=80",
+  },
 ];
 
-const defaultPartners: Partner[] = [
-  { id: "p-1", name: "Hallmark" },
-  { id: "p-2", name: "Hygeia" },
-  { id: "p-3", name: "Bastion" },
-  { id: "p-4", name: "Ilera Eko" },
+const partners = [
+  "Hallmark", "Hygeia", "Bastion", "Ilera Eko", "Reliance HMO", "Avon", "AXA Mansard", "Total Health",
 ];
-
-const getInitials = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("") || "DR";
 
 /* ---------- Page ---------- */
 const MediCare = () => {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [megaOpen, setMegaOpen] = useState(false);
   const settings = useMediCareSettings();
-  const howItWorks = settings.howItWorks.length > 0 ? settings.howItWorks : defaultSteps;
-  const testimonials = settings.testimonials.length > 0 ? settings.testimonials : defaultTestimonials;
-  const partners = settings.partners.length > 0 ? settings.partners : defaultPartners;
 
   const themeStyle = useMemo(
     () =>
       ({
         ["--mc-primary" as string]: hexToHslString(settings.primaryColor),
-        ["--mc-primary-glow" as string]: hexToHslString(settings.primaryColor),
         ["--mc-accent" as string]: hexToHslString(settings.accentColor),
-        ["--mc-accent-glow" as string]: hexToHslString(settings.accentColor),
       }) as React.CSSProperties,
     [settings.primaryColor, settings.accentColor],
   );
 
   useEffect(() => {
-    document.title = `${settings.siteName} — Owner-led Practice Portal`;
+    const onScroll = () => setScrolled(window.scrollY > 30);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    document.title = `${settings.siteName} — Advanced Healthcare Designed Around You`;
     const meta = document.querySelector('meta[name="description"]') || (() => {
       const m = document.createElement("meta"); m.setAttribute("name", "description"); document.head.appendChild(m); return m;
     })();
-    meta.setAttribute("content", "MediCare is an owner-led practice portal for managing a single doctor's telemedicine brand, content, and patient journey.");
+    meta.setAttribute("content", "Book appointments, consult certified doctors, access medical records and receive world-class healthcare digitally and physically with MediCare.");
 
     const ld = document.createElement("script");
     ld.type = "application/ld+json";
     ld.text = JSON.stringify({
       "@context": "https://schema.org",
-      "@type": "MedicalBusiness",
-      name: "MediCare",
-      description: "Owner-led telemedicine practice management.",
+      "@type": "Hospital",
+      name: settings.siteName,
+      description: "Premium hospital and telemedicine platform.",
       url: typeof window !== "undefined" ? window.location.href : "",
-      telephone: "+1-800-MEDICARE",
-      medicalSpecialty: ["GeneralPractice", "Dermatology", "Pediatrics", "Psychiatry"],
+      telephone: settings.contact.phone,
+      medicalSpecialty: ["Cardiology", "Neurology", "Pediatrics", "Dermatology", "Oncology"],
       aggregateRating: { "@type": "AggregateRating", ratingValue: "4.9", reviewCount: "12480" },
     });
     document.head.appendChild(ld);
     return () => { document.head.removeChild(ld); };
-  }, [settings.siteName]);
+  }, [settings.siteName, settings.contact.phone]);
 
   return (
     <div className="medicare-root min-h-screen relative overflow-x-hidden" style={themeStyle}>
@@ -203,257 +284,346 @@ const MediCare = () => {
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" />
 
-      {/* NAVBAR */}
-      <header className="fixed top-3 sm:top-5 inset-x-0 z-50 px-3 sm:px-6">
-        <nav className="mx-auto max-w-6xl mc-glass mc-shadow-card rounded-full px-4 sm:px-6 py-3 flex items-center justify-between">
-          <a href="#top" className="flex items-center gap-2.5">
-            <span className="grid place-items-center h-9 w-9 rounded-xl mc-grad-primary mc-shadow-glow overflow-hidden">
+      {/* ============ TOP UTILITY BAR ============ */}
+      <div className={`relative z-50 hidden md:block text-xs transition-colors ${scrolled ? "bg-transparent text-transparent h-0 overflow-hidden" : "bg-[hsl(var(--mc-dark))] text-white/80"}`}>
+        <div className="mx-auto max-w-7xl px-6 h-9 flex items-center justify-between">
+          <div className="flex items-center gap-5">
+            <span className="inline-flex items-center gap-1.5"><Languages className="h-3.5 w-3.5" /> EN · ES · FR</span>
+            <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> Global · 36 locations</span>
+          </div>
+          <div className="flex items-center gap-5">
+            <a href={`tel:${settings.contact.phone}`} className="inline-flex items-center gap-1.5 font-semibold text-rose-300">
+              <span className="relative flex h-2 w-2"><span className="absolute inset-0 rounded-full bg-rose-400 opacity-75 animate-ping" /><span className="relative rounded-full h-2 w-2 bg-rose-400" /></span>
+              Emergency: {settings.contact.phone}
+            </a>
+            <a href="#cta" className="hover:text-white transition">Patient Portal</a>
+          </div>
+        </div>
+      </div>
+
+      {/* ============ NAVBAR ============ */}
+      <header className={`sticky top-0 z-40 w-full transition-all duration-300 ${scrolled ? "mc-glass mc-shadow-card" : "bg-transparent"}`}>
+        <nav className="mx-auto max-w-7xl px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-4">
+          <a href="#top" className="flex items-center gap-2.5 shrink-0">
+            <span className="grid place-items-center h-10 w-10 rounded-2xl mc-grad-primary mc-shadow-glow overflow-hidden">
               {settings.logoDataUrl ? (
                 <img src={settings.logoDataUrl} alt={`${settings.siteName} logo`} className="h-full w-full object-cover" />
               ) : (
                 <Stethoscope className="h-5 w-5 text-white" />
               )}
             </span>
-            <span className="font-display font-bold text-lg tracking-tight">{settings.siteName}</span>
+            <span className="font-display font-bold text-xl tracking-tight">{settings.siteName}</span>
           </a>
 
-          <ul className="hidden md:flex items-center gap-7 text-sm font-medium">
+          <ul className="hidden lg:flex items-center gap-1 text-sm font-medium">
             {navLinks.map((l) => (
-              <li key={l.href}>
-                <a href={l.href} className="hover:text-[hsl(var(--mc-primary))] transition-colors">{l.label}</a>
+              <li
+                key={l.href}
+                className="relative"
+                onMouseEnter={() => l.hasMenu && setMegaOpen(true)}
+                onMouseLeave={() => l.hasMenu && setMegaOpen(false)}
+              >
+                <a href={l.href} className="px-3 py-2 rounded-full inline-flex items-center gap-1 hover:text-[hsl(var(--mc-primary))] transition-colors">
+                  {l.label}
+                  {l.hasMenu && <ChevronDown className="h-3.5 w-3.5" />}
+                </a>
+                {l.hasMenu && megaOpen && (
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 w-[640px] z-50">
+                    <div className="mc-glass mc-shadow-elegant rounded-3xl p-6 grid grid-cols-2 gap-2">
+                      {specialties.map((s) => (
+                        <a key={s.name} href="#specialties" className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-[hsl(var(--mc-muted-soft))] transition">
+                          <span className="grid place-items-center h-9 w-9 rounded-xl mc-grad-primary text-white">
+                            <s.icon className="h-4 w-4" />
+                          </span>
+                          <span className="text-sm font-semibold">{s.name}</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
+
+          <div className="hidden md:flex items-center gap-2">
+            <button className="grid place-items-center h-10 w-10 rounded-full mc-glass hover:text-[hsl(var(--mc-primary))] transition" aria-label="Search">
+              <Search className="h-4 w-4" />
+            </button>
+            <a href="#cta" className="inline-flex items-center gap-2 rounded-full mc-grad-primary text-white px-5 py-2.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
+              Book Appointment <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
 
           <button
             type="button"
             aria-label={open ? "Close menu" : "Open menu"}
             onClick={() => setOpen((o) => !o)}
-            className="md:hidden grid place-items-center h-10 w-10 rounded-full hover:bg-[hsl(var(--mc-muted-soft))] focus-visible:ring-2 focus-visible:ring-[hsl(var(--mc-primary))]"
+            className="lg:hidden grid place-items-center h-10 w-10 rounded-full mc-glass"
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </nav>
 
         {open && (
-          <div className="md:hidden mx-auto max-w-6xl mt-2 mc-glass mc-shadow-card rounded-3xl p-5 mc-anim-fade-up">
-            <ul className="grid gap-3 text-base font-medium">
+          <div className="lg:hidden mx-4 mb-3 mc-glass mc-shadow-card rounded-3xl p-5 mc-anim-fade-up">
+            <ul className="grid gap-1 text-base font-medium">
               {navLinks.map((l) => (
                 <li key={l.href}>
-                  <a href={l.href} onClick={() => setOpen(false)} className="block py-2">{l.label}</a>
+                  <a href={l.href} onClick={() => setOpen(false)} className="block py-2.5 px-3 rounded-xl hover:bg-[hsl(var(--mc-muted-soft))]">{l.label}</a>
                 </li>
               ))}
             </ul>
+            <a href="#cta" onClick={() => setOpen(false)} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full mc-grad-primary text-white px-5 py-3 text-sm font-semibold">
+              Book Appointment <ArrowRight className="h-4 w-4" />
+            </a>
           </div>
         )}
       </header>
 
-      {/* HERO — centered, with floating side cards */}
-      <section id="top" className="relative pt-28 sm:pt-32 pb-16 sm:pb-24">
-        <div className="absolute inset-0 mc-grad-hero" />
-        <div className="absolute inset-0 mc-grad-mesh opacity-90" />
-        <div className="absolute inset-0 mc-grid-pattern opacity-60" />
+      {/* ============ HERO ============ */}
+      <section id="top" className="relative -mt-16 sm:-mt-20 min-h-[100svh] flex items-center pt-28 pb-20 overflow-hidden">
+        <video
+          className="absolute inset-0 h-full w-full object-cover"
+          src={HERO_VIDEO}
+          autoPlay muted loop playsInline poster="https://images.unsplash.com/photo-1666214280391-8ff5bd3c0bf0?w=1920&auto=format&fit=crop&q=80"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(212_88%_10%/.9)] via-[hsl(212_70%_18%/.75)] to-[hsl(174_60%_22%/.6)]" />
+        <div className="absolute inset-0 mc-grid-pattern opacity-30" />
 
-        <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
-          {/* Eyebrow */}
-          <div className="flex justify-center mc-anim-fade-up">
-            <span className="inline-flex items-center gap-2 rounded-full mc-glass px-4 py-1.5 text-xs sm:text-sm font-semibold">
-              <span className="h-2 w-2 rounded-full bg-[hsl(var(--mc-accent))] mc-anim-pulse-dot" />
-              {settings.hero.eyebrow.replace(/\b\d+\+?\s+doctors?\b/i, "Owner-led practice")}
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 w-full grid lg:grid-cols-12 gap-10 items-center">
+          <div className="lg:col-span-7 text-white">
+            <span className="inline-flex items-center gap-2 rounded-full mc-glass-dark px-4 py-1.5 text-xs sm:text-sm font-semibold mc-anim-fade-up">
+              <span className="h-2 w-2 rounded-full bg-[hsl(var(--mc-accent-glow))] mc-anim-pulse-dot" />
+              Live consultations available now
               <span className="opacity-30">·</span>
-              <Star className="h-3.5 w-3.5 fill-[hsl(45_100%_55%)] text-[hsl(45_100%_55%)]" /> 4.9
+              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" /> 4.9 / 5
             </span>
-          </div>
 
-          {/* Headline */}
-          <h1 className="mt-6 mx-auto max-w-3xl text-center font-display text-[2.5rem] leading-[1.05] sm:text-5xl md:text-6xl lg:text-[4rem] font-bold text-balance mc-anim-fade-up">
-            {settings.hero.titleLead} <span className="mc-grad-text">{settings.hero.titleHighlight}</span>
-          </h1>
+            <h1 className="mt-6 font-display text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-[1.05] text-balance mc-anim-fade-up">
+              Advanced Healthcare<br />
+              <span className="bg-gradient-to-r from-white via-[hsl(174_80%_75%)] to-[hsl(200_95%_75%)] bg-clip-text text-transparent">
+                Designed Around You
+              </span>
+            </h1>
 
-          <p className="mt-5 sm:mt-6 mx-auto max-w-xl text-center text-base sm:text-lg leading-relaxed text-[hsl(var(--mc-muted))] mc-anim-fade-up">
-            {settings.hero.subtitle}
-          </p>
+            <p className="mt-6 max-w-xl text-base sm:text-lg leading-relaxed text-white/80 mc-anim-fade-up">
+              Book appointments, consult certified doctors, access medical records, and receive world-class healthcare — digitally and physically.
+            </p>
 
-          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center items-center mc-anim-fade-up">
-            <a href="#cta" className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-full mc-grad-primary text-white px-7 py-3.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
-              {settings.hero.ctaLabel} <ArrowRight className="h-4 w-4" />
-            </a>
-          </div>
-
-          {/* Hero visual + floating cards */}
-          <div className="relative mt-14 sm:mt-20 mx-auto max-w-5xl">
-            {/* Center illustration */}
-            <div className="relative mx-auto max-w-[22rem] sm:max-w-md">
-              <div className="absolute inset-0 -m-10 mc-grad-primary opacity-15 blur-3xl rounded-full" />
-              <div className="relative aspect-square rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden bg-white mc-shadow-elegant ring-1 ring-white">
-                <img
-                  src={heroImg}
-                  alt="Smiling doctor providing virtual consultation via smartphone"
-                  width={1024}
-                  height={1024}
-                  className="w-full h-full object-cover"
-                />
-                {/* Live now strip */}
-                <div className="absolute left-3 top-3 sm:left-4 sm:top-4 mc-glass rounded-full px-3 py-1.5 flex items-center gap-2 text-[11px] sm:text-xs font-semibold">
-                  <span className="h-2 w-2 rounded-full bg-[hsl(0_85%_60%)] mc-anim-pulse-dot" />
-                  Live · Owner practice
-                </div>
-                <div className="absolute right-3 top-3 sm:right-4 sm:top-4">
-                  <button className="rounded-full mc-grad-accent text-white text-[11px] sm:text-xs font-semibold px-3 py-1.5 sm:px-3.5 sm:py-2 mc-anim-pulse-glow">
-                    Join call
-                  </button>
-                </div>
-              </div>
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 mc-anim-fade-up">
+              <a href="#cta" className="inline-flex justify-center items-center gap-2 rounded-full mc-grad-primary text-white px-7 py-3.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
+                Book Appointment <ArrowRight className="h-4 w-4" />
+              </a>
+              <a href="#doctors" className="inline-flex justify-center items-center gap-2 rounded-full mc-glass-dark text-white px-7 py-3.5 text-sm font-semibold hover:bg-white/15 transition">
+                <Search className="h-4 w-4" /> Find a Doctor
+              </a>
             </div>
 
-            {/* Floating cards — desktop */}
-            <div className="hidden lg:block absolute left-0 top-6 w-60 mc-glass mc-shadow-card rounded-2xl p-4 mc-anim-float" style={{ animationDelay: ".1s" }}>
+            {/* Mini stats */}
+            <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl">
+              {stats.map((s) => (
+                <div key={s.label} className="mc-glass-dark rounded-2xl px-4 py-3">
+                  <p className="font-display text-2xl sm:text-3xl font-bold bg-gradient-to-r from-white to-[hsl(174_80%_75%)] bg-clip-text text-transparent">{s.value}</p>
+                  <p className="mt-0.5 text-[11px] sm:text-xs text-white/70">{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Floating dashboard cards */}
+          <div className="hidden lg:block lg:col-span-5 relative h-[520px]">
+            <div className="absolute top-4 right-0 w-72 mc-glass mc-shadow-elegant rounded-3xl p-5 mc-anim-float">
               <div className="flex items-center gap-3">
-                <span className="grid place-items-center h-10 w-10 rounded-xl bg-[hsl(var(--mc-accent))/0.12] text-[hsl(var(--mc-accent))]">
+                <span className="grid place-items-center h-11 w-11 rounded-2xl mc-grad-primary text-white">
                   <Video className="h-5 w-5" />
                 </span>
-                <p className="font-semibold text-sm">Video visits</p>
-              </div>
-              <p className="mt-3 text-xs text-[hsl(var(--mc-muted))] leading-relaxed">HD secure consultations from any device.</p>
-            </div>
-
-            <div className="hidden lg:block absolute left-4 bottom-6 w-60 mc-glass mc-shadow-card rounded-2xl p-4 mc-anim-float" style={{ animationDelay: ".4s" }}>
-              <div className="flex items-center gap-3">
-                <span className="grid place-items-center h-10 w-10 rounded-xl bg-[hsl(var(--mc-primary))/0.12] text-[hsl(var(--mc-primary))]">
-                  <ShieldCheck className="h-5 w-5" />
-                </span>
-                <p className="font-semibold text-sm">HIPAA Secure</p>
-              </div>
-              <p className="mt-3 text-xs text-[hsl(var(--mc-muted))] leading-relaxed">End-to-end encrypted records.</p>
-            </div>
-
-            <div className="hidden lg:block absolute right-0 top-6 w-60 mc-glass mc-shadow-card rounded-2xl p-4 mc-anim-float" style={{ animationDelay: ".25s" }}>
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-[hsl(var(--mc-muted))]">Avg. wait time</p>
-                <Clock className="h-4 w-4 text-[hsl(var(--mc-primary))]" />
-              </div>
-              <p className="mt-1 font-display text-3xl font-bold">12<span className="text-sm font-medium text-[hsl(var(--mc-accent))] ml-1">min</span></p>
-              <div className="mt-3 h-1.5 rounded-full bg-[hsl(var(--mc-muted-soft))] overflow-hidden">
-                <div className="h-full w-3/4 mc-grad-primary rounded-full" />
-              </div>
-            </div>
-
-            <div className="hidden lg:block absolute right-4 bottom-6 w-60 mc-glass mc-shadow-card rounded-2xl p-4 mc-anim-float" style={{ animationDelay: ".55s" }}>
-              <div className="flex items-center gap-3">
-                <span className="grid place-items-center h-10 w-10 rounded-xl bg-[hsl(var(--mc-primary))/0.12] text-[hsl(var(--mc-primary))]">
-                  <CalendarCheck className="h-5 w-5" />
-                </span>
                 <div>
-                  <p className="text-xs text-[hsl(var(--mc-muted))]">Next slot</p>
-                  <p className="text-sm font-semibold">Today, 2:30 PM</p>
+                  <p className="text-xs text-[hsl(var(--mc-muted))]">In session</p>
+                  <p className="text-sm font-bold">Dr. Amara Okafor</p>
                 </div>
+                <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold text-rose-500">
+                  <span className="h-1.5 w-1.5 rounded-full bg-rose-500 mc-anim-pulse-dot" /> LIVE
+                </span>
+              </div>
+              <div className="mt-4 h-24 rounded-2xl overflow-hidden bg-[hsl(var(--mc-muted-soft))]">
+                <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&auto=format&fit=crop&q=80" alt="Live telemedicine consultation" className="h-full w-full object-cover" />
+              </div>
+              <div className="mt-3 flex gap-2">
+                <button className="flex-1 rounded-xl bg-[hsl(var(--mc-muted-soft))] py-2 text-xs font-semibold">Mute</button>
+                <button className="flex-1 rounded-xl mc-grad-primary text-white py-2 text-xs font-semibold">Join</button>
               </div>
             </div>
 
-            {/* Mobile/tablet stacked cards */}
-            <div className="lg:hidden mt-8 grid grid-cols-2 gap-3 sm:gap-4">
-              <div className="mc-glass mc-shadow-card rounded-2xl p-4">
-                <div className="flex items-center gap-3">
-                  <span className="grid place-items-center h-10 w-10 rounded-xl bg-[hsl(var(--mc-accent))/0.12] text-[hsl(var(--mc-accent))]"><Video className="h-5 w-5" /></span>
-                  <p className="font-semibold text-sm">Video visits</p>
+            <div className="absolute top-44 left-0 w-64 mc-glass mc-shadow-elegant rounded-3xl p-5 mc-anim-float" style={{ animationDelay: ".4s" }}>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[hsl(var(--mc-primary))]">Today's Schedule</p>
+              {[
+                { t: "09:30", n: "Cardiology check-in" },
+                { t: "11:15", n: "Pediatric video call" },
+                { t: "14:00", n: "Lab results review" },
+              ].map((row) => (
+                <div key={row.t} className="mt-3 flex items-center gap-3 text-sm">
+                  <span className="font-mono text-xs font-bold text-[hsl(var(--mc-primary))]">{row.t}</span>
+                  <span className="flex-1 truncate">{row.n}</span>
+                  <CheckCircle2 className="h-4 w-4 text-[hsl(var(--mc-accent))]" />
                 </div>
-                <p className="mt-3 text-xs text-[hsl(var(--mc-muted))]">HD secure consultations from your phone or laptop.</p>
+              ))}
+            </div>
+
+            <div className="absolute bottom-6 right-8 w-60 mc-glass mc-shadow-elegant rounded-3xl p-5 mc-anim-float" style={{ animationDelay: ".7s" }}>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-[hsl(var(--mc-muted))]">Heart rate</p>
+                <HeartPulse className="h-4 w-4 text-rose-500" />
               </div>
-              <div className="mc-glass mc-shadow-card rounded-2xl p-4">
-                <div className="flex items-center gap-3">
-                  <span className="grid place-items-center h-10 w-10 rounded-xl bg-[hsl(var(--mc-primary))/0.12] text-[hsl(var(--mc-primary))]"><ShieldCheck className="h-5 w-5" /></span>
-                  <p className="font-semibold text-sm">HIPAA Secure</p>
-                </div>
-                <p className="mt-3 text-xs text-[hsl(var(--mc-muted))]">End-to-end encrypted records and conversations.</p>
+              <p className="mt-1 font-display text-3xl font-bold">72<span className="text-sm font-medium text-[hsl(var(--mc-muted))] ml-1">bpm</span></p>
+              <svg viewBox="0 0 200 40" className="mt-2 w-full h-10 text-[hsl(var(--mc-primary))]">
+                <polyline fill="none" stroke="currentColor" strokeWidth="2" points="0,20 30,20 38,8 46,32 54,20 100,20 110,4 120,36 130,20 200,20" />
+              </svg>
+            </div>
+
+            <div className="absolute bottom-32 left-10 w-56 mc-glass mc-shadow-elegant rounded-3xl p-4 mc-anim-float" style={{ animationDelay: "1s" }}>
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-[hsl(var(--mc-accent))]" />
+                <p className="text-xs font-bold">98% Patient Satisfaction</p>
               </div>
-              <div className="mc-glass mc-shadow-card rounded-2xl p-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-[hsl(var(--mc-muted))]">Avg. wait time</p>
-                  <Clock className="h-4 w-4 text-[hsl(var(--mc-primary))]" />
-                </div>
-                <p className="mt-1 font-display text-3xl font-bold">12<span className="text-sm font-medium text-[hsl(var(--mc-accent))] ml-1">min</span></p>
-              </div>
-              <div className="mc-glass mc-shadow-card rounded-2xl p-4">
-                <div className="flex items-center gap-3">
-                  <span className="grid place-items-center h-10 w-10 rounded-xl bg-[hsl(var(--mc-primary))/0.12] text-[hsl(var(--mc-primary))]"><CalendarCheck className="h-5 w-5" /></span>
-                  <div>
-                    <p className="text-xs text-[hsl(var(--mc-muted))]">Next slot</p>
-                    <p className="text-sm font-semibold">Today, 2:30 PM</p>
-                  </div>
-                </div>
+              <div className="mt-2 h-1.5 rounded-full bg-[hsl(var(--mc-muted-soft))] overflow-hidden">
+                <div className="h-full w-[98%] mc-grad-primary rounded-full" />
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Trust strip */}
-          <div className="mt-14 text-center text-sm text-[hsl(var(--mc-muted))]">
-            <div className="mb-3">Trusted by patients across</div>
-            <div className="flex flex-wrap justify-center items-center gap-x-5 gap-y-2">
-              {[
-                { code: "us", name: "United States" },
-                { code: "gb", name: "United Kingdom" },
-                { code: "ca", name: "Canada" },
-                { code: "au", name: "Australia" },
-                { code: "de", name: "Germany" },
-                { code: "ng", name: "Nigeria" },
-              ].map((c) => (
-                <span key={c.code} className="inline-flex items-center gap-2">
-                  <img
-                    src={`https://flagcdn.com/24x18/${c.code}.png`}
-                    srcSet={`https://flagcdn.com/48x36/${c.code}.png 2x`}
-                    width={24}
-                    height={18}
-                    alt={`${c.name} flag`}
-                    loading="lazy"
-                    className="rounded-sm shadow-sm"
-                  />
-                  <span>{c.name}</span>
-                </span>
+        {/* Marquee partners */}
+        <div className="absolute bottom-0 inset-x-0 py-4 bg-gradient-to-t from-black/60 to-transparent">
+          <div className="overflow-hidden">
+            <div className="mc-marquee flex gap-12 whitespace-nowrap text-white/60 text-xs sm:text-sm font-semibold tracking-widest uppercase w-max">
+              {[...partners, ...partners].map((p, i) => (
+                <span key={i} className="inline-flex items-center gap-3"><Award className="h-4 w-4" /> {p}</span>
               ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
-      <section id="how" className="py-20 sm:py-28">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      {/* ============ QUICK ACCESS CARE ============ */}
+      <section className="relative py-20 sm:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto">
-            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">How it works</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Set up the practice in three simple steps</h2>
+            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Quick Access Care</p>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Healthcare in <span className="mc-grad-text">one click</span></h2>
+            <p className="mt-4 text-[hsl(var(--mc-muted))]">Everything you need to manage your health — beautifully unified.</p>
           </div>
 
-          <div className="relative mt-14 grid md:grid-cols-3 gap-6">
-            <div className="hidden md:block absolute top-12 left-[16%] right-[16%] h-px bg-gradient-to-r from-transparent via-[hsl(var(--mc-primary))/0.4] to-transparent" />
-            {howItWorks.map((step, i) => (
-              <div key={step.id} className="relative mc-glass mc-shadow-card rounded-3xl p-7 mc-anim-fade-up" style={{ animationDelay: `${i * 0.1}s` }}>
-                <div className="flex items-center justify-between">
-                  <span className="grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow">
-                    <CalendarCheck className="h-5 w-5" />
-                  </span>
-                  <span className="font-display text-4xl font-bold mc-grad-text">{String(i + 1).padStart(2, "0")}</span>
+          <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {quickAccess.map((q) => (
+              <div key={q.title} className="group relative overflow-hidden rounded-3xl border border-[hsl(var(--mc-border))] bg-[hsl(var(--mc-card))] p-7 mc-shadow-card mc-card-hover">
+                <div className={`absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br ${q.tone} opacity-10 group-hover:opacity-25 transition-opacity`} />
+                <span className={`relative grid place-items-center h-14 w-14 rounded-2xl bg-gradient-to-br ${q.tone} text-white mc-shadow-glow`}>
+                  <q.icon className="h-6 w-6" />
+                </span>
+                <h3 className="relative mt-5 font-display text-xl font-bold">{q.title}</h3>
+                <p className="relative mt-2 text-sm text-[hsl(var(--mc-muted))]">{q.desc}</p>
+                <div className="relative mt-5 inline-flex items-center gap-1 text-sm font-semibold text-[hsl(var(--mc-primary))]">
+                  Start now <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </div>
-                <h3 className="mt-5 font-display text-xl font-bold">{step.title}</h3>
-                <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">{step.body}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* SERVICES */}
-      <section id="services" className="py-20 sm:py-28 bg-[hsl(var(--mc-muted-soft))]">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="text-center max-w-2xl mx-auto">
-            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Our services</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Practice tools at your fingertips</h2>
+      {/* ============ SPECIALTIES ============ */}
+      <section id="specialties" className="relative py-20 sm:py-28 bg-[hsl(var(--mc-muted-soft))] overflow-hidden">
+        <div className="absolute inset-0 mc-grad-mesh opacity-50" />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Specialties</p>
+              <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold max-w-xl">World-class care across <span className="mc-grad-text">every discipline</span></h2>
+            </div>
+            <a href="#doctors" className="inline-flex items-center gap-2 text-sm font-semibold text-[hsl(var(--mc-primary))] hover:gap-3 transition-all">
+              View all specialties <ArrowRight className="h-4 w-4" />
+            </a>
           </div>
 
-          <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5">
+            {specialties.map((s) => (
+              <a key={s.name} href="#doctors" className="group relative overflow-hidden rounded-3xl mc-shadow-card mc-card-hover bg-[hsl(var(--mc-card))]">
+                <div className="aspect-[4/5] overflow-hidden">
+                  <img src={s.img} alt={s.name} loading="lazy" className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--mc-dark)/.9)] via-[hsl(var(--mc-dark)/.4)] to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 text-white">
+                  <span className="grid place-items-center h-10 w-10 rounded-xl mc-glass-dark mb-3">
+                    <s.icon className="h-5 w-5" />
+                  </span>
+                  <h3 className="font-display text-base sm:text-lg font-bold">{s.name}</h3>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ============ WHY CHOOSE US ============ */}
+      <section className="py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 grid lg:grid-cols-12 gap-12 items-center">
+          <div className="lg:col-span-6 relative">
+            <div className="relative rounded-[2.5rem] overflow-hidden mc-shadow-elegant aspect-[4/5] sm:aspect-[5/6]">
+              <img src="https://images.unsplash.com/photo-1666214280557-f1b5022eb634?w=1200&auto=format&fit=crop&q=80" alt="Doctor attending to a patient" className="h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--mc-dark)/.7)] via-transparent to-transparent" />
+              <div className="absolute bottom-6 left-6 right-6 mc-glass-dark rounded-2xl p-4 text-white">
+                <div className="flex items-center gap-3">
+                  <span className="grid place-items-center h-11 w-11 rounded-xl mc-grad-primary"><Award className="h-5 w-5" /></span>
+                  <div>
+                    <p className="font-display font-bold">Accredited by JCI & ISO</p>
+                    <p className="text-xs text-white/70">Meeting global healthcare standards</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="hidden md:block absolute -top-8 -right-8 w-48 mc-glass mc-shadow-elegant rounded-3xl p-5 mc-anim-float">
+              <div className="flex items-center gap-2 text-[hsl(var(--mc-accent))]">
+                {Array.from({ length: 5 }).map((_, i) => <Star key={i} className="h-4 w-4 fill-current" />)}
+              </div>
+              <p className="mt-2 font-display text-3xl font-bold">4.9</p>
+              <p className="text-xs text-[hsl(var(--mc-muted))]">12,480+ reviews</p>
+            </div>
+          </div>
+
+          <div className="lg:col-span-6">
+            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Why Choose Us</p>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Care you can <span className="mc-grad-text">truly trust</span></h2>
+            <p className="mt-4 text-[hsl(var(--mc-muted))] max-w-xl">Built on decades of clinical excellence and powered by modern technology, MediCare delivers a healthcare experience that feels human at every step.</p>
+
+            <div className="mt-10 grid sm:grid-cols-2 gap-4">
+              {reasons.map((r, i) => (
+                <div key={r.title} className="flex gap-4 mc-anim-fade-up" style={{ animationDelay: `${i * 0.07}s` }}>
+                  <span className="shrink-0 grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow">
+                    <r.icon className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <h3 className="font-display text-lg font-bold">{r.title}</h3>
+                    <p className="mt-1 text-sm text-[hsl(var(--mc-muted))]">{r.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============ SERVICES ============ */}
+      <section id="services" className="py-20 sm:py-28 mc-grad-soft">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="text-center max-w-2xl mx-auto">
+            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Services</p>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Everything you need, <span className="mc-grad-text">one platform</span></h2>
+          </div>
+          <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {services.map((s) => (
-              <div key={s.title} className="group bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card hover:-translate-y-1 hover:mc-shadow-elegant transition-all duration-300">
-                <span className="grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow">
-                  <s.icon className="h-5 w-5" />
+              <div key={s.title} className="group bg-[hsl(var(--mc-card))] rounded-3xl p-7 border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover">
+                <span className="grid place-items-center h-14 w-14 rounded-2xl mc-grad-primary text-white mc-shadow-glow">
+                  <s.icon className="h-6 w-6" />
                 </span>
                 <h3 className="mt-5 font-display text-xl font-bold">{s.title}</h3>
                 <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">{s.desc}</p>
@@ -463,84 +633,180 @@ const MediCare = () => {
         </div>
       </section>
 
-      {/* WHY CHOOSE US */}
-      <section className="py-20 sm:py-28">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="text-center max-w-2xl mx-auto">
-            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Why choose us</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Built for a single owner-led practice</h2>
-          </div>
-
-          <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {reasons.map((r) => (
-              <div key={r.title} className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card">
-                <span className="grid place-items-center h-12 w-12 rounded-2xl bg-[hsl(var(--mc-primary))/0.1] text-[hsl(var(--mc-primary))]">
-                  <r.icon className="h-5 w-5" />
-                </span>
-                <h3 className="mt-5 font-display text-lg font-bold">{r.title}</h3>
-                <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">{r.desc}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Stats */}
-          <div className="mt-12 rounded-3xl mc-grad-primary text-white p-8 sm:p-10 mc-shadow-elegant grid grid-cols-2 md:grid-cols-4 gap-6">
-            {stats.map((s) => (
-              <div key={s.label} className="text-center">
-                <p className="font-display text-3xl sm:text-4xl font-bold tracking-tight">{s.value}</p>
-                <p className="mt-1 text-xs sm:text-sm text-white/80 tracking-wide">{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* PARTNERS */}
-      <section className="py-8 sm:py-12">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="rounded-3xl border border-[hsl(var(--mc-border))] bg-[hsl(var(--mc-card))] p-6 sm:p-8 mc-shadow-card">
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Partners</p>
-                <h2 className="mt-2 font-display text-2xl sm:text-3xl font-bold">Organizations that support the practice</h2>
-              </div>
-              <p className="text-sm text-[hsl(var(--mc-muted))] max-w-xl">These names are editable from the admin panel, so the public page reflects the same partnership list without a backend.</p>
+      {/* ============ DOCTORS ============ */}
+      <section id="doctors" className="py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Find a Doctor</p>
+              <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold max-w-xl">Meet our top-rated <span className="mc-grad-text">specialists</span></h2>
             </div>
-            <div className="mt-6 flex flex-wrap gap-3">
-              {partners.map((partner) => (
-                <span key={partner.id} className="inline-flex items-center rounded-full border border-[hsl(var(--mc-border))] bg-[hsl(var(--mc-muted-soft))] px-4 py-2 text-sm font-medium text-[hsl(var(--mc-fg))]">
-                  {partner.name}
-                </span>
-              ))}
+            <div className="flex items-center gap-2 mc-glass mc-shadow-card rounded-full px-4 py-2 max-w-md w-full">
+              <Search className="h-4 w-4 text-[hsl(var(--mc-muted))]" />
+              <input placeholder="Search by name or specialty…" className="flex-1 bg-transparent outline-none text-sm" />
+              <button className="rounded-full mc-grad-primary text-white text-xs font-semibold px-4 py-1.5">Search</button>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* REVIEWS */}
-      <section id="reviews" className="py-20 sm:py-28">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="text-center max-w-2xl mx-auto">
-            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Patient stories</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Loved by patients</h2>
-          </div>
-
-          <div className="mt-12 grid md:grid-cols-3 gap-5">
-            {testimonials.map((testimonial) => (
-              <figure key={testimonial.id} className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card">
-                <div className="flex items-center gap-1 text-[hsl(45_100%_55%)]">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-current" />
-                  ))}
-                </div>
-                <blockquote className="mt-4 text-sm leading-relaxed">"{testimonial.quote}"</blockquote>
-                <figcaption className="mt-5 flex items-center gap-3">
-                  <span className="grid place-items-center h-10 w-10 rounded-full mc-grad-primary text-white text-sm font-bold">
-                    {getInitials(testimonial.name)}
+          <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {doctors.map((d) => (
+              <div key={d.name} className="group bg-[hsl(var(--mc-card))] rounded-3xl border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover overflow-hidden">
+                <div className="relative aspect-[4/5] overflow-hidden">
+                  <img src={d.img} alt={d.name} loading="lazy" className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-white/90 backdrop-blur px-2.5 py-1 text-[11px] font-bold">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mc-anim-pulse-dot" /> Online
                   </span>
+                  <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-amber-400/95 px-2.5 py-1 text-[11px] font-bold">
+                    <Star className="h-3 w-3 fill-white text-white" /> {d.rating}
+                  </span>
+                </div>
+                <div className="p-5">
+                  <h3 className="font-display text-lg font-bold">{d.name}</h3>
+                  <p className="text-xs text-[hsl(var(--mc-primary))] font-semibold">{d.specialty}</p>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-[hsl(var(--mc-muted))]">
+                    <p className="inline-flex items-center gap-1"><Award className="h-3.5 w-3.5" /> {d.years} yrs exp</p>
+                    <p className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {d.next}</p>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between">
+                    <p className="font-display font-bold text-lg">${d.fee}<span className="text-xs font-normal text-[hsl(var(--mc-muted))]">/visit</span></p>
+                    <button className="rounded-full mc-grad-primary text-white text-xs font-semibold px-3.5 py-2">Book Session</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ============ TELEMEDICINE ============ */}
+      <section id="telemedicine" className="relative py-20 sm:py-28 mc-grad-dark text-white overflow-hidden mc-noise">
+        <div className="absolute inset-0 mc-grid-pattern opacity-20" />
+        <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-[hsl(var(--mc-primary)/.4)] blur-3xl" />
+        <div className="absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-[hsl(var(--mc-accent)/.35)] blur-3xl" />
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 grid lg:grid-cols-12 gap-12 items-center">
+          <div className="lg:col-span-6">
+            <span className="inline-flex items-center gap-2 rounded-full mc-glass-dark px-4 py-1.5 text-xs font-semibold">
+              <Bot className="h-3.5 w-3.5 text-[hsl(var(--mc-accent-glow))]" /> AI-powered Telemedicine
+            </span>
+            <h2 className="mt-5 font-display text-3xl sm:text-5xl font-bold leading-tight">
+              The future of care, <br />
+              <span className="bg-gradient-to-r from-[hsl(174_80%_75%)] to-[hsl(200_95%_75%)] bg-clip-text text-transparent">in your pocket</span>
+            </h2>
+            <p className="mt-4 text-white/75 max-w-lg">High-fidelity video consultations, AI symptom triage, secure prescriptions and continuous monitoring — all in one beautifully crafted experience.</p>
+
+            <ul className="mt-8 space-y-3">
+              {[
+                "HD video & encrypted chat consultations",
+                "AI-assisted symptom checker & triage",
+                "Real-time vitals monitoring",
+                "Digital prescriptions & e-referrals",
+              ].map((t) => (
+                <li key={t} className="flex items-center gap-3 text-sm">
+                  <span className="grid place-items-center h-7 w-7 rounded-full bg-[hsl(var(--mc-accent)/.18)] text-[hsl(var(--mc-accent-glow))]">
+                    <CheckCircle2 className="h-4 w-4" />
+                  </span>
+                  {t}
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-9 flex flex-wrap gap-3">
+              <a href="#cta" className="inline-flex items-center gap-2 rounded-full mc-grad-primary text-white px-6 py-3 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
+                Start consultation <ArrowRight className="h-4 w-4" />
+              </a>
+              <a href="#cta" className="inline-flex items-center gap-2 rounded-full mc-glass-dark text-white px-6 py-3 text-sm font-semibold hover:bg-white/15 transition">
+                <Play className="h-4 w-4" /> Watch demo
+              </a>
+            </div>
+          </div>
+
+          {/* Phone mockup + dashboard */}
+          <div className="lg:col-span-6 relative h-[560px]">
+            {/* Dashboard panel */}
+            <div className="absolute top-0 right-0 w-[88%] mc-glass-dark mc-shadow-elegant rounded-3xl p-6 border border-white/10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="grid place-items-center h-10 w-10 rounded-xl mc-grad-primary"><MonitorSmartphone className="h-5 w-5" /></span>
                   <div>
-                    <p className="text-sm font-semibold">{testimonial.name}</p>
-                    <p className="text-xs text-[hsl(var(--mc-muted))]">{testimonial.role}</p>
+                    <p className="text-sm font-bold">Care Dashboard</p>
+                    <p className="text-[11px] text-white/60">Live overview · today</p>
+                  </div>
+                </div>
+                <BellRing className="h-5 w-5 text-white/60" />
+              </div>
+
+              <div className="mt-5 grid grid-cols-3 gap-3">
+                {[
+                  { l: "Appts", v: "12", c: "from-sky-400 to-cyan-400" },
+                  { l: "Patients", v: "284", c: "from-teal-400 to-emerald-400" },
+                  { l: "Refills", v: "37", c: "from-violet-400 to-fuchsia-400" },
+                ].map((k) => (
+                  <div key={k.l} className="rounded-2xl bg-white/5 p-3 border border-white/10">
+                    <p className={`font-display text-2xl font-bold bg-gradient-to-r ${k.c} bg-clip-text text-transparent`}>{k.v}</p>
+                    <p className="text-[11px] text-white/60">{k.l}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-5 rounded-2xl bg-white/5 p-4 border border-white/10">
+                <div className="flex items-center justify-between text-xs text-white/60">
+                  <span>Patient activity</span><span>7 days</span>
+                </div>
+                <svg viewBox="0 0 240 80" className="mt-3 w-full h-20">
+                  <defs>
+                    <linearGradient id="ln" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--mc-accent-glow))" stopOpacity=".5" />
+                      <stop offset="100%" stopColor="hsl(var(--mc-accent-glow))" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,60 C30,40 50,50 70,30 C90,15 110,55 140,40 C170,25 190,55 240,20 L240,80 L0,80 Z" fill="url(#ln)" />
+                  <path d="M0,60 C30,40 50,50 70,30 C90,15 110,55 140,40 C170,25 190,55 240,20" fill="none" stroke="hsl(var(--mc-accent-glow))" strokeWidth="2" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Phone */}
+            <div className="absolute bottom-0 left-0 w-56 sm:w-60 rounded-[2.5rem] bg-[hsl(222_47%_6%)] p-2 mc-shadow-elegant border border-white/10 mc-anim-float">
+              <div className="rounded-[2rem] overflow-hidden bg-white aspect-[9/19]">
+                <div className="relative h-full w-full">
+                  <img src="https://images.unsplash.com/photo-1612531386530-97286d97c2d2?w=600&auto=format&fit=crop&q=80" alt="Telemedicine app" className="absolute inset-0 h-full w-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-b from-[hsl(212_88%_20%/.7)] via-transparent to-[hsl(212_88%_15%/.85)]" />
+                  <div className="absolute inset-x-3 top-3 mc-glass-dark rounded-xl px-3 py-2 text-white text-[10px] font-semibold flex items-center justify-between">
+                    <span>Dr. Carter</span><span className="text-rose-300">● LIVE</span>
+                  </div>
+                  <div className="absolute inset-x-3 bottom-3 grid grid-cols-3 gap-2">
+                    {[Video, MessageSquare, Phone].map((I, i) => (
+                      <button key={i} className="grid place-items-center h-10 rounded-xl mc-glass-dark text-white"><I className="h-4 w-4" /></button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============ TESTIMONIALS ============ */}
+      <section className="py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="text-center max-w-2xl mx-auto">
+            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Patient Stories</p>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Real people. <span className="mc-grad-text">Real outcomes.</span></h2>
+          </div>
+          <div className="mt-14 grid md:grid-cols-3 gap-6">
+            {testimonials.map((t, i) => (
+              <figure key={t.name} className={`relative bg-[hsl(var(--mc-card))] rounded-3xl p-7 border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover ${i === 1 ? "md:translate-y-6" : ""}`}>
+                <Quote className="absolute top-5 right-5 h-10 w-10 text-[hsl(var(--mc-primary)/.12)]" />
+                <div className="flex items-center gap-1 text-amber-400">
+                  {Array.from({ length: 5 }).map((_, k) => <Star key={k} className="h-4 w-4 fill-current" />)}
+                </div>
+                <blockquote className="mt-4 font-display text-lg leading-relaxed">"{t.quote}"</blockquote>
+                <figcaption className="mt-6 flex items-center gap-3 pt-5 border-t border-[hsl(var(--mc-border))]">
+                  <img src={t.img} alt={t.name} className="h-11 w-11 rounded-full object-cover" />
+                  <div>
+                    <p className="text-sm font-bold">{t.name}</p>
+                    <p className="text-xs text-[hsl(var(--mc-muted))]">{t.loc}</p>
                   </div>
                 </figcaption>
               </figure>
@@ -549,10 +815,93 @@ const MediCare = () => {
         </div>
       </section>
 
-      {/* ABOUT */}
-      <section id="about" className="py-20 sm:py-28 bg-[hsl(var(--mc-muted-soft))]">
+      {/* ============ MOBILE APP ============ */}
+      <section className="py-20 sm:py-28 bg-[hsl(var(--mc-muted-soft))]">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Mobile App</p>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Your hospital, <span className="mc-grad-text">in your pocket</span></h2>
+            <p className="mt-4 text-[hsl(var(--mc-muted))] max-w-lg">Book doctors, attend video visits, manage prescriptions, and track your health — anywhere, anytime.</p>
+
+            <ul className="mt-8 grid sm:grid-cols-2 gap-3">
+              {[
+                "Doctor booking", "Video consultation", "E-prescriptions",
+                "Smart notifications", "Medical reports", "Family profiles",
+              ].map((f) => (
+                <li key={f} className="flex items-center gap-2 text-sm">
+                  <CheckCircle2 className="h-4 w-4 text-[hsl(var(--mc-accent))]" /> {f}
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-9 flex flex-wrap gap-3">
+              <a href="#" className="inline-flex items-center gap-3 rounded-2xl bg-[hsl(var(--mc-dark))] text-white px-5 py-3 hover:opacity-90 transition">
+                <Apple className="h-7 w-7" />
+                <span className="text-left leading-tight">
+                  <span className="block text-[10px] opacity-70">Download on</span>
+                  <span className="block text-sm font-bold">App Store</span>
+                </span>
+              </a>
+              <a href="#" className="inline-flex items-center gap-3 rounded-2xl bg-[hsl(var(--mc-dark))] text-white px-5 py-3 hover:opacity-90 transition">
+                <Play className="h-7 w-7" />
+                <span className="text-left leading-tight">
+                  <span className="block text-[10px] opacity-70">Get it on</span>
+                  <span className="block text-sm font-bold">Google Play</span>
+                </span>
+              </a>
+            </div>
+          </div>
+
+          <div className="relative h-[520px] flex items-center justify-center">
+            <div className="absolute inset-0 mc-grad-mesh opacity-70 blur-2xl" />
+            <div className="relative flex gap-5">
+              {[
+                { src: "https://images.unsplash.com/photo-1620912189865-cd4d7203ee71?w=600&auto=format&fit=crop&q=80", delay: "0s" },
+                { src: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&auto=format&fit=crop&q=80", delay: ".4s" },
+              ].map((p, i) => (
+                <div key={i} className="w-52 sm:w-60 rounded-[2.5rem] bg-[hsl(222_47%_6%)] p-2 mc-shadow-elegant border border-white/10 mc-anim-float" style={{ animationDelay: p.delay, transform: i === 1 ? "translateY(40px)" : "none" }}>
+                  <div className="rounded-[2rem] overflow-hidden bg-white aspect-[9/19] relative">
+                    <img src={p.src} alt="App preview" className="h-full w-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[hsl(212_88%_15%/.6)]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============ FINAL CTA ============ */}
+      <section id="cta" className="relative py-24 sm:py-32 overflow-hidden">
+        <video
+          className="absolute inset-0 h-full w-full object-cover"
+          src={CTA_VIDEO}
+          autoPlay muted loop playsInline poster="https://images.unsplash.com/photo-1631815589968-fdb09a223b1e?w=1920&auto=format&fit=crop&q=80"
+        />
+        <div className="absolute inset-0" style={{ background: "var(--mc-grad-cta-overlay)" }} />
+        <div className="absolute inset-0 mc-grid-pattern opacity-20" />
+
+        <div className="relative mx-auto max-w-4xl px-4 sm:px-6 text-center text-white">
+          <span className="inline-flex items-center gap-2 rounded-full mc-glass-dark px-4 py-1.5 text-xs font-semibold">
+            <HeartPulse className="h-3.5 w-3.5 text-rose-400" /> Care that fits your life
+          </span>
+          <h2 className="mt-6 font-display text-4xl sm:text-6xl font-bold leading-tight">Healthcare that <br /><span className="bg-gradient-to-r from-white to-[hsl(174_80%_75%)] bg-clip-text text-transparent">feels human</span></h2>
+          <p className="mt-5 max-w-xl mx-auto text-white/85">Experience trusted digital healthcare built around your comfort, dignity and safety.</p>
+          <div className="mt-9 flex flex-col sm:flex-row gap-3 justify-center">
+            <a href="#doctors" className="inline-flex justify-center items-center gap-2 rounded-full bg-white text-[hsl(var(--mc-primary))] px-7 py-3.5 text-sm font-bold hover:bg-white/95 transition">
+              Get Started <ArrowRight className="h-4 w-4" />
+            </a>
+            <a href="#telemedicine" className="inline-flex justify-center items-center gap-2 rounded-full mc-glass-dark text-white px-7 py-3.5 text-sm font-bold hover:bg-white/15 transition">
+              <Video className="h-4 w-4" /> Talk to a Doctor
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ============ ABOUT (compact) ============ */}
+      <section id="about" className="py-20 sm:py-24">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
-          <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">About us</p>
+          <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">About Us</p>
           <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">{settings.about.title}</h2>
           <p className="mt-6 text-base sm:text-lg text-[hsl(var(--mc-muted))] leading-relaxed whitespace-pre-line">
             {settings.about.body}
@@ -560,25 +909,25 @@ const MediCare = () => {
         </div>
       </section>
 
-      {/* CONTACT */}
-      <section id="contact" className="py-20 sm:py-28">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+      {/* ============ CONTACT ============ */}
+      <section id="contact" className="py-20 sm:py-24 bg-[hsl(var(--mc-muted-soft))]">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto">
             <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Contact</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Get in touch</h2>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">We're here, <span className="mc-grad-text">always</span></h2>
           </div>
           <div className="mt-12 grid sm:grid-cols-3 gap-5">
-            <a href={`mailto:${settings.contact.email}`} className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card hover:-translate-y-1 transition">
+            <a href={`mailto:${settings.contact.email}`} className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover">
               <span className="grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow"><Mail className="h-5 w-5" /></span>
               <h3 className="mt-5 font-display text-lg font-bold">Email</h3>
               <p className="mt-1 text-sm text-[hsl(var(--mc-muted))] break-all">{settings.contact.email}</p>
             </a>
-            <a href={`tel:${settings.contact.phone}`} className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card hover:-translate-y-1 transition">
+            <a href={`tel:${settings.contact.phone}`} className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover">
               <span className="grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow"><Phone className="h-5 w-5" /></span>
               <h3 className="mt-5 font-display text-lg font-bold">Phone</h3>
               <p className="mt-1 text-sm text-[hsl(var(--mc-muted))]">{settings.contact.phone}</p>
             </a>
-            <div className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card">
+            <div className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover">
               <span className="grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow"><MapPin className="h-5 w-5" /></span>
               <h3 className="mt-5 font-display text-lg font-bold">Location</h3>
               <p className="mt-1 text-sm text-[hsl(var(--mc-muted))]">{settings.contact.address}</p>
@@ -587,85 +936,82 @@ const MediCare = () => {
         </div>
       </section>
 
-      {/* FINAL CTA */}
-      <section id="cta" className="py-16 sm:py-24">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="relative overflow-hidden rounded-[2.5rem] mc-grad-primary text-white p-10 sm:p-16 text-center mc-shadow-elegant">
-            <div className="absolute inset-0 opacity-30 mc-grid-pattern" />
-            <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-white/20 blur-3xl" />
-            <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-white/20 blur-3xl" />
-            <div className="relative">
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur px-3 py-1 text-xs font-semibold">
-                <HeartPulse className="h-3.5 w-3.5" /> Care that fits your life
-              </span>
-              <h2 className="mt-4 font-display text-3xl sm:text-5xl font-bold">Start your consultation today</h2>
-              <p className="mt-4 text-white/85 max-w-xl mx-auto">Keep your practice simple, clear, and ready for patients without extra clutter.</p>
-              <a href="#top" className="mt-8 inline-flex items-center gap-2 rounded-full bg-white text-[hsl(var(--mc-primary))] px-7 py-3.5 text-sm font-bold hover:bg-white/95 transition">
-                Get Started <ArrowRight className="h-4 w-4" />
+      {/* ============ FOOTER (premium dark) ============ */}
+      <footer className="relative mc-grad-dark text-white pt-20">
+        <div className="absolute inset-0 mc-grid-pattern opacity-10" />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
+          {/* Newsletter */}
+          <div className="mc-glass-dark rounded-3xl p-8 sm:p-10 grid md:grid-cols-2 gap-6 items-center mb-16">
+            <div>
+              <h3 className="font-display text-2xl sm:text-3xl font-bold">Stay informed about your health</h3>
+              <p className="mt-2 text-white/70 text-sm">Get weekly health tips, new specialist alerts and platform updates.</p>
+            </div>
+            <form className="flex gap-2" onSubmit={(e) => e.preventDefault()}>
+              <input type="email" required placeholder="you@example.com" className="flex-1 rounded-full bg-white/10 border border-white/15 px-5 py-3 text-sm placeholder:text-white/50 outline-none focus:border-[hsl(var(--mc-accent-glow))]" />
+              <button className="rounded-full mc-grad-primary text-white px-5 py-3 text-sm font-semibold mc-shadow-glow">Subscribe</button>
+            </form>
+          </div>
+
+          {/* Columns */}
+          <div className="grid gap-10 md:grid-cols-5 pb-12">
+            <div className="md:col-span-2">
+              <a href="#top" className="flex items-center gap-2.5">
+                <span className="grid place-items-center h-10 w-10 rounded-2xl mc-grad-primary mc-shadow-glow overflow-hidden">
+                  {settings.logoDataUrl ? (
+                    <img src={settings.logoDataUrl} alt={`${settings.siteName} logo`} className="h-full w-full object-cover" />
+                  ) : (
+                    <Stethoscope className="h-5 w-5 text-white" />
+                  )}
+                </span>
+                <span className="font-display font-bold text-xl">{settings.siteName}</span>
               </a>
+              <p className="mt-4 text-sm text-white/70 leading-relaxed max-w-sm">{settings.footerTagline}</p>
+              <div className="mt-5 flex gap-3">
+                {[Facebook, Twitter, Instagram, Linkedin].map((I, i) => (
+                  <a key={i} href="#" aria-label="Social link" className="grid place-items-center h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 transition">
+                    <I className="h-4 w-4" />
+                  </a>
+                ))}
+              </div>
+              <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-rose-500/15 border border-rose-400/30 px-3 py-1.5 text-xs text-rose-200">
+                <Ambulance className="h-3.5 w-3.5" /> Emergency: {settings.contact.phone}
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* FOOTER */}
-      <footer className="border-t border-[hsl(var(--mc-border))] bg-[hsl(var(--mc-card))]">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-14 grid gap-10 md:grid-cols-4">
-          <div>
-            <a href="#top" className="flex items-center gap-2.5">
-              <span className="grid place-items-center h-9 w-9 rounded-xl mc-grad-primary mc-shadow-glow overflow-hidden">
-                {settings.logoDataUrl ? (
-                  <img src={settings.logoDataUrl} alt={`${settings.siteName} logo`} className="h-full w-full object-cover" />
-                ) : (
-                  <Stethoscope className="h-5 w-5 text-white" />
-                )}
-              </span>
-              <span className="font-display font-bold text-lg">{settings.siteName}</span>
-            </a>
-            <p className="mt-4 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">{settings.footerTagline}</p>
-            <div className="mt-5 flex gap-3">
-              {[Facebook, Twitter, Instagram, Linkedin].map((I, i) => (
-                <a key={i} href="#" aria-label="Social link" className="grid place-items-center h-9 w-9 rounded-full bg-[hsl(var(--mc-muted-soft))] hover:mc-grad-primary hover:text-white transition">
-                  <I className="h-4 w-4" />
-                </a>
-              ))}
+            {[
+              { title: "Specialties", items: specialties.slice(0, 5).map(s => ({ label: s.name, href: "#specialties" })) },
+              { title: "Quick Links", items: [
+                { label: "Find Doctor", href: "#doctors" },
+                { label: "Telemedicine", href: "#telemedicine" },
+                { label: "Services", href: "#services" },
+                { label: "About", href: "#about" },
+              ]},
+              { title: "Support", items: [
+                { label: "Contact", href: "#contact" },
+                { label: "Patient Portal", href: "#cta" },
+                { label: "Privacy Policy", href: "#" },
+                { label: "Terms", href: "#" },
+              ]},
+            ].map((c) => (
+              <div key={c.title}>
+                <h3 className="font-display text-sm font-bold uppercase tracking-wider">{c.title}</h3>
+                <ul className="mt-4 space-y-2.5 text-sm text-white/70">
+                  {c.items.map((it) => (<li key={it.label}><a href={it.href} className="hover:text-white transition">{it.label}</a></li>))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          <div className="border-t border-white/10">
+            <div className="py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/60">
+              <p>© {new Date().getFullYear()} {settings.siteName}. All rights reserved.</p>
+              <div className="flex items-center gap-3">
+                <span className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" /> JCI Accredited</span>
+                <Link to="/doctor-portal/admin" className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 hover:text-white hover:border-white/40 transition">
+                  <Settings className="h-3.5 w-3.5" /> Admin
+                </Link>
+              </div>
             </div>
-          </div>
-
-          {[
-            { title: "Explore", items: [
-              { label: "How it works", href: "#how" },
-              { label: "Services", href: "#services" },
-              { label: "Reviews", href: "#reviews" },
-            ]},
-            { title: "Site", items: [
-              { label: "About", href: "#about" },
-              { label: "Contact", href: "#contact" },
-            ]},
-          ].map((c) => (
-            <div key={c.title}>
-              <h3 className="font-display text-sm font-bold uppercase tracking-wider">{c.title}</h3>
-              <ul className="mt-4 space-y-2.5 text-sm text-[hsl(var(--mc-muted))]">
-                {c.items.map((it) => (<li key={it.label}><a href={it.href} className="hover:text-[hsl(var(--mc-primary))] transition">{it.label}</a></li>))}
-              </ul>
-            </div>
-          ))}
-
-          <div>
-            <h3 className="font-display text-sm font-bold uppercase tracking-wider">Contact</h3>
-            <ul className="mt-4 space-y-2.5 text-sm text-[hsl(var(--mc-muted))]">
-              <li className="flex items-center gap-2"><Mail className="h-4 w-4" /> {settings.contact.email}</li>
-              <li className="flex items-center gap-2"><Phone className="h-4 w-4" /> {settings.contact.phone}</li>
-              <li className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {settings.contact.address}</li>
-            </ul>
-          </div>
-        </div>
-        <div className="border-t border-[hsl(var(--mc-border))]">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[hsl(var(--mc-muted))]">
-            <p>© {new Date().getFullYear()} {settings.siteName}. All rights reserved.</p>
-            <Link to="/doctor-portal/admin" className="inline-flex items-center gap-1.5 rounded-full border border-[hsl(var(--mc-border))] px-3 py-1.5 hover:text-[hsl(var(--mc-primary))] hover:border-[hsl(var(--mc-primary))] transition">
-              <Settings className="h-3.5 w-3.5" /> Admin
-            </Link>
           </div>
         </div>
       </footer>
