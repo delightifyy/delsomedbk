@@ -363,9 +363,6 @@ const MediCare = () => {
                 </li>
               ))}
             </ul>
-            <a href="#cta" onClick={() => setOpen(false)} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full mc-grad-primary text-white px-5 py-3 text-sm font-semibold">
-              Book Appointment <ArrowRight className="h-4 w-4" />
-            </a>
           </div>
         )}
       </header>
