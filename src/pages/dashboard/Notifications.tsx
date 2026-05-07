@@ -18,6 +18,7 @@ import {
   Bell, Search, Stethoscope, Building2, Pill, FlaskConical, HeartPulse,
   CheckCircle2, XCircle, Clock, Mail, Phone, MapPin, FileText, Download, ExternalLink, Calendar, Loader2,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { listRegistrations, subscribeStore, updateRegistration, ensureDemoRegistrations, type LocalRegistration } from "@/lib/localStore";
 
@@ -55,7 +56,7 @@ type Registration = {
 
 type TabKey = "all" | "pending" | ApplicantType;
 
-const TYPE_META: Record<ApplicantType, { label: string; icon: any; tone: string }> = {
+const TYPE_META: Record<ApplicantType, { label: string; icon: LucideIcon; tone: string }> = {
   doctor: { label: "Doctor", icon: Stethoscope, tone: "bg-primary-soft text-primary" },
   organization: { label: "HMO / Organization", icon: Building2, tone: "bg-accent text-accent-foreground" },
   pharmacy: { label: "Pharmacy", icon: Pill, tone: "bg-secondary text-secondary-foreground" },
@@ -63,7 +64,7 @@ const TYPE_META: Record<ApplicantType, { label: string; icon: any; tone: string 
   patient: { label: "Patient", icon: HeartPulse, tone: "bg-primary-soft text-primary" },
 };
 
-const STATUS_META: Record<Status, { label: string; tone: string; icon: any }> = {
+const STATUS_META: Record<Status, { label: string; tone: string; icon: LucideIcon }> = {
   pending: { label: "Pending", tone: "bg-warning/15 text-warning border border-warning/30", icon: Clock },
   approved: { label: "Approved", tone: "bg-success/15 text-success border border-success/30", icon: CheckCircle2 },
   rejected: { label: "Rejected", tone: "bg-destructive/15 text-destructive border border-destructive/30", icon: XCircle },
@@ -80,6 +81,45 @@ const TABS: { key: TabKey; label: string }[] = [
 
 const fmtDate = (s?: string | null) =>
   s ? new Date(s).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "—";
+
+type DetailRow = { key: string; value: string };
+
+const formatUnknown = (value: unknown): string => {
+  if (value === null || value === undefined) return "—";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "string") return value.trim() || "—";
+  if (typeof value === "number" || typeof value === "bigint") return String(value);
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "[Unserializable value]";
+    }
+  }
+  return String(value);
+};
+
+const flattenDetails = (input: unknown, prefix = ""): DetailRow[] => {
+  if (input === null || input === undefined) return [];
+
+  if (Array.isArray(input)) {
+    return input.flatMap((item, index) => {
+      const key = `${prefix} ${index + 1}`.trim();
+      if (item && typeof item === "object") return flattenDetails(item, key);
+      return [{ key, value: formatUnknown(item) }];
+    });
+  }
+
+  if (typeof input === "object") {
+    return Object.entries(input as Record<string, unknown>).flatMap(([k, v]) => {
+      const nextKey = prefix ? `${prefix} ${prettyKey(k)}` : prettyKey(k);
+      if (v && typeof v === "object") return flattenDetails(v, nextKey);
+      return [{ key: nextKey, value: formatUnknown(v) }];
+    });
+  }
+
+  return [{ key: prefix || "Value", value: formatUnknown(input) }];
+};
 
 const NotificationsPageInner = () => {
   const { toast } = useToast();
@@ -137,6 +177,8 @@ const NotificationsPageInner = () => {
     };
     items.forEach((r) => {
       if (r.status === "pending") c.pending++;
+      if (r.status === "approved") c.doctor++;
+      if (r.status === "rejected") c.organization++;
       c[r.applicant_type]++;
     });
     return c;
@@ -193,7 +235,7 @@ const NotificationsPageInner = () => {
       {/* Stat cards */}
       <div className="mt-5 sm:mt-6 grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
         <Card className="p-3 sm:p-4">
-          <p className="text-xs text-muted-foreground">Total</p>
+          <p className="text-xs text-muted-foreground">Total User</p>
           <p className="text-xl sm:text-2xl font-display font-bold mt-1">{counts.all}</p>
         </Card>
         <Card className="p-3 sm:p-4">
@@ -201,12 +243,12 @@ const NotificationsPageInner = () => {
           <p className="text-xl sm:text-2xl font-display font-bold mt-1 text-warning">{counts.pending}</p>
         </Card>
         <Card className="p-3 sm:p-4">
-          <p className="text-xs text-muted-foreground inline-flex items-center gap-1"><Stethoscope className="h-3 w-3" /> Doctors</p>
-          <p className="text-xl sm:text-2xl font-display font-bold mt-1">{counts.doctor}</p>
+          <p className="text-xs text-muted-foreground inline-flex items-center gap-1"><XCircle className="h-3 w-3" /> Rejected</p>
+          <p className="text-xl sm:text-2xl font-display font-bold mt-1 text-destructive">{items.filter((r) => r.status === "rejected").length}</p>
         </Card>
         <Card className="p-3 sm:p-4">
-          <p className="text-xs text-muted-foreground inline-flex items-center gap-1"><HeartPulse className="h-3 w-3" /> Patients</p>
-          <p className="text-xl sm:text-2xl font-display font-bold mt-1">{counts.patient}</p>
+          <p className="text-xs text-muted-foreground inline-flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Approve</p>
+          <p className="text-xl sm:text-2xl font-display font-bold mt-1 text-success">{items.filter((r) => r.status === "approved").length}</p>
         </Card>
       </div>
 
@@ -256,13 +298,6 @@ const NotificationsPageInner = () => {
                           </div>
                           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] sm:text-xs text-muted-foreground">
                             <span className="inline-flex items-center gap-1 max-w-full truncate"><Mail className="h-3 w-3 flex-shrink-0" /><span className="truncate">{r.email}</span></span>
-                            {r.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />{r.phone}</span>}
-                            {(r.city || r.state) && (
-                              <span className="inline-flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />{[r.city, r.state].filter(Boolean).join(", ")}
-                              </span>
-                            )}
-                            <span className="inline-flex items-center gap-1"><FileText className="h-3 w-3" />{r.documents?.length ?? 0} docs</span>
                             <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" />{fmtDate(r.created_at)}</span>
                           </div>
                           <div className="mt-3 sm:hidden">
@@ -293,6 +328,7 @@ const NotificationsPageInner = () => {
             const Status = STATUS_META[active.status];
             const StatusIcon = Status.icon;
             const TypeIcon = meta.icon;
+            const detailRows = flattenDetails(active.details);
             return (
               <>
                 <DialogHeader>
@@ -327,16 +363,28 @@ const NotificationsPageInner = () => {
                   </section>
 
                   {/* Form details */}
-                  {active.details && Object.keys(active.details).length > 0 && (
+                  {detailRows.length > 0 && (
                     <section>
                       <h4 className="font-display font-semibold text-sm mb-3">Application details</h4>
                       <div className="grid sm:grid-cols-2 gap-3 text-sm">
-                        {Object.entries(active.details).map(([k, v]) => (
-                          <Field key={k} label={prettyKey(k)} value={String(v ?? "") || "—"} />
+                        {detailRows.map((row) => (
+                          <Field key={`${row.key}:${row.value}`} label={row.key} value={row.value} />
                         ))}
                       </div>
                     </section>
                   )}
+
+                  <section>
+                    <h4 className="font-display font-semibold text-sm mb-3">Submission summary</h4>
+                    <div className="grid sm:grid-cols-2 gap-3 text-sm">
+                      <Field label="Application ID" value={active.id} />
+                      <Field label="Applicant type" value={meta.label} />
+                      <Field label="Current status" value={Status.label} />
+                      <Field label="Submitted at" value={fmtDate(active.created_at)} />
+                      <Field label="Reviewed at" value={active.reviewed_at ? fmtDate(active.reviewed_at) : "Pending review"} />
+                      <Field label="Reviewer notes" value={active.reviewer_notes} />
+                    </div>
+                  </section>
 
                   {/* Documents */}
                   <section>

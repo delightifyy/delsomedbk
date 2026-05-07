@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { deleteContactMessage, listContactMessages, markContactMessageRead, subscribeStore, type LocalContactMessage } from "@/lib/localStore";
+import { deleteContactMessage, ensureDemoContactMessages, listContactMessages, markContactMessageRead, subscribeStore, type LocalContactMessage } from "@/lib/localStore";
 
 type Msg = {
   id: string;
@@ -29,6 +29,10 @@ const ContactsPage = () => {
       load();
     });
     return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    ensureDemoContactMessages();
   }, []);
 
   const view = async (m: Msg) => {

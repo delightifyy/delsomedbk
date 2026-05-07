@@ -528,6 +528,78 @@ export const setUserRole = async (userId: string, role: LocalRole) => {
 
 export const listContactMessages = () => sortNewest(readStore().contacts);
 
+export const ensureDemoContactMessages = () => {
+  save((state) => {
+    if (state.contacts.length > 0) return;
+
+    const nowTs = now();
+    const samples: LocalContactMessage[] = [
+      {
+        id: crypto.randomUUID(),
+        name: "Amina Yusuf",
+        email: "amina.yusuf@example.com",
+        subject: "Need a specialist recommendation",
+        message: "Hello, I would like to know if you have a cardiologist available in Abuja for a first-time consultation.",
+        state: "FCT",
+        read: false,
+        created_at: nowTs,
+      },
+      {
+        id: crypto.randomUUID(),
+        name: "Dr. Kelechi Nwankwo",
+        email: "kelechi.nwankwo@healthpro.example.com",
+        subject: "Partnership enquiry",
+        message: "We are a small clinic in Enugu and want to explore listing our doctors on your platform.",
+        state: "Enugu",
+        read: false,
+        created_at: nowTs,
+      },
+      {
+        id: crypto.randomUUID(),
+        name: "MediCare Pharmacy",
+        email: "info@medicarepharmacy.example.com",
+        subject: "Verify pharmacy onboarding process",
+        message: "Please share the steps required for pharmacy registration and what documents we need to submit.",
+        state: "Lagos",
+        read: false,
+        created_at: nowTs,
+      },
+      {
+        id: crypto.randomUUID(),
+        name: "HealthPlus HMO",
+        email: "contact@healthplushmo.example.com",
+        subject: "Bulk member support",
+        message: "Our team would like to understand how your platform handles member access and claims support.",
+        state: "Rivers",
+        read: true,
+        created_at: nowTs,
+      },
+      {
+        id: crypto.randomUUID(),
+        name: "Oluwatobi Adewale",
+        email: "oluwatobi.adewale@example.com",
+        subject: "Question about patient registration",
+        message: "I completed the patient form but I want to confirm if my next of kin details were received correctly.",
+        state: "Oyo",
+        read: true,
+        created_at: nowTs,
+      },
+      {
+        id: crypto.randomUUID(),
+        name: "Northside Diagnostics",
+        email: "admin@northsidedx.example.com",
+        subject: "Diagnostic centre onboarding",
+        message: "We want to register our diagnostics centre and need guidance on the licence and verification documents.",
+        state: "Kaduna",
+        read: false,
+        created_at: nowTs,
+      },
+    ];
+
+    state.contacts.unshift(...samples);
+  });
+};
+
 export const addContactMessage = async (message: Omit<LocalContactMessage, "id" | "read" | "created_at">) => {
   const entry: LocalContactMessage = { ...message, id: crypto.randomUUID(), read: false, created_at: now() };
   save((state) => {

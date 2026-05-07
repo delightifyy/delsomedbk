@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
-  Search,
   Users as UsersIcon,
   HeartPulse,
   Stethoscope,
@@ -25,6 +24,7 @@ import {
   MapPin,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -70,6 +70,8 @@ type Row = {
 
 type TabKey = "all" | "patient" | "doctor" | "organization" | "pharmacy" | "lab-diagnostics";
 
+const EXCLUDED_USER_EMAILS = new Set(["user@carehub.local"]);
+
 type SampleUser = {
   id: string;
   name: string;
@@ -109,7 +111,6 @@ const UsersPage = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [roles, setRoles] = useState<Record<string, AppRole>>({});
   const [tab, setTab] = useState<TabKey>("all");
-  const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [sampleUsers, setSampleUsers] = useState<SampleUser[]>(INITIAL_SAMPLE_USERS);
@@ -118,7 +119,7 @@ const UsersPage = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [tab, q]);
+  }, [tab]);
 
   const load = () => {
     setLoading(true);
@@ -146,21 +147,24 @@ const UsersPage = () => {
 
   const profileRows: Row[] = useMemo(
     () =>
-      profiles.map((p) => {
-        const display = p.organization_name || p.full_name || p.email || "Unnamed user";
-        return {
-          id: p.id,
-          display,
-          email: p.email,
-          phone: p.phone,
-          avatar_url: p.avatar_url,
-          initials: initialsOf(p.full_name || display),
-          user_type: p.user_type,
-          created_at: p.created_at,
-          manageable: true,
-          role: roles[p.id] ?? "user",
-        };
-      }).filter((row) => row.role !== "admin"),
+      profiles
+        .filter((p) => !EXCLUDED_USER_EMAILS.has((p.email ?? "").toLowerCase()))
+        .map((p) => {
+          const display = p.organization_name || p.full_name || p.email || "Unnamed user";
+          return {
+            id: p.id,
+            display,
+            email: p.email,
+            phone: p.phone,
+            avatar_url: p.avatar_url,
+            initials: initialsOf(p.full_name || display),
+            user_type: p.user_type,
+            created_at: p.created_at,
+            manageable: true,
+            role: roles[p.id] ?? "user",
+          };
+        })
+        .filter((row) => row.role !== "admin"),
     [profiles, roles]
   );
 
@@ -205,9 +209,7 @@ const UsersPage = () => {
     } else if (key !== "all") {
       list = allRows.filter((r) => r.user_type === key);
     }
-    if (!q.trim()) return list;
-    const needle = q.toLowerCase();
-    return list.filter((r) => [r.display, r.subtitle, r.email, r.phone].some((v) => v?.toLowerCase().includes(needle)));
+    return list;
   };
 
   const handleSetUserRole = async (userId: string, next: AppRole) => {
@@ -236,93 +238,85 @@ const UsersPage = () => {
             Patients, doctors and organisations registered on Desol<span className="text-secondary">Med</span>.
           </p>
         </div>
-        <div className="relative w-full lg:w-80">
-          <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, email, phone…" className="pl-9" />
+        <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+          <Select value={tab} onValueChange={(v) => setTab(v as TabKey)}>
+            <SelectTrigger className="w-full sm:w-[220px]">
+              <SelectValue placeholder="Filter users" />
+            </SelectTrigger>
+            <SelectContent>
+              {TABS.map((t) => (
+                <SelectItem key={t.key} value={t.key}>
+                  {t.label} ({counts[t.key]})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as TabKey)} className="mt-6">
-        <TabsList className="flex flex-wrap h-auto">
-          {TABS.map((t) => (
-            <TabsTrigger key={t.key} value={t.key} className="flex-col gap-1 h-auto py-2 px-4 whitespace-normal text-center">
-              <div className="flex items-center gap-2">
-                <t.icon className="h-4 w-4" />
-                <span>{t.label}</span>
-              </div>
-              <span className="text-xs text-muted-foreground">({counts[t.key]})</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      {(() => {
+        const currentTab = TABS.find((x) => x.key === tab) ?? TABS[0];
+        const list = filterFor(tab);
+        const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+        const currentPage = Math.min(page, totalPages);
+        const pagedList = list.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+        const filteredSample = sampleUsers;
 
-        {TABS.map((t) => {
-          const list = filterFor(t.key);
-          const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
-          const currentPage = Math.min(page, totalPages);
-          const pagedList = list.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-          const filteredSample = q.trim()
-            ? sampleUsers.filter((u) => [u.name, u.email, u.role, u.status].some((v) => v.toLowerCase().includes(q.toLowerCase())))
-            : sampleUsers;
-
-          return (
-            <TabsContent key={t.key} value={t.key} className="mt-4">
-              {t.key === "all" && (
-                <Card className="overflow-hidden mb-4">
-                  <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-                    <h3 className="font-medium text-sm">{t.label} — Sample</h3>
-                    <span className="text-xs text-muted-foreground">{filteredSample.length} total</span>
-                  </div>
-                  {filteredSample.length === 0 ? (
-                    <div className="p-8 text-center text-sm text-muted-foreground">No sample users match your search.</div>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead className="hidden sm:table-cell">Role</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredSample.map((u) => (
-                          <TableRow key={u.id}>
-                            <TableCell>
-                              <div className="font-medium">{u.name}</div>
-                              <div className="text-xs text-muted-foreground">{u.email}</div>
+        return (
+          <div className="mt-4 space-y-4">
+            {tab === "all" && (
+              <Card className="overflow-hidden">
+                <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                  <h3 className="font-medium text-sm">{currentTab.label} — Sample</h3>
+                  <span className="text-xs text-muted-foreground">{filteredSample.length} total</span>
+                </div>
+                {filteredSample.length === 0 ? (
+                  <div className="p-8 text-center text-sm text-muted-foreground">No sample users match your search.</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                          <TableHead className="hidden sm:table-cell">Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredSample.map((u) => (
+                        <TableRow key={u.id}>
+                          <TableCell>
+                            <div className="font-medium">{u.name}</div>
+                            <div className="text-xs text-muted-foreground">{u.email}</div>
                               <div className="sm:hidden mt-1">
-                                <Badge variant="secondary" className="bg-primary-soft text-primary text-[10px]">{u.role}</Badge>
-                              </div>
-                            </TableCell>
+                                <Badge
+                                  variant="secondary"
+                                  className={u.status === "Active" ? "bg-success/15 text-success text-[10px]" : "bg-warning/15 text-warning text-[10px]"}
+                                >
+                                  {u.status}
+                                </Badge>
+                            </div>
+                          </TableCell>
                             <TableCell className="hidden sm:table-cell">
-                              <Badge variant="secondary" className="bg-primary-soft text-primary">{u.role}</Badge>
-                            </TableCell>
-                            <TableCell>
                               <Badge
-                                className={
-                                  u.status === "Active"
-                                    ? "bg-primary/15 text-primary hover:bg-primary/15"
-                                    : "bg-destructive/15 text-destructive hover:bg-destructive/15"
-                                }
+                                variant="secondary"
+                                className={u.status === "Active" ? "bg-success/15 text-success" : "bg-warning/15 text-warning"}
                               >
                                 {u.status}
                               </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="inline-flex gap-1.5">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 px-2 text-xs [&_svg]:size-3"
-                                  onClick={() => toast({ title: "Viewing user", description: u.name })}
-                                >
-                                  <Eye className="h-3 w-3" />
-                                  <span className="hidden sm:inline">View</span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button size="icon" variant="outline" className="h-8 w-8" aria-label="Open actions menu">
+                                  <ChevronDown className="h-4 w-4" />
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 px-2 text-xs [&_svg]:size-3"
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => toast({ title: "Viewing user", description: u.name })}>
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  View
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
                                   onClick={() => {
                                     setSampleUsers((prev) =>
                                       prev.map((x) =>
@@ -335,127 +329,134 @@ const UsersPage = () => {
                                     });
                                   }}
                                 >
-                                  <Ban className="h-3 w-3" />
-                                  <span className="hidden sm:inline">Suspend</span>
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  className="h-7 px-2 text-xs [&_svg]:size-3"
+                                  <Ban className="h-4 w-4 mr-2" />
+                                  {u.status === "Active" ? "Suspend" : "Reactivate"}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
                                   onClick={() => {
                                     setSampleUsers((prev) => prev.filter((x) => x.id !== u.id));
                                     toast({ title: "User deleted", description: u.name });
                                   }}
                                 >
-                                  <Trash2 className="h-3 w-3" />
-                                  <span className="hidden sm:inline">Delete</span>
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </Card>
-              )}
-              <Card className="overflow-hidden">
-                {loading ? (
-                  <div className="p-10 text-center text-sm text-muted-foreground">Loading…</div>
-                ) : list.length === 0 ? (
-                  <div className="p-10 text-center">
-                    <UsersIcon className="h-10 w-10 mx-auto text-muted-foreground/40" />
-                    <p className="mt-3 text-sm text-muted-foreground">
-                      {q ? "No users match your search." : `No ${t.label.toLowerCase()} yet.`}
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <ul className="divide-y divide-border">
-                      {pagedList.map((r) => (
-                        <li key={r.id} className="p-4 flex flex-col lg:flex-row lg:items-center gap-4">
-                          <div className="flex items-start gap-4 min-w-0 flex-1">
-                            <Avatar className="h-11 w-11 flex-shrink-0">
-                              {r.avatar_url ? <AvatarImage src={r.avatar_url} alt="" /> : null}
-                              <AvatarFallback className="bg-primary-soft text-primary text-sm font-medium">
-                                {r.initials}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <p className="font-medium truncate">{r.display}</p>
-                              </div>
-                              <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                                {r.subtitle && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{r.subtitle}</span>}
-                                {r.email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" />{r.email}</span>}
-                                {r.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />{r.phone}</span>}
-                                {r.created_at && <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" />Joined {fmtDate(r.created_at)}</span>}
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-between lg:justify-end gap-2 lg:ml-auto w-full lg:w-auto">
-                            {r.manageable ? (
-                              <Select
-                                value={r.role ?? "user"}
-                                onValueChange={(v) => handleSetUserRole(r.id, v as AppRole)}
-                                disabled={savingId === r.id}
-                              >
-                                <SelectTrigger className="h-9 w-[120px]">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="user">User</SelectItem>
-                                  <SelectItem value="admin">Admin</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            ) : null}
-
-                            {r.user_type === "doctor" && (
-                              <Button size="icon" variant="outline" title="View">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </li>
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </ul>
-                    {totalPages > 1 && (
-                      <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-border">
-                        <span className="text-xs text-muted-foreground">
-                          Page {currentPage} of {totalPages} · {list.length} total
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 px-2"
-                            disabled={currentPage <= 1}
-                            onClick={() => setPage((p) => Math.max(1, p - 1))}
-                          >
-                            <ChevronLeft className="h-4 w-4" />
-                            <span className="hidden sm:inline ml-1">Prev</span>
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 px-2"
-                            disabled={currentPage >= totalPages}
-                            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                          >
-                            <span className="hidden sm:inline mr-1">Next</span>
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </>
+                    </TableBody>
+                  </Table>
                 )}
               </Card>
-            </TabsContent>
-          );
-        })}
-      </Tabs>
+            )}
+
+            {loading ? (
+              <Card className="overflow-hidden">
+                <div className="p-10 text-center text-sm text-muted-foreground">Loading…</div>
+              </Card>
+            ) : list.length > 0 ? (
+              <Card className="overflow-hidden">
+                <>
+                  <ul className="divide-y divide-border">
+                    {pagedList.map((r) => (
+                      <li key={r.id} className="p-4 flex flex-col lg:flex-row lg:items-center gap-4">
+                        <div className="flex items-start gap-4 min-w-0 flex-1">
+                          <Avatar className="h-11 w-11 flex-shrink-0">
+                            {r.avatar_url ? <AvatarImage src={r.avatar_url} alt="" /> : null}
+                            <AvatarFallback className="bg-primary-soft text-primary text-sm font-medium">
+                              {r.initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-medium truncate">{r.display}</p>
+                            </div>
+                            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                              {r.subtitle && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{r.subtitle}</span>}
+                              {r.email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" />{r.email}</span>}
+                              {r.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />{r.phone}</span>}
+                              {r.created_at && <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" />Joined {fmtDate(r.created_at)}</span>}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between lg:justify-end gap-2 lg:ml-auto w-full lg:w-auto">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="icon" variant="outline" className="h-8 w-8" aria-label="Open user actions">
+                                <ChevronDown className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => toast({ title: "Viewing user", description: r.display })}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View
+                              </DropdownMenuItem>
+                              {r.manageable ? (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    const next = (roles[r.id] ?? "user") === "admin" ? "user" : "admin";
+                                    handleSetUserRole(r.id, next);
+                                  }}
+                                  disabled={savingId === r.id}
+                                >
+                                  <UsersIcon className="h-4 w-4 mr-2" />
+                                  {roles[r.id] === "admin" ? "Set as User" : "Set as Admin"}
+                                </DropdownMenuItem>
+                              ) : null}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => toast({ title: "Delete action", description: "This action is not connected yet." })}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-border">
+                      <span className="text-xs text-muted-foreground">
+                        Page {currentPage} of {totalPages} · {list.length} total
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 px-2"
+                          disabled={currentPage <= 1}
+                          onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                          <span className="hidden sm:inline ml-1">Prev</span>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 px-2"
+                          disabled={currentPage >= totalPages}
+                          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                        >
+                          <span className="hidden sm:inline mr-1">Next</span>
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              </Card>
+            ) : null}
+          </div>
+        );
+      })()}
     </DashboardLayout>
   );
 };
