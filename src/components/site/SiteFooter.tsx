@@ -77,11 +77,11 @@ export const SiteFooter = () => {
             <div className="text-center md:text-left w-full md:w-auto">
               <p className="">© {new Date().getFullYear()} DesolMed. All rights reserved.</p>
             </div>
-            {/* <div className="w-full md:w-auto">
+            <div className="w-full md:w-auto">
               <ul className="flex flex-col md:flex-row items-center md:items-center justify-center md:justify-end gap-2 md:gap-x-5">
                 <li><Link to="/dashboard" className="hover:text-foreground transition-colors">Admin</Link></li>
               </ul>
-            </div> */}
+            </div>
           </div>
         </div>
       </div>
