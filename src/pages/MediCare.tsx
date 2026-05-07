@@ -314,7 +314,7 @@ const MediCare = () => {
             <span className="font-display font-bold text-xl tracking-tight">{settings.siteName}</span>
           </a>
 
-          <ul className="hidden lg:flex items-center gap-1 text-sm font-medium">
+          <ul className="hidden lg:flex items-center gap-1 text-sm font-semibold text-slate-900">
             {navLinks.map((l) => (
               <li
                 key={l.href}
@@ -343,15 +343,6 @@ const MediCare = () => {
               </li>
             ))}
           </ul>
-
-          <div className="hidden md:flex items-center gap-2">
-            <button className="grid place-items-center h-10 w-10 rounded-full mc-glass hover:text-[hsl(var(--mc-primary))] transition" aria-label="Search">
-              <Search className="h-4 w-4" />
-            </button>
-            <a href="#cta" className="inline-flex items-center gap-2 rounded-full mc-grad-primary text-white px-5 py-2.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
-              Book Appointment <ArrowRight className="h-4 w-4" />
-            </a>
-          </div>
 
           <button
             type="button"
