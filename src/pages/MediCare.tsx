@@ -633,51 +633,6 @@ const MediCare = () => {
         </div>
       </section>
 
-      {/* ============ DOCTORS ============ */}
-      <section id="doctors" className="py-20 sm:py-28">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <div>
-              <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Find a Doctor</p>
-              <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold max-w-xl">Meet our top-rated <span className="mc-grad-text">specialists</span></h2>
-            </div>
-            <div className="flex items-center gap-2 mc-glass mc-shadow-card rounded-full px-4 py-2 max-w-md w-full">
-              <Search className="h-4 w-4 text-[hsl(var(--mc-muted))]" />
-              <input placeholder="Search by name or specialty…" className="flex-1 bg-transparent outline-none text-sm" />
-              <button className="rounded-full mc-grad-primary text-white text-xs font-semibold px-4 py-1.5">Search</button>
-            </div>
-          </div>
-
-          <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {doctors.map((d) => (
-              <div key={d.name} className="group bg-[hsl(var(--mc-card))] rounded-3xl border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover overflow-hidden">
-                <div className="relative aspect-[4/5] overflow-hidden">
-                  <img src={d.img} alt={d.name} loading="lazy" className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-white/90 backdrop-blur px-2.5 py-1 text-[11px] font-bold">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mc-anim-pulse-dot" /> Online
-                  </span>
-                  <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-amber-400/95 px-2.5 py-1 text-[11px] font-bold">
-                    <Star className="h-3 w-3 fill-white text-white" /> {d.rating}
-                  </span>
-                </div>
-                <div className="p-5">
-                  <h3 className="font-display text-lg font-bold">{d.name}</h3>
-                  <p className="text-xs text-[hsl(var(--mc-primary))] font-semibold">{d.specialty}</p>
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-[hsl(var(--mc-muted))]">
-                    <p className="inline-flex items-center gap-1"><Award className="h-3.5 w-3.5" /> {d.years} yrs exp</p>
-                    <p className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {d.next}</p>
-                  </div>
-                  <div className="mt-4 flex items-center justify-between">
-                    <p className="font-display font-bold text-lg">${d.fee}<span className="text-xs font-normal text-[hsl(var(--mc-muted))]">/visit</span></p>
-                    <button className="rounded-full mc-grad-primary text-white text-xs font-semibold px-3.5 py-2">Book Session</button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ============ TELEMEDICINE ============ */}
       <section id="telemedicine" className="relative py-20 sm:py-28 mc-grad-dark text-white overflow-hidden mc-noise">
         <div className="absolute inset-0 mc-grid-pattern opacity-20" />
