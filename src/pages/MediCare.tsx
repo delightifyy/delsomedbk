@@ -401,9 +401,6 @@ const MediCare = () => {
               <a href="#cta" className="inline-flex justify-center items-center gap-2 rounded-full mc-grad-primary text-white px-7 py-3.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
                 Book Appointment <ArrowRight className="h-4 w-4" />
               </a>
-              <a href="#doctors" className="inline-flex justify-center items-center gap-2 rounded-full mc-glass-dark text-white px-7 py-3.5 text-sm font-semibold hover:bg-white/15 transition">
-                <Search className="h-4 w-4" /> Find a Doctor
-              </a>
             </div>
 
             {/* Mini stats */}
