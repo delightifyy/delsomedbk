@@ -93,8 +93,8 @@ const DoctorProfile = () => {
 
             <div className="mt-6 flex flex-wrap gap-3">
               <Button variant="hero" size="lg" asChild>
-                <Link to={`/medicare/${doctor.id}`}>
-                  <Globe className="h-4 w-4 mr-2" /> Visit Website
+                <Link to={`/doctor-portal?doctor=${doctor.id}`}>
+                  <Globe className="h-4 w-4 mr-2" /> Doctor Website
                 </Link>
               </Button>
               <Button variant="outline" size="lg">
@@ -113,7 +113,7 @@ const DoctorProfile = () => {
             <p className="mt-3 text-muted-foreground leading-relaxed">{doctor.bio}</p>
             <p className="mt-3 text-muted-foreground leading-relaxed">
               {doctor.name} is a verified member of the DesolMed network, practising in {doctor.city}, {doctor.state}.
-              Patients can connect through DesolMed for in-person consultations, follow-ups and second opinions.
+              DesolMed helps patients discover and verify this profile; appointment booking continues on the doctor's own website.
             </p>
           </div>
 
@@ -131,9 +131,9 @@ const DoctorProfile = () => {
 
           <div>
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <h2 className="font-display text-2xl font-bold">Available Time Slots</h2>
+              <h2 className="font-display text-2xl font-bold">Availability Preview</h2>
               <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <Clock className="h-3.5 w-3.5" /> Times shown in WAT
+                <Clock className="h-3.5 w-3.5" /> Final booking happens on the doctor website
               </span>
             </div>
             <div className="mt-4 grid sm:grid-cols-2 gap-3">
@@ -142,13 +142,12 @@ const DoctorProfile = () => {
                   <p className="text-xs font-semibold tracking-wider text-muted-foreground">{day.day}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {day.slots.map((s) => (
-                      <button
+                      <span
                         key={s}
-                        type="button"
-                        className="text-xs font-medium px-2.5 py-1.5 rounded-lg border border-border bg-background hover:border-secondary hover:bg-secondary/10 hover:text-secondary transition-colors"
+                        className="text-xs font-medium px-2.5 py-1.5 rounded-lg border border-border bg-background text-muted-foreground"
                       >
                         {s}
-                      </button>
+                      </span>
                     ))}
                   </div>
                 </div>
@@ -205,25 +204,25 @@ const DoctorProfile = () => {
                 <Phone className="h-4 w-4 mt-0.5 text-muted-foreground" />
                 <div>
                   <dt className="text-xs text-muted-foreground">Phone</dt>
-                  <dd className="font-medium">Available after booking</dd>
+                  <dd className="font-medium">Managed on doctor website</dd>
                 </div>
               </div>
               <div className="flex items-start gap-2">
                 <Globe className="h-4 w-4 mt-0.5 text-muted-foreground" />
                 <div>
                   <dt className="text-xs text-muted-foreground">Website</dt>
-                  <dd className="font-medium text-muted-foreground">desolmed.com/doctors/{doctor.id}</dd>
+                  <dd className="font-medium text-muted-foreground">Doctor Medicare website</dd>
                 </div>
               </div>
             </dl>
           </div>
 
           <div className="rounded-2xl border border-border bg-primary-soft p-5">
-            <h3 className="font-display text-base font-semibold">Schedule an Appointment</h3>
-            <p className="mt-2 text-sm text-muted-foreground">Book a consultation with {doctor.name} on their booking page.</p>
+            <h3 className="font-display text-base font-semibold">Doctor Website</h3>
+            <p className="mt-2 text-sm text-muted-foreground">DesolMed verifies and lists {doctor.name}. Open the doctor's Medicare website, then book the appointment there.</p>
             <Button variant="hero" className="w-full mt-4" asChild>
-              <Link to={`/medicare/${doctor.id}`}>
-                <Globe className="h-4 w-4 mr-2" /> Visit Website
+              <Link to={`/doctor-portal?doctor=${doctor.id}`}>
+                <Globe className="h-4 w-4 mr-2" /> Doctor Website
               </Link>
             </Button>
           </div>

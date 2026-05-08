@@ -57,8 +57,8 @@ export const DoctorCard = ({ doctor, featured = false }: { doctor: Doctor; featu
       </dl>
 
       <Button asChild variant="soft" size="sm" className="w-full mt-5">
-        <Link to={`/medicare/${doctor.id}`}>
-          Visit Website <ArrowUpRight className="h-4 w-4" />
+        <Link to={`/doctor-portal?doctor=${doctor.id}`}>
+          Doctor Website <ArrowUpRight className="h-4 w-4" />
         </Link>
       </Button>
     </article>

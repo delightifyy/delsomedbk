@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   Stethoscope, Menu, X, Star, Video, ShieldCheck, Clock, CalendarCheck,
   Brain, Baby, Sparkles, HeartPulse, Pill, FileText, Headphones, FlaskConical,
@@ -12,6 +12,7 @@ import {
   hexToHslString,
   useMediCareSettings,
 } from "@/lib/medicareSettings";
+import { DOCTORS, type Doctor } from "@/data/doctors";
 
 /* ---------- Scoped design tokens & styles ---------- */
 const tokenStyles = `
@@ -230,12 +231,333 @@ const partners = [
   "Hallmark", "Hygeia", "Bastion", "Ilera Eko", "Reliance HMO", "Avon", "AXA Mansard", "Total Health",
 ];
 
+const formatDateValue = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const formatDateLabel = (date: Date) =>
+  date.toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+
+const buildAppointmentDates = (doctor: Doctor) => {
+  const byDay = new Map(doctor.availability.map((day) => [day.day, day.slots]));
+  const dates: Array<{ value: string; label: string; day: string; slots: string[] }> = [];
+  const today = new Date();
+
+  for (let offset = 0; offset < 21; offset += 1) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + offset);
+    const dayName = date.toLocaleDateString(undefined, { weekday: "long" });
+    const slots = byDay.get(dayName) ?? [];
+    if (slots.length > 0) {
+      dates.push({ value: formatDateValue(date), label: formatDateLabel(date), day: dayName, slots });
+    }
+  }
+
+  return dates;
+};
+
+const inputClass =
+  "w-full rounded-2xl border border-[hsl(var(--mc-border))] bg-white/90 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-[hsl(var(--mc-primary))] focus:ring-4 focus:ring-[hsl(var(--mc-primary)/.12)]";
+
+const AppointmentPopup = ({
+  doctor,
+  open,
+  onClose,
+  siteName,
+}: {
+  doctor: Doctor;
+  open: boolean;
+  onClose: () => void;
+  siteName: string;
+}) => {
+  const appointmentDates = useMemo(() => buildAppointmentDates(doctor), [doctor]);
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedSlot, setSelectedSlot] = useState("");
+  const [payment, setPayment] = useState<"pay-now" | "hmo" | "subscription">("pay-now");
+  const [confirmed, setConfirmed] = useState(false);
+  const [patient, setPatient] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    reason: "",
+  });
+
+  const activeDate = appointmentDates.find((date) => date.value === selectedDate) ?? appointmentDates[0];
+  const availableSlots = activeDate?.slots ?? [];
+
+  useEffect(() => {
+    if (!open) return;
+    setSelectedDate((current) =>
+      appointmentDates.some((date) => date.value === current) ? current : appointmentDates[0]?.value ?? "",
+    );
+  }, [appointmentDates, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    setSelectedSlot((current) => (availableSlots.includes(current) ? current : availableSlots[0] ?? ""));
+  }, [availableSlots, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [onClose, open]);
+
+  const submitAppointment = (event: FormEvent) => {
+    event.preventDefault();
+    setConfirmed(true);
+  };
+
+  const closePopup = () => {
+    setConfirmed(false);
+    onClose();
+  };
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[hsl(222_47%_8%/.72)] px-3 py-4 backdrop-blur-xl sm:px-6">
+      <button className="absolute inset-0 cursor-default" type="button" aria-label="Close appointment form" onClick={closePopup} />
+      <div className="relative w-full max-w-5xl overflow-hidden rounded-[2rem] bg-white shadow-[0_32px_90px_-28px_hsl(var(--mc-primary)/.55)] max-h-[92vh]">
+        <div className="grid max-h-[92vh] overflow-y-auto lg:grid-cols-[0.9fr_1.25fr]">
+          <aside className="relative min-h-[240px] overflow-hidden bg-[hsl(var(--mc-dark))] p-6 text-white sm:p-8">
+            <div className="absolute inset-0 mc-grad-mesh opacity-70" />
+            <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--mc-primary)/.88)] via-[hsl(var(--mc-dark)/.9)] to-[hsl(var(--mc-accent)/.72)]" />
+            <div className="relative">
+              <div className="flex items-center justify-between gap-4">
+                <Link to={`/doctor-portal?doctor=${doctor.id}`} className="inline-flex items-center gap-2.5">
+                  <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white/15">
+                    <Stethoscope className="h-5 w-5" />
+                  </span>
+                  <span className="font-display text-xl font-bold">{siteName}</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={closePopup}
+                  className="grid h-10 w-10 place-items-center rounded-full bg-white/12 text-white transition hover:bg-white/20"
+                  aria-label="Close appointment form"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="mt-12">
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1 text-xs font-semibold">
+                  <ShieldCheck className="h-3.5 w-3.5 text-[hsl(var(--mc-accent-glow))]" /> Verified practice
+                </span>
+                <h2 className="mt-4 font-display text-3xl font-bold leading-tight">{doctor.name}</h2>
+                <p className="mt-2 text-white/75">{doctor.specialty} in {doctor.city}, {doctor.state}</p>
+
+                <div className="mt-7 grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl bg-white/10 p-4">
+                    <p className="text-xs text-white/60">Consultation</p>
+                    <p className="mt-1 font-display text-2xl font-bold">N{doctor.consultationFee.toLocaleString()}</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/10 p-4">
+                    <p className="text-xs text-white/60">Experience</p>
+                    <p className="mt-1 font-display text-2xl font-bold">{doctor.yearsExperience}+ yrs</p>
+                  </div>
+                </div>
+
+                <div className="mt-7 rounded-3xl bg-white/10 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/55">Selected slot</p>
+                  <p className="mt-2 text-sm text-white/85">{activeDate?.label ?? "Date"} at {selectedSlot || "Time"}</p>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <section className="bg-[linear-gradient(180deg,hsl(210_100%_99%)_0%,white_100%)] p-5 sm:p-8">
+            {confirmed ? (
+              <div className="flex min-h-[520px] flex-col items-center justify-center text-center">
+                <span className="grid h-16 w-16 place-items-center rounded-full bg-[hsl(var(--mc-accent)/.14)] text-[hsl(var(--mc-accent))]">
+                  <CheckCircle2 className="h-8 w-8" />
+                </span>
+                <h3 className="mt-5 font-display text-3xl font-bold">Appointment requested</h3>
+                <p className="mt-3 max-w-md text-sm leading-relaxed text-[hsl(var(--mc-muted))]">
+                  {doctor.name}'s practice will confirm {patient.fullName || "your"} appointment for {activeDate?.label} at {selectedSlot}.
+                </p>
+                <button
+                  type="button"
+                  onClick={closePopup}
+                  className="mt-8 inline-flex items-center justify-center rounded-full mc-grad-primary px-6 py-3 text-sm font-semibold text-white mc-shadow-glow"
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={submitAppointment} className="space-y-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[hsl(var(--mc-primary))]">Book appointment</p>
+                    <h3 className="mt-2 font-display text-3xl font-bold">Choose your visit</h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closePopup}
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[hsl(var(--mc-border))] bg-white text-slate-600 transition hover:bg-slate-50 lg:hidden"
+                    aria-label="Close appointment form"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Date</label>
+                  <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {appointmentDates.slice(0, 4).map((date) => (
+                      <button
+                        key={date.value}
+                        type="button"
+                        onClick={() => setSelectedDate(date.value)}
+                        className={`rounded-2xl border p-3 text-left transition ${
+                          selectedDate === date.value
+                            ? "border-[hsl(var(--mc-primary))] bg-[hsl(var(--mc-primary)/.08)] text-[hsl(var(--mc-primary))]"
+                            : "border-[hsl(var(--mc-border))] bg-white hover:border-[hsl(var(--mc-primary)/.45)]"
+                        }`}
+                      >
+                        <span className="block text-sm font-bold">{date.label}</span>
+                        <span className="mt-1 block text-xs text-slate-500">{date.day}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Time</label>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {availableSlots.map((slot) => (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => setSelectedSlot(slot)}
+                        className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                          selectedSlot === slot
+                            ? "border-[hsl(var(--mc-accent))] bg-[hsl(var(--mc-accent))] text-white"
+                            : "border-[hsl(var(--mc-border))] bg-white text-slate-700 hover:border-[hsl(var(--mc-accent)/.55)]"
+                        }`}
+                      >
+                        {slot}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block">
+                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Full name</span>
+                    <input
+                      required
+                      value={patient.fullName}
+                      onChange={(event) => setPatient((current) => ({ ...current, fullName: event.target.value }))}
+                      className={`${inputClass} mt-2`}
+                      placeholder="Your name"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Phone</span>
+                    <input
+                      required
+                      value={patient.phone}
+                      onChange={(event) => setPatient((current) => ({ ...current, phone: event.target.value }))}
+                      className={`${inputClass} mt-2`}
+                      placeholder="+234..."
+                    />
+                  </label>
+                  <label className="block sm:col-span-2">
+                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Email</span>
+                    <input
+                      required
+                      type="email"
+                      value={patient.email}
+                      onChange={(event) => setPatient((current) => ({ ...current, email: event.target.value }))}
+                      className={`${inputClass} mt-2`}
+                      placeholder="you@example.com"
+                    />
+                  </label>
+                  <label className="block sm:col-span-2">
+                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Reason for visit</span>
+                    <textarea
+                      value={patient.reason}
+                      onChange={(event) => setPatient((current) => ({ ...current, reason: event.target.value }))}
+                      className={`${inputClass} mt-2 min-h-24 resize-none`}
+                      placeholder="Briefly describe the concern"
+                    />
+                  </label>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Payment</label>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    {[
+                      { value: "pay-now", label: "Pay now" },
+                      { value: "hmo", label: "HMO" },
+                      { value: "subscription", label: "Plan" },
+                    ].map((method) => (
+                      <button
+                        key={method.value}
+                        type="button"
+                        onClick={() => setPayment(method.value as typeof payment)}
+                        className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                          payment === method.value
+                            ? "border-[hsl(var(--mc-primary))] bg-[hsl(var(--mc-primary))] text-white"
+                            : "border-[hsl(var(--mc-border))] bg-white text-slate-700 hover:border-[hsl(var(--mc-primary)/.45)]"
+                        }`}
+                      >
+                        {method.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 rounded-3xl border border-[hsl(var(--mc-border))] bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Total</p>
+                    <p className="font-display text-2xl font-bold">N{doctor.consultationFee.toLocaleString()}</p>
+                  </div>
+                  <button
+                    type="submit"
+                    className="inline-flex items-center justify-center rounded-full mc-grad-primary px-6 py-3 text-sm font-semibold text-white mc-shadow-glow transition hover:opacity-95"
+                  >
+                    Confirm appointment
+                  </button>
+                </div>
+              </form>
+            )}
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /* ---------- Page ---------- */
 const MediCare = () => {
+  const [searchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
+  const [bookingOpen, setBookingOpen] = useState(false);
   const settings = useMediCareSettings();
+  const selectedDoctorId = searchParams.get("doctor");
+  const selectedDoctor = useMemo(
+    () => DOCTORS.find((doctor) => doctor.id === selectedDoctorId) ?? DOCTORS[0],
+    [selectedDoctorId],
+  );
 
   const themeStyle = useMemo(
     () =>
@@ -398,9 +720,13 @@ const MediCare = () => {
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3 mc-anim-fade-up">
-              <a href="#cta" className="inline-flex justify-center items-center gap-2 rounded-full mc-grad-primary text-white px-7 py-3.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
+              <button
+                type="button"
+                onClick={() => setBookingOpen(true)}
+                className="inline-flex justify-center items-center gap-2 rounded-full mc-grad-primary text-white px-7 py-3.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition"
+              >
                 Book Appointment <ArrowRight className="h-4 w-4" />
-              </a>
+              </button>
             </div>
 
             {/* Mini stats */}
@@ -954,6 +1280,12 @@ const MediCare = () => {
           </div>
         </div>
       </footer>
+      <AppointmentPopup
+        doctor={selectedDoctor}
+        open={bookingOpen}
+        onClose={() => setBookingOpen(false)}
+        siteName={settings.siteName}
+      />
     </div>
   );
 };
