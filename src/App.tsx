@@ -6,6 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AdminGuard } from "@/components/dashboard/AdminGuard";
 import Index from "./pages/Index.tsx";
+import HospitalHome from "./pages/HospitalHome.tsx";
+import BookConsultation from "./pages/BookConsultation.tsx";
+import VideoConsult from "./pages/VideoConsult.tsx";
 import About from "./pages/About.tsx";
 import Contact from "./pages/Contact.tsx";
 import Doctors from "./pages/Doctors.tsx";
@@ -46,7 +49,10 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<HospitalHome />} />
+            <Route path="/legacy" element={<Index />} />
+            <Route path="/book" element={<BookConsultation />} />
+            <Route path="/consult/:roomId" element={<VideoConsult />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
