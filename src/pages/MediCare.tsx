@@ -636,7 +636,7 @@ const MediCare = () => {
             <span className="font-display font-bold text-xl tracking-tight">{settings.siteName}</span>
           </a>
 
-          <ul className="hidden lg:flex items-center gap-1 text-sm font-semibold text-slate-900">
+          <ul className="hidden lg:flex items-center gap-1 text-sm font-semibold text-white">
             {navLinks.map((l) => (
               <li
                 key={l.href}
