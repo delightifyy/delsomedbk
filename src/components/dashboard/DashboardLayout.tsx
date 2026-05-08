@@ -30,7 +30,7 @@ const items = [
   { to: "/dashboard/contacts", label: "Contact Messages", icon: MessageSquare },
   { to: "/dashboard/blog", label: "Health Adverts", icon: Megaphone },
   { to: "/dashboard/news", label: "News", icon: Newspaper },
-  { to: "/dashboard/adverts", label: "Health Adverts", icon: Megaphone },
+  
   { to: "/dashboard/faqs", label: "FAQs", icon: CircleHelp },
   { to: "/dashboard/testimonials", label: "Testimonials", icon: MessageCircleHeart },
 ];
