@@ -28,7 +28,7 @@ const items = [
   { to: "/dashboard/users", label: "Users", icon: Users },
   { to: "/dashboard/doctors", label: "Doctors", icon: Stethoscope },
   { to: "/dashboard/contacts", label: "Contact Messages", icon: MessageSquare },
-  { to: "/dashboard/blog", label: "Health Adverts", icon: FileText },
+  { to: "/dashboard/blog", label: "Health Adverts", icon: Megaphone },
   { to: "/dashboard/news", label: "News", icon: Newspaper },
   { to: "/dashboard/adverts", label: "Health Adverts", icon: Megaphone },
   { to: "/dashboard/faqs", label: "FAQs", icon: CircleHelp },
