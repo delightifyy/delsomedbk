@@ -652,7 +652,7 @@ const MediCare = () => {
                   <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 w-[640px] z-50">
                     <div className="mc-glass mc-shadow-elegant rounded-3xl p-6 grid grid-cols-2 gap-2">
                       {specialties.map((s) => (
-                        <a key={s.name} href="#specialties" className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-[hsl(var(--mc-muted-soft))] transition">
+                        <a key={s.name} href="#specialties" className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-[hsl(215_50%_85%)] hover:text-[hsl(215_60%_25%)] transition">
                           <span className="grid place-items-center h-9 w-9 rounded-xl mc-grad-primary text-white">
                             <s.icon className="h-4 w-4" />
                           </span>
