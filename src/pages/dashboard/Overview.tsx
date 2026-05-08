@@ -33,7 +33,7 @@ const Overview = () => {
         <StatCard icon={Users} label="Total users" value={stats.users} />
         <StatCard icon={Bell} label="New Registrations" value={stats.adverts} />
         <StatCard icon={MessageSquare} label="Contact messages" value={stats.contacts} />
-        <StatCard icon={FileText} label="Blog posts" value={stats.posts} />
+        <StatCard icon={FileText} label="Health Adverts" value={stats.posts} />
       </div>
     </DashboardLayout>
   );

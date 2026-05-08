@@ -71,7 +71,7 @@ const BlogPage = () => {
     <DashboardLayout>
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-display text-3xl font-bold">Blog</h1>
+          <h1 className="font-display text-3xl font-bold">Health Adverts</h1>
           <p className="text-muted-foreground text-sm mt-1">Manage articles and announcements.</p>
         </div>
         <Button variant="hero" onClick={openNew}><Plus className="h-4 w-4" /> New post</Button>
