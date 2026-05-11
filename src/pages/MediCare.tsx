@@ -786,33 +786,6 @@ const MediCare = () => {
         </div>
       </section>
 
-      {/* ============ QUICK ACCESS CARE ============ */}
-      <section className="relative py-20 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="text-center max-w-2xl mx-auto">
-            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Quick Access Care</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Healthcare in <span className="mc-grad-text">one click</span></h2>
-            <p className="mt-4 text-[hsl(var(--mc-muted))]">Everything you need to manage your health — beautifully unified.</p>
-          </div>
-
-          <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {quickAccess.map((q) => (
-              <div key={q.title} className="group relative overflow-hidden rounded-3xl border border-[hsl(var(--mc-border))] bg-[hsl(var(--mc-card))] p-7 mc-shadow-card mc-card-hover">
-                <div className={`absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br ${q.tone} opacity-10 group-hover:opacity-25 transition-opacity`} />
-                <span className={`relative grid place-items-center h-14 w-14 rounded-2xl bg-gradient-to-br ${q.tone} text-white mc-shadow-glow`}>
-                  <q.icon className="h-6 w-6" />
-                </span>
-                <h3 className="relative mt-5 font-display text-xl font-bold">{q.title}</h3>
-                <p className="relative mt-2 text-sm text-[hsl(var(--mc-muted))]">{q.desc}</p>
-                <div className="relative mt-5 inline-flex items-center gap-1 text-sm font-semibold text-[hsl(var(--mc-primary))]">
-                  Start now <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ============ SPECIALTIES ============ */}
       <section id="specialties" className="relative py-20 sm:py-28 bg-[hsl(var(--mc-muted-soft))] overflow-hidden">
         <div className="absolute inset-0 mc-grad-mesh opacity-50" />
