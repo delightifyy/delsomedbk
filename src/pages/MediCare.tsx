@@ -687,8 +687,6 @@ const MediCare = () => {
             <span className="inline-flex items-center gap-2 rounded-full mc-glass-dark px-4 py-1.5 text-xs sm:text-sm font-semibold mc-anim-fade-up">
               <span className="h-2 w-2 rounded-full bg-[hsl(var(--mc-accent-glow))] mc-anim-pulse-dot" />
               Live consultations available now
-              <span className="opacity-30">·</span>
-              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" /> 4.9 / 5
             </span>
 
             <h1 className="mt-6 font-display text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-[1.05] text-balance mc-anim-fade-up">
