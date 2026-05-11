@@ -786,39 +786,6 @@ const MediCare = () => {
         </div>
       </section>
 
-      {/* ============ SPECIALTIES ============ */}
-      <section id="specialties" className="relative py-20 sm:py-28 bg-[hsl(var(--mc-muted-soft))] overflow-hidden">
-        <div className="absolute inset-0 mc-grad-mesh opacity-50" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <div>
-              <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Specialties</p>
-              <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold max-w-xl">World-class care across <span className="mc-grad-text">every discipline</span></h2>
-            </div>
-            <a href="#doctors" className="inline-flex items-center gap-2 text-sm font-semibold text-[hsl(var(--mc-primary))] hover:gap-3 transition-all">
-              View all specialties <ArrowRight className="h-4 w-4" />
-            </a>
-          </div>
-
-          <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5">
-            {specialties.map((s) => (
-              <a key={s.name} href="#doctors" className="group relative overflow-hidden rounded-3xl mc-shadow-card mc-card-hover bg-[hsl(var(--mc-card))]">
-                <div className="aspect-[4/5] overflow-hidden">
-                  <img src={s.img} alt={s.name} loading="lazy" className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--mc-dark)/.9)] via-[hsl(var(--mc-dark)/.4)] to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 text-white">
-                  <span className="grid place-items-center h-10 w-10 rounded-xl mc-glass-dark mb-3">
-                    <s.icon className="h-5 w-5" />
-                  </span>
-                  <h3 className="font-display text-base sm:text-lg font-bold">{s.name}</h3>
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ============ WHY CHOOSE US ============ */}
       <section className="py-20 sm:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 grid lg:grid-cols-12 gap-12 items-center">
