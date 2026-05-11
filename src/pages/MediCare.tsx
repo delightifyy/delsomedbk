@@ -793,15 +793,6 @@ const MediCare = () => {
             <div className="relative rounded-[2.5rem] overflow-hidden mc-shadow-elegant aspect-[4/5] sm:aspect-[5/6]">
               <img src="https://images.unsplash.com/photo-1666214280557-f1b5022eb634?w=1200&auto=format&fit=crop&q=80" alt="Doctor attending to a patient" className="h-full w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--mc-dark)/.7)] via-transparent to-transparent" />
-              <div className="absolute bottom-6 left-6 right-6 mc-glass-dark rounded-2xl p-4 text-white">
-                <div className="flex items-center gap-3">
-                  <span className="grid place-items-center h-11 w-11 rounded-xl mc-grad-primary"><Award className="h-5 w-5" /></span>
-                  <div>
-                    <p className="font-display font-bold">Accredited by JCI & ISO</p>
-                    <p className="text-xs text-white/70">Meeting global healthcare standards</p>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
