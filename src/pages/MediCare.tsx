@@ -605,23 +605,6 @@ const MediCare = () => {
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" />
 
-      {/* ============ TOP UTILITY BAR ============ */}
-      <div className={`relative z-50 hidden md:block text-xs transition-colors ${scrolled ? "bg-transparent text-transparent h-0 overflow-hidden" : "bg-[hsl(var(--mc-dark))] text-white/80"}`}>
-        <div className="mx-auto max-w-7xl px-6 h-9 flex items-center justify-between">
-          <div className="flex items-center gap-5">
-            <span className="inline-flex items-center gap-1.5"><Languages className="h-3.5 w-3.5" /> EN · ES · FR</span>
-            <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> Global · 36 locations</span>
-          </div>
-          <div className="flex items-center gap-5">
-            <a href={`tel:${settings.contact.phone}`} className="inline-flex items-center gap-1.5 font-semibold text-rose-300">
-              <span className="relative flex h-2 w-2"><span className="absolute inset-0 rounded-full bg-rose-400 opacity-75 animate-ping" /><span className="relative rounded-full h-2 w-2 bg-rose-400" /></span>
-              Emergency: {settings.contact.phone}
-            </a>
-            <a href="#cta" className="hover:text-white transition">Patient Portal</a>
-          </div>
-        </div>
-      </div>
-
       {/* ============ NAVBAR ============ */}
       <header className={`sticky top-0 z-40 w-full transition-all duration-300 ${scrolled ? "mc-glass mc-shadow-card" : "bg-transparent"}`}>
         <nav className="mx-auto max-w-7xl px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-4">
