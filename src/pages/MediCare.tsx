@@ -803,13 +803,6 @@ const MediCare = () => {
                 </div>
               </div>
             </div>
-            <div className="hidden md:block absolute -top-8 -right-8 w-48 mc-glass mc-shadow-elegant rounded-3xl p-5 mc-anim-float">
-              <div className="flex items-center gap-2 text-[hsl(var(--mc-accent))]">
-                {Array.from({ length: 5 }).map((_, i) => <Star key={i} className="h-4 w-4 fill-current" />)}
-              </div>
-              <p className="mt-2 font-display text-3xl font-bold">4.9</p>
-              <p className="text-xs text-[hsl(var(--mc-muted))]">12,480+ reviews</p>
-            </div>
           </div>
 
           <div className="lg:col-span-6">
