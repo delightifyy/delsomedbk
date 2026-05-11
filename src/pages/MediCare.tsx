@@ -995,22 +995,6 @@ const MediCare = () => {
               ))}
             </ul>
 
-            <div className="mt-9 flex flex-wrap gap-3">
-              <a href="#" className="inline-flex items-center gap-3 rounded-2xl bg-[hsl(var(--mc-dark))] text-white px-5 py-3 hover:opacity-90 transition">
-                <Apple className="h-7 w-7" />
-                <span className="text-left leading-tight">
-                  <span className="block text-[10px] opacity-70">Download on</span>
-                  <span className="block text-sm font-bold">App Store</span>
-                </span>
-              </a>
-              <a href="#" className="inline-flex items-center gap-3 rounded-2xl bg-[hsl(var(--mc-dark))] text-white px-5 py-3 hover:opacity-90 transition">
-                <Play className="h-7 w-7" />
-                <span className="text-left leading-tight">
-                  <span className="block text-[10px] opacity-70">Get it on</span>
-                  <span className="block text-sm font-bold">Google Play</span>
-                </span>
-              </a>
-            </div>
           </div>
 
           <div className="relative h-[520px] flex items-center justify-center">
