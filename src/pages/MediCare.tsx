@@ -710,15 +710,6 @@ const MediCare = () => {
               </button>
             </div>
 
-            {/* Mini stats */}
-            <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl">
-              {stats.map((s) => (
-                <div key={s.label} className="mc-glass-dark rounded-2xl px-4 py-3">
-                  <p className="font-display text-2xl sm:text-3xl font-bold bg-gradient-to-r from-white to-[hsl(174_80%_75%)] bg-clip-text text-transparent">{s.value}</p>
-                  <p className="mt-0.5 text-[11px] sm:text-xs text-white/70">{s.label}</p>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Floating dashboard cards */}
