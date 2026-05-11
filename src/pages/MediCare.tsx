@@ -697,7 +697,7 @@ const MediCare = () => {
             </h1>
 
             <p className="mt-6 max-w-xl text-base sm:text-lg leading-relaxed text-white/80 mc-anim-fade-up">
-              Book appointments, consult certified doctors, access medical records, and receive world-class healthcare — digitally and physically.
+              Book Appointments, Consult Certified Doctors, Receive World class Healthcare Digitally and physically.
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3 mc-anim-fade-up">
