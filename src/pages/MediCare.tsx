@@ -1053,9 +1053,6 @@ const MediCare = () => {
                   </a>
                 ))}
               </div>
-              <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-rose-500/15 border border-rose-400/30 px-3 py-1.5 text-xs text-rose-200">
-                <Ambulance className="h-3.5 w-3.5" /> Emergency: {settings.contact.phone}
-              </div>
             </div>
 
             {[
