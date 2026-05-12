@@ -886,9 +886,6 @@ const MediCare = () => {
               <a href="#cta" className="inline-flex items-center gap-2 rounded-full mc-grad-primary text-white px-6 py-3 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
                 Start consultation <ArrowRight className="h-4 w-4" />
               </a>
-              <a href="#cta" className="inline-flex items-center gap-2 rounded-full mc-glass-dark text-white px-6 py-3 text-sm font-semibold hover:bg-white/15 transition">
-                <Play className="h-4 w-4" /> Watch demo
-              </a>
             </div>
           </div>
 
