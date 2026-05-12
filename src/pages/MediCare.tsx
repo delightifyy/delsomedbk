@@ -1053,16 +1053,14 @@ const MediCare = () => {
             </div>
 
             {[
-              { title: "Specialties", items: specialties.slice(0, 5).map(s => ({ label: s.name, href: "#specialties" })) },
+              { title: "Specialties", items: specialties.filter(s => s.name.toLowerCase() !== "dermatology").slice(0, 5).map(s => ({ label: s.name, href: "#specialties" })) },
               { title: "Quick Links", items: [
-                { label: "Find Doctor", href: "#doctors" },
                 { label: "Telemedicine", href: "#telemedicine" },
                 { label: "Services", href: "#services" },
                 { label: "About", href: "#about" },
               ]},
               { title: "Support", items: [
                 { label: "\n", href: "#contact" },
-                { label: "Patient Portal", href: "#cta" },
                 { label: "Privacy Policy", href: "#" },
                 { label: "Terms", href: "#" },
               ]},
