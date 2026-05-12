@@ -1042,17 +1042,6 @@ const MediCare = () => {
         </div>
       </section>
 
-      {/* ============ ABOUT (compact) ============ */}
-      <section id="about" className="py-20 sm:py-24">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
-          <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">About Us</p>
-          <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">{settings.about.title}</h2>
-          <p className="mt-6 text-base sm:text-lg text-[hsl(var(--mc-muted))] leading-relaxed whitespace-pre-line">
-            {settings.about.body}
-          </p>
-        </div>
-      </section>
-
 
 
       {/* ============ FOOTER (premium dark) ============ */}
