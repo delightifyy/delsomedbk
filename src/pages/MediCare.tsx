@@ -119,7 +119,6 @@ const navLinks = [
   { href: "#services", label: "Services" },
   { href: "#telemedicine", label: "Telemedicine" },
   { href: "#about", label: "About" },
-  { href: "#contact", label: "Contact" },
 ];
 
 const quickAccess = [
