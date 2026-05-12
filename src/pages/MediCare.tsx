@@ -986,45 +986,6 @@ const MediCare = () => {
         </div>
       </section>
 
-      {/* ============ MOBILE APP ============ */}
-      <section className="py-20 sm:py-28 bg-[hsl(var(--mc-muted-soft))]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 grid lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Mobile App</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Your hospital, <span className="mc-grad-text">in your pocket</span></h2>
-            <p className="mt-4 text-[hsl(var(--mc-muted))] max-w-lg">Book doctors, attend video visits, manage prescriptions, and track your health — anywhere, anytime.</p>
-
-            <ul className="mt-8 grid sm:grid-cols-2 gap-3">
-              {[
-                "Doctor booking", "Video consultation", "E-prescriptions",
-                "Smart notifications", "Medical reports", "Family profiles",
-              ].map((f) => (
-                <li key={f} className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="h-4 w-4 text-[hsl(var(--mc-accent))]" /> {f}
-                </li>
-              ))}
-            </ul>
-
-          </div>
-
-          <div className="relative h-[520px] flex items-center justify-center">
-            <div className="absolute inset-0 mc-grad-mesh opacity-70 blur-2xl" />
-            <div className="relative flex gap-5">
-              {[
-                { src: "https://images.unsplash.com/photo-1620912189865-cd4d7203ee71?w=600&auto=format&fit=crop&q=80", delay: "0s" },
-                { src: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&auto=format&fit=crop&q=80", delay: ".4s" },
-              ].map((p, i) => (
-                <div key={i} className="w-52 sm:w-60 rounded-[2.5rem] bg-[hsl(222_47%_6%)] p-2 mc-shadow-elegant border border-white/10 mc-anim-float" style={{ animationDelay: p.delay, transform: i === 1 ? "translateY(40px)" : "none" }}>
-                  <div className="rounded-[2rem] overflow-hidden bg-white aspect-[9/19] relative">
-                    <img src={p.src} alt="App preview" className="h-full w-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[hsl(212_88%_15%/.6)]" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ============ FINAL CTA ============ */}
       <section id="cta" className="relative py-24 sm:py-32 overflow-hidden">
