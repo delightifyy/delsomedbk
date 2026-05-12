@@ -1067,7 +1067,7 @@ const MediCare = () => {
                 { label: "About", href: "#about" },
               ]},
               { title: "Support", items: [
-                { label: "Contact", href: "#contact" },
+                { label: "\n", href: "#contact" },
                 { label: "Patient Portal", href: "#cta" },
                 { label: "Privacy Policy", href: "#" },
                 { label: "Terms", href: "#" },
