@@ -119,7 +119,6 @@ const navLinks = [
   { href: "#services", label: "Services" },
   { href: "#telemedicine", label: "Telemedicine" },
   { href: "#about", label: "About" },
-  { href: "#contact", label: "Contact" },
 ];
 
 const quickAccess = [
@@ -1054,32 +1053,7 @@ const MediCare = () => {
         </div>
       </section>
 
-      {/* ============ CONTACT ============ */}
-      <section id="contact" className="py-20 sm:py-24 bg-[hsl(var(--mc-muted-soft))]">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="text-center max-w-2xl mx-auto">
-            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Contact</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">We're here, <span className="mc-grad-text">always</span></h2>
-          </div>
-          <div className="mt-12 grid sm:grid-cols-3 gap-5">
-            <a href={`mailto:${settings.contact.email}`} className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover">
-              <span className="grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow"><Mail className="h-5 w-5" /></span>
-              <h3 className="mt-5 font-display text-lg font-bold">Email</h3>
-              <p className="mt-1 text-sm text-[hsl(var(--mc-muted))] break-all">{settings.contact.email}</p>
-            </a>
-            <a href={`tel:${settings.contact.phone}`} className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover">
-              <span className="grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow"><Phone className="h-5 w-5" /></span>
-              <h3 className="mt-5 font-display text-lg font-bold">Phone</h3>
-              <p className="mt-1 text-sm text-[hsl(var(--mc-muted))]">{settings.contact.phone}</p>
-            </a>
-            <div className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover">
-              <span className="grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow"><MapPin className="h-5 w-5" /></span>
-              <h3 className="mt-5 font-display text-lg font-bold">Location</h3>
-              <p className="mt-1 text-sm text-[hsl(var(--mc-muted))]">{settings.contact.address}</p>
-            </div>
-          </div>
-        </div>
-      </section>
+
 
       {/* ============ FOOTER (premium dark) ============ */}
       <footer className="relative mc-grad-dark text-white pt-20">
