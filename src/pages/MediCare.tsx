@@ -869,7 +869,7 @@ const MediCare = () => {
             <ul className="mt-8 space-y-3">
               {[
                 "HD video & encrypted chat consultations",
-                "Get Connected to Care Within 60 Seconds",
+                "Doctor Consultations Made Simple and Flexible",
                 "Real-time vitals monitoring",
                 "Digital prescriptions & e-referrals",
               ].map((t) => (
