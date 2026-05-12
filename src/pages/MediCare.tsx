@@ -861,15 +861,15 @@ const MediCare = () => {
               <Bot className="h-3.5 w-3.5 text-[hsl(var(--mc-accent-glow))]" /> AI-powered Telemedicine
             </span>
             <h2 className="mt-5 font-display text-3xl sm:text-5xl font-bold leading-tight">
-              The future of care, <br />
-              <span className="bg-gradient-to-r from-[hsl(174_80%_75%)] to-[hsl(200_95%_75%)] bg-clip-text text-transparent">in your pocket</span>
+              Virtual Care Designed <br />
+              <span className="bg-gradient-to-r from-[hsl(174_80%_75%)] to-[hsl(200_95%_75%)] bg-clip-text text-transparent">Around Your Schedule</span>
             </h2>
-            <p className="mt-4 text-white/75 max-w-lg">High-fidelity video consultations, AI symptom triage, secure prescriptions and continuous monitoring — all in one beautifully crafted experience.</p>
+            <p className="mt-4 text-white/75 max-w-lg">Access smarter healthcare through crystal-clear virtual consultations, intelligent symptom guidance, secure prescriptions, and connected patient monitoring in one seamless experience.</p>
 
             <ul className="mt-8 space-y-3">
               {[
                 "HD video & encrypted chat consultations",
-                "AI-assisted symptom checker & triage",
+                "Get Connected to Care Within 60 Seconds",
                 "Real-time vitals monitoring",
                 "Digital prescriptions & e-referrals",
               ].map((t) => (
