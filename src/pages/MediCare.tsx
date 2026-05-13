@@ -143,14 +143,7 @@ const specialties = [
   { icon: Stethoscope,name: "General Medicine",  img: "https://images.unsplash.com/photo-1666214280391-8ff5bd3c0bf0?w=800&auto=format&fit=crop&q=80" },
 ];
 
-const services = [
-  { icon: Stethoscope,  image: serviceGeneralImg,      title: "General Consultation", desc: "Everyday illnesses, checkups, and concerns from licensed GPs." },
-  { icon: Brain,        image: serviceMentalImg,       title: "Mental Health Support", desc: "Therapy and counseling from accredited professionals." },
-  { icon: Pill,         image: servicePrescriptionImg, title: "Prescription & Refills", desc: "Digital prescriptions sent to your local pharmacy." },
-  { icon: FlaskConical, image: serviceLabImg,          title: "Lab Tests & Referrals", desc: "Order labs and access specialist referrals fast." },
-  { icon: Eye,          image: serviceVisionImg,       title: "Vision & Optical",      desc: "Eye exams and optical care from board-certified doctors." },
-  { icon: Activity,     image: serviceChronicImg,      title: "Chronic Care",          desc: "Continuous monitoring for diabetes, BP and more." },
-];
+// services / reasons content now comes from settings (admin-managed)
 
 const reasons = [
   { icon: ShieldCheck, title: "Certified Specialists", desc: "Every doctor is board-licensed and verified." },
