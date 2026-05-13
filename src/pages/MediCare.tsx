@@ -13,6 +13,12 @@ import {
   useMediCareSettings,
 } from "@/lib/medicareSettings";
 import { DOCTORS, type Doctor } from "@/data/doctors";
+import serviceGeneralImg from "@/assets/service-general.jpg";
+import serviceMentalImg from "@/assets/service-mental.jpg";
+import servicePrescriptionImg from "@/assets/service-prescription.jpg";
+import serviceLabImg from "@/assets/service-lab.jpg";
+import serviceVisionImg from "@/assets/service-vision.jpg";
+import serviceChronicImg from "@/assets/service-chronic.jpg";
 
 /* ---------- Scoped design tokens & styles ---------- */
 const tokenStyles = `
@@ -142,12 +148,12 @@ const specialties = [
 ];
 
 const services = [
-  { icon: Stethoscope,  title: "General Consultation", desc: "Everyday illnesses, checkups, and concerns from licensed GPs." },
-  { icon: Brain,        title: "Mental Health Support", desc: "Therapy and counseling from accredited professionals." },
-  { icon: Pill,         title: "Prescription & Refills", desc: "Digital prescriptions sent to your local pharmacy." },
-  { icon: FlaskConical, title: "Lab Tests & Referrals", desc: "Order labs and access specialist referrals fast." },
-  { icon: Eye,          title: "Vision & Optical",      desc: "Eye exams and optical care from board-certified doctors." },
-  { icon: Activity,     title: "Chronic Care",          desc: "Continuous monitoring for diabetes, BP and more." },
+  { icon: Stethoscope,  image: serviceGeneralImg,      title: "General Consultation", desc: "Everyday illnesses, checkups, and concerns from licensed GPs." },
+  { icon: Brain,        image: serviceMentalImg,       title: "Mental Health Support", desc: "Therapy and counseling from accredited professionals." },
+  { icon: Pill,         image: servicePrescriptionImg, title: "Prescription & Refills", desc: "Digital prescriptions sent to your local pharmacy." },
+  { icon: FlaskConical, image: serviceLabImg,          title: "Lab Tests & Referrals", desc: "Order labs and access specialist referrals fast." },
+  { icon: Eye,          image: serviceVisionImg,       title: "Vision & Optical",      desc: "Eye exams and optical care from board-certified doctors." },
+  { icon: Activity,     image: serviceChronicImg,      title: "Chronic Care",          desc: "Continuous monitoring for diabetes, BP and more." },
 ];
 
 const reasons = [
@@ -837,12 +843,24 @@ const MediCare = () => {
           </div>
           <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {services.map((s) => (
-              <div key={s.title} className="group bg-[hsl(var(--mc-card))] rounded-3xl p-7 border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover">
-                <span className="grid place-items-center h-14 w-14 rounded-2xl mc-grad-primary text-white mc-shadow-glow">
-                  <s.icon className="h-6 w-6" />
-                </span>
-                <h3 className="mt-5 font-display text-xl font-bold">{s.title}</h3>
-                <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">{s.desc}</p>
+              <div key={s.title} className="group bg-[hsl(var(--mc-card))] rounded-3xl overflow-hidden border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover">
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  <img
+                    src={s.image}
+                    alt={s.title}
+                    width={800}
+                    height={600}
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <span className="absolute bottom-3 left-3 grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow">
+                    <s.icon className="h-5 w-5" />
+                  </span>
+                </div>
+                <div className="p-7">
+                  <h3 className="font-display text-xl font-bold">{s.title}</h3>
+                  <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">{s.desc}</p>
+                </div>
               </div>
             ))}
           </div>
