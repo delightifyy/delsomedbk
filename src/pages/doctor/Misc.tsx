@@ -1,0 +1,58 @@
+import { PortalLayout } from "@/components/portal/PortalLayout";
+import { PageHeader, EmptyState } from "@/components/portal/PortalUI";
+import { doctorNav } from "./nav";
+import { Pill, FlaskConical, Send } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { SectionCard } from "@/components/portal/PortalUI";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+
+const rxList = [
+  { id: "rx_a01", patient: "Adaobi Okeke", med: "Lisinopril 10mg", date: "2026-04-28", status: "active" },
+  { id: "rx_a02", patient: "Tunde Bakare", med: "Salbutamol Inhaler", date: "2026-04-21", status: "active" },
+  { id: "rx_a03", patient: "Ngozi Eze", med: "Sumatriptan 50mg", date: "2026-04-15", status: "completed" },
+];
+
+export const DoctorPrescriptions = () => (
+  <PortalLayout portalName="Doctor EMR" nav={doctorNav}>
+    <PageHeader title="Prescriptions" description="All prescriptions you've issued." action={<Button><Pill className="h-4 w-4" /> New Prescription</Button>} />
+    <SectionCard>
+      <Table>
+        <TableHeader><TableRow><TableHead>Patient</TableHead><TableHead>Medication</TableHead><TableHead>Date</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+        <TableBody>
+          {rxList.map((r) => (
+            <TableRow key={r.id}>
+              <TableCell className="font-medium">{r.patient}</TableCell>
+              <TableCell>{r.med}</TableCell>
+              <TableCell className="text-muted-foreground">{r.date}</TableCell>
+              <TableCell><Badge variant={r.status === "active" ? "default" : "outline"} className="capitalize">{r.status}</Badge></TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </SectionCard>
+  </PortalLayout>
+);
+
+export const DoctorInvestigations = () => (
+  <PortalLayout portalName="Doctor EMR" nav={doctorNav}>
+    <PageHeader title="Investigations" description="Lab requests and diagnostic orders." action={<Button><FlaskConical className="h-4 w-4" /> New Request</Button>} />
+    <EmptyState icon={FlaskConical} title="No pending investigations" description="When you order labs or imaging during a consultation, they'll appear here." action={<Button variant="outline">View archive</Button>} />
+  </PortalLayout>
+);
+
+export const DoctorReferrals = () => (
+  <PortalLayout portalName="Doctor EMR" nav={doctorNav}>
+    <PageHeader title="Referrals" description="Specialist referrals you've issued." action={<Button><Send className="h-4 w-4" /> New Referral</Button>} />
+    <EmptyState icon={Send} title="No active referrals" description="Referrals you send to specialists will appear here." />
+  </PortalLayout>
+);
+
+export const DoctorSettings = () => (
+  <PortalLayout portalName="Doctor EMR" nav={doctorNav}>
+    <PageHeader title="Settings" description="Manage your profile and preferences." />
+    <SectionCard title="Profile">
+      <p className="text-sm text-muted-foreground">Profile editor coming soon. Contact support to update your license details.</p>
+    </SectionCard>
+  </PortalLayout>
+);
