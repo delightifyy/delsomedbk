@@ -13,6 +13,12 @@ import {
   useMediCareSettings,
 } from "@/lib/medicareSettings";
 import { DOCTORS, type Doctor } from "@/data/doctors";
+import serviceGeneralImg from "@/assets/service-general.jpg";
+import serviceMentalImg from "@/assets/service-mental.jpg";
+import servicePrescriptionImg from "@/assets/service-prescription.jpg";
+import serviceLabImg from "@/assets/service-lab.jpg";
+import serviceVisionImg from "@/assets/service-vision.jpg";
+import serviceChronicImg from "@/assets/service-chronic.jpg";
 
 /* ---------- Scoped design tokens & styles ---------- */
 const tokenStyles = `
