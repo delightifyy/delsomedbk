@@ -12,14 +12,9 @@ import {
   hexToHslString,
   useMediCareSettings,
 } from "@/lib/medicareSettings";
+import { Icon as McIcon } from "@/components/medicare-admin/icons";
 import { DOCTORS, type Doctor } from "@/data/doctors";
 import aboutHospitalImg from "@/assets/about-hospital.jpg";
-import serviceGeneralImg from "@/assets/service-general.jpg";
-import serviceMentalImg from "@/assets/service-mental.jpg";
-import servicePrescriptionImg from "@/assets/service-prescription.jpg";
-import serviceLabImg from "@/assets/service-lab.jpg";
-import serviceVisionImg from "@/assets/service-vision.jpg";
-import serviceChronicImg from "@/assets/service-chronic.jpg";
 
 /* ---------- Scoped design tokens & styles ---------- */
 const tokenStyles = `
@@ -148,14 +143,7 @@ const specialties = [
   { icon: Stethoscope,name: "General Medicine",  img: "https://images.unsplash.com/photo-1666214280391-8ff5bd3c0bf0?w=800&auto=format&fit=crop&q=80" },
 ];
 
-const services = [
-  { icon: Stethoscope,  image: serviceGeneralImg,      title: "General Consultation", desc: "Everyday illnesses, checkups, and concerns from licensed GPs." },
-  { icon: Brain,        image: serviceMentalImg,       title: "Mental Health Support", desc: "Therapy and counseling from accredited professionals." },
-  { icon: Pill,         image: servicePrescriptionImg, title: "Prescription & Refills", desc: "Digital prescriptions sent to your local pharmacy." },
-  { icon: FlaskConical, image: serviceLabImg,          title: "Lab Tests & Referrals", desc: "Order labs and access specialist referrals fast." },
-  { icon: Eye,          image: serviceVisionImg,       title: "Vision & Optical",      desc: "Eye exams and optical care from board-certified doctors." },
-  { icon: Activity,     image: serviceChronicImg,      title: "Chronic Care",          desc: "Continuous monitoring for diabetes, BP and more." },
-];
+// services / reasons content now comes from settings (admin-managed)
 
 const reasons = [
   { icon: ShieldCheck, title: "Certified Specialists", desc: "Every doctor is board-licensed and verified." },
@@ -582,11 +570,22 @@ const MediCare = () => {
   }, []);
 
   useEffect(() => {
-    document.title = `${settings.siteName} — Advanced Healthcare Designed Around You`;
+    document.title = settings.seo.pageTitle || `${settings.siteName} — Advanced Healthcare`;
     const meta = document.querySelector('meta[name="description"]') || (() => {
       const m = document.createElement("meta"); m.setAttribute("name", "description"); document.head.appendChild(m); return m;
     })();
-    meta.setAttribute("content", "Book appointments, consult certified doctors, access medical records and receive world-class healthcare digitally and physically with MediCare.");
+    meta.setAttribute("content", settings.seo.metaDescription);
+
+    const kw = document.querySelector('meta[name="keywords"]') || (() => {
+      const m = document.createElement("meta"); m.setAttribute("name", "keywords"); document.head.appendChild(m); return m;
+    })();
+    kw.setAttribute("content", settings.seo.keywords);
+
+    if (settings.seo.favicon) {
+      let link = document.querySelector("link[rel='icon']") as HTMLLinkElement | null;
+      if (!link) { link = document.createElement("link"); link.rel = "icon"; document.head.appendChild(link); }
+      link.href = settings.seo.favicon;
+    }
 
     const ld = document.createElement("script");
     ld.type = "application/ld+json";
@@ -594,7 +593,7 @@ const MediCare = () => {
       "@context": "https://schema.org",
       "@type": "Hospital",
       name: settings.siteName,
-      description: "Premium hospital and telemedicine platform.",
+      description: settings.seo.metaDescription,
       url: typeof window !== "undefined" ? window.location.href : "",
       telephone: settings.contact.phone,
       medicalSpecialty: ["Cardiology", "Neurology", "Pediatrics", "Dermatology", "Oncology"],
@@ -887,28 +886,33 @@ const MediCare = () => {
       <section id="services" className="py-20 sm:py-28 mc-grad-soft">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto">
-            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Services</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Everything you need, <span className="mc-grad-text">one platform</span></h2>
+            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">{settings.services.label}</p>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">{settings.services.title}</h2>
           </div>
           <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {services.map((s) => (
-              <div key={s.title} className="group bg-[hsl(var(--mc-card))] rounded-3xl overflow-hidden border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover">
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <img
-                    src={s.image}
-                    alt={s.title}
-                    width={800}
-                    height={600}
-                    loading="lazy"
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <span className="absolute bottom-3 left-3 grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow">
-                    <s.icon className="h-5 w-5" />
-                  </span>
-                </div>
+            {settings.services.items.filter((x) => x.active).sort((a, b) => a.order - b.order).map((svc) => (
+              <div key={svc.id} className="group bg-[hsl(var(--mc-card))] rounded-3xl overflow-hidden border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover">
+                {svc.image && (
+                  <div className="relative aspect-[4/3] overflow-hidden">
+                    <img src={svc.image} alt={svc.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    <span className="absolute bottom-3 left-3 grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow">
+                      <McIcon name={svc.icon} className="h-5 w-5" />
+                    </span>
+                  </div>
+                )}
                 <div className="p-7">
-                  <h3 className="font-display text-xl font-bold">{s.title}</h3>
-                  <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">{s.desc}</p>
+                  {!svc.image && (
+                    <span className="inline-grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow mb-4">
+                      <McIcon name={svc.icon} className="h-5 w-5" />
+                    </span>
+                  )}
+                  <h3 className="font-display text-xl font-bold">{svc.title}</h3>
+                  <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">{svc.description}</p>
+                  {svc.ctaLabel && svc.ctaHref && (
+                    <a href={svc.ctaHref} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[hsl(var(--mc-primary))]">
+                      {svc.ctaLabel} <ArrowRight className="h-4 w-4" />
+                    </a>
+                  )}
                 </div>
               </div>
             ))}

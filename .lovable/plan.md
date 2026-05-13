@@ -1,61 +1,62 @@
-# Plan: Healthcare Portals (Patient, Doctor EMR, Organization/HMO)
+## Goal
+Turn the existing MediCare admin (`/doctor-portal/admin`) into a complete Landing Page CMS that controls every section of the existing MediCare landing page (`/doctor-portal`). No redesign of the public page — only wire its content to admin-managed settings.
 
-Extend the existing Delsomed project with three authenticated portals and a new footer "Portals" section. Reuse existing branding (sage primary, Poppins/Inter), shadcn/ui components, and current auth (`useAuth`).
+## Approach
+Keep using the existing `medicareSettings` localStorage store (already powering branding/hero/about/faqs/testimonials/partners). Extend its schema to cover every section listed, then:
+1. Expand `src/lib/medicareSettings.ts` with new typed sections + sensible defaults that mirror the *current* hard-coded landing page content (so nothing visually changes on first load).
+2. Refactor `src/pages/MediCare.tsx` to read every section from `useMediCareSettings()` instead of hard-coded JSX. Preserve current layout, classes, animations.
+3. Rebuild `src/pages/MediCareAdmin.tsx` as a tabbed CMS with one tab per section + Media Library + SEO. Reuse the existing sidebar shell.
 
-## 1. Footer update
-- Edit `src/components/site/SiteFooter.tsx`: add a new "Portals" row above the existing grid (or as a top band) with three premium cards linking to `/patient`, `/doctor`, `/organization`. Hover lift, sage→secondary gradient, icon + label + short description, fully responsive.
+## Sections / data model added
+- `nav`: logo, brand, items[{id,label,href,enabled,order}], cta{label,href,enabled}
+- `hero`: extends current — badge, headline, description, ctaLabel, ctaHref, bgImage, overlayOpacity, doctorCard{name,role,avatar}, checklistCard{title,items[]}, vitalsCard{label,value,trend}
+- `partners`: already exists; add reorder + logo upload
+- `about`: extends current — label, title, description, mission{title,body}, vision{title,body}, image, ctaLabel, ctaHref, satisfactionCard{value,label}
+- `whyChoose`: label, title, description, image, features[{id,icon,title,description,order,active}]
+- `services`: label, title, items[{id,image,icon,title,description,ctaLabel,ctaHref,order,active}]
+- `virtualCare`: badge, title, description, checklist[], ctaLabel, ctaHref, mockupImage, dashboardCard{title,stat,sub}, bgImage
+- `testimonials`: extends — label, title, items add age/location, image, rating, order
+- `ctaBanner`: bgImage, badge, title, description, primaryCta{label,href}, secondaryCta{label,href}, overlayOpacity
+- `footer`: logo, description, socials[{platform,href}], specialistLinks[], quickLinks[], supportLinks[], copyright, availabilityText, bgColor
+- `media`: items[{id,name,type:'image'|'video',dataUrl,uploadedAt}]
+- `seo`: pageTitle, metaDescription, keywords, ogImage, favicon
 
-## 2. Shared portal infrastructure
-- `src/components/portal/PortalLayout.tsx` — shadcn Sidebar shell (collapsible icon mode) with header containing `SidebarTrigger`, breadcrumb, user menu. Accepts `nav` items and `title`. Wraps in `SidebarProvider`.
-- `src/components/portal/PortalSidebar.tsx` — generic sidebar driven by nav config (icon, label, path), active highlight via `NavLink`.
-- `src/components/portal/StatCard.tsx`, `EmptyState.tsx`, `PageHeader.tsx`, `SectionCard.tsx` — reusable building blocks.
-- All routes guarded by a lightweight `PortalGuard` (uses `useAuth`; redirects unauthenticated users to `/auth`). Role gating is UI-only for now (no DB schema changes) — we use existing session.
+All images/videos stored as base64 dataURLs in localStorage (consistent with current logo upload). Media Library is a shared picker reused by every section's image/video field.
 
-## 3. Patient Portal (`/patient/*`)
-Pages under `src/pages/patient/`:
-- `Dashboard.tsx` — welcome, quick stats (upcoming, past, prescriptions, balance), upcoming appointments timeline, quick actions (Join, Book, View Records).
-- `Appointments.tsx` — list + appointment detail drawer (doctor info, date/time, status, Join button, notes preview, Reschedule placeholder).
-- `MedicalRecords.tsx` — timeline UI, expandable cards (diagnoses/treatments/attachments), search/filter.
-- `Prescriptions.tsx` — list, medication details, status badges, Download button.
-- `Payments.tsx` — transactions table, subscription card, HMO usage, billing cards.
-- `Settings.tsx` — tabs: Profile, Password, Notifications, Security.
-- Mock data file: `src/data/patientMock.ts`.
+## Admin UI structure
+Sidebar tabs (replacing current 8 with the full set):
+Navbar · Hero · Partners · About · Why Choose Us · Services · Virtual Care · Testimonials · CTA Banner · Footer · Media Library · SEO
 
-## 4. Doctor EMR Portal (`/doctor/*`)
-Pages under `src/pages/doctor/`:
-- `Dashboard.tsx` — today's schedule, upcoming consultations, notifications, stat cards, Start Consultation buttons.
-- `Schedule.tsx` — calendar/agenda list view.
-- `Consultations.tsx` — list of consultations → links to `/doctor/consultations/:id`.
-- `ConsultationRoom.tsx` — **3-column EMR layout**:
-  - Left: patient details, history, previous consults, allergies, meds.
-  - Center: large video placeholder (camera off icon), mic/cam/share/end controls.
-  - Right: Tabs — Clinical Notes (symptoms, diagnosis, observations, plan, save + autosave indicator), Prescription (dynamic medication list, generate, send), Investigations (lab select, test type, notes, add/send/download), Referral (specialist select, notes, send/download).
-  - Responsive: stacks vertically on mobile/tablet.
-- `Patients.tsx` — searchable/filterable table + profile drawer with history preview.
-- `Prescriptions.tsx`, `Investigations.tsx`, `Referrals.tsx` — list views.
-- `Settings.tsx`.
-- Mock data: `src/data/doctorMock.ts`.
+Per-section pattern:
+- Form fields styled with existing `Field` / `inputCls` helpers
+- List sections (services, features, testimonials, partners, nav items, social/footer links) get: add row, inline edit, delete with confirm modal, ↑/↓ reorder, enable/disable toggle
+- Image/video fields use a `<MediaPicker>` (upload new or pick from library)
+- Sticky save bar with Save / Reset / "View landing page" link
+- Toast on save/error (sonner already in project)
+- "Preview" button opens `/doctor-portal` in new tab (unsaved changes warning)
 
-## 5. Organization / HMO Portal (`/organization/*`)
-Pages under `src/pages/organization/`:
-- `Dashboard.tsx` — usage overview, staff metrics, billing summary, active subs, recent activities (charts via `recharts`).
-- `Staff.tsx` — staff table, add/remove modal, status badges, search/filter.
-- `Usage.tsx` — consultation usage, department usage, monthly analytics, utilization line/bar charts.
-- `Billing.tsx`, `Invoices.tsx` — invoice cards, payment history, download buttons, subscription overview.
-- `Settings.tsx`.
-- Mock data: `src/data/orgMock.ts`.
+## Public page wiring (`MediCare.tsx`)
+- Replace hard-coded strings/images with `s.nav.*`, `s.hero.*`, `s.whyChoose.features.filter(active).sort(order)`, etc.
+- Inject `s.seo.pageTitle` / meta description via `document.title` + meta tags effect (already pattern in file)
+- Footer reads from `s.footer`; nav from `s.nav` filtered by enabled+order
+- Defaults are seeded to current copy so the page renders identically out of the box
 
-## 6. Routing
-Update `src/App.tsx`: add nested routes for `/patient/*`, `/doctor/*`, `/organization/*`, each wrapped in `PortalGuard` + `PortalLayout`. Keep all existing routes untouched. Note: existing `/doctor-portal` (MediCare public page) stays — new portal lives at `/doctor` to avoid collision.
+## Out of scope (kept simple)
+- No DB migration — stays in localStorage (matches existing architecture). If user later wants multi-device sync, we can move to Supabase.
+- No drag-and-drop reorder — use up/down arrows (simpler, mobile-friendly)
+- No publish workflow — saves are live immediately (current behavior)
 
-## Technical Notes
-- No DB/schema changes; all data is realistic mock from `src/data/*Mock.ts`.
-- Reuse shadcn `sidebar`, `tabs`, `table`, `card`, `dialog`, `drawer`, `badge`, `avatar`, `skeleton`, `dropdown-menu`.
-- Charts: `recharts` (already a shadcn dep via `chart.tsx`).
-- All colors via semantic tokens (`bg-primary`, `text-secondary`, `bg-muted`, etc.). No hardcoded hex.
-- Mobile-first; sidebar collapses to icon mode on desktop, offcanvas sheet on mobile.
-- Loading/empty/error states + skeletons on every list/dashboard.
-- Footer Portals section: 3 cards in a responsive grid (`grid-cols-1 sm:grid-cols-3`), placed inside footer above the existing column grid.
+## Files
+**Edit**
+- `src/lib/medicareSettings.ts` — extend schema + defaults
+- `src/pages/MediCare.tsx` — wire every section to settings
+- `src/pages/MediCareAdmin.tsx` — replace tabs with full CMS
 
-## File Summary
-Create ~22 files (3 shared portal components, ~6 patient pages, ~9 doctor pages, ~6 org pages, 3 mock-data files). Edit 2 files (`App.tsx`, `SiteFooter.tsx`).
+**Create**
+- `src/components/medicare-admin/MediaPicker.tsx` — upload/select image or video
+- `src/components/medicare-admin/ConfirmDialog.tsx` — delete confirmation
+- `src/components/medicare-admin/SectionEditors/` — one file per section editor (Navbar, Hero, About, WhyChoose, Services, VirtualCare, Testimonials, CtaBanner, Footer, Partners, Media, Seo) to keep `MediCareAdmin.tsx` lean
+
+## Notes
+- This is a large change (~12 new files, 3 large rewrites). Public landing page output stays visually identical until admin changes content.
+- localStorage has a ~5MB cap; uploaded videos should be small. I'll add a size warning in MediaPicker (>2MB).
