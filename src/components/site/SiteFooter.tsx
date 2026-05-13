@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Mail, Phone, MapPin, MessageCircle, Stethoscope, ArrowRight, User, Heart, Building2 } from "lucide-react";
+import { Mail, Phone, MapPin, MessageCircle, Stethoscope, ArrowRight, Heart, Building2 } from "lucide-react";
 import desolmedLogo from "@/assets/desolmed-logo.png";
 
 const DOCTOR_PORTAL_PATH = "/doctor-portal";

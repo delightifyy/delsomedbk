@@ -1,7 +1,7 @@
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { PageHeader, SectionCard, StatCard } from "@/components/portal/PortalUI";
 import { orgNav } from "./nav";
-import { orgMock, formatNGN } from "@/data/portalMock";
+import { orgMock } from "@/data/portalMock";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, AreaChart, Area } from "recharts";
 import { Activity, TrendingUp, Gauge } from "lucide-react";
 
