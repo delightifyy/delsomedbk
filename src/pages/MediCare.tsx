@@ -148,12 +148,12 @@ const specialties = [
 ];
 
 const services = [
-  { icon: Stethoscope,  title: "General Consultation", desc: "Everyday illnesses, checkups, and concerns from licensed GPs." },
-  { icon: Brain,        title: "Mental Health Support", desc: "Therapy and counseling from accredited professionals." },
-  { icon: Pill,         title: "Prescription & Refills", desc: "Digital prescriptions sent to your local pharmacy." },
-  { icon: FlaskConical, title: "Lab Tests & Referrals", desc: "Order labs and access specialist referrals fast." },
-  { icon: Eye,          title: "Vision & Optical",      desc: "Eye exams and optical care from board-certified doctors." },
-  { icon: Activity,     title: "Chronic Care",          desc: "Continuous monitoring for diabetes, BP and more." },
+  { icon: Stethoscope,  image: serviceGeneralImg,      title: "General Consultation", desc: "Everyday illnesses, checkups, and concerns from licensed GPs." },
+  { icon: Brain,        image: serviceMentalImg,       title: "Mental Health Support", desc: "Therapy and counseling from accredited professionals." },
+  { icon: Pill,         image: servicePrescriptionImg, title: "Prescription & Refills", desc: "Digital prescriptions sent to your local pharmacy." },
+  { icon: FlaskConical, image: serviceLabImg,          title: "Lab Tests & Referrals", desc: "Order labs and access specialist referrals fast." },
+  { icon: Eye,          image: serviceVisionImg,       title: "Vision & Optical",      desc: "Eye exams and optical care from board-certified doctors." },
+  { icon: Activity,     image: serviceChronicImg,      title: "Chronic Care",          desc: "Continuous monitoring for diabetes, BP and more." },
 ];
 
 const reasons = [
