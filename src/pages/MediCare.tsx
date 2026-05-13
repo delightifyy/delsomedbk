@@ -792,14 +792,62 @@ const MediCare = () => {
         </div>
       </section>
 
-      {/* ============ ABOUT (compact) ============ */}
-      <section id="about" className="py-20 sm:py-24">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
-          <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">About Us</p>
-          <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">{settings.about.title}</h2>
-          <p className="mt-6 text-base sm:text-lg text-[hsl(var(--mc-muted))] leading-relaxed whitespace-pre-line">
-            {settings.about.body}
-          </p>
+      {/* ============ ABOUT ============ */}
+      <section id="about" className="py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          {/* Image side */}
+          <div className="relative">
+            <div className="relative rounded-[2rem] overflow-hidden mc-shadow-elegant aspect-[4/5]">
+              <img
+                src={aboutHospitalImg}
+                alt="Modern hospital facility"
+                width={1000}
+                height={1200}
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+            </div>
+            {/* Floating stat card */}
+            <div className="absolute -bottom-6 left-6 sm:left-10 bg-[hsl(var(--mc-card))] rounded-2xl px-6 py-4 mc-shadow-elegant border border-[hsl(var(--mc-border))] flex items-center gap-4">
+              <span className="grid place-items-center h-12 w-12 rounded-xl bg-[hsl(var(--mc-primary)/.1)] text-[hsl(var(--mc-primary))]">
+                <Users className="h-6 w-6" />
+              </span>
+              <div>
+                <p className="font-display text-2xl font-bold leading-none">98%</p>
+                <p className="text-xs text-[hsl(var(--mc-muted))] mt-1">Patient satisfaction</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Content side */}
+          <div>
+            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">About MediCare</p>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold leading-[1.1]">
+              {settings.about.title}
+            </h2>
+            <p className="mt-6 text-base sm:text-lg text-[hsl(var(--mc-muted))] leading-relaxed whitespace-pre-line">
+              {settings.about.body}
+            </p>
+
+            <div className="mt-10 grid sm:grid-cols-2 gap-8">
+              <div>
+                <h3 className="font-display text-lg font-bold">Our Mission</h3>
+                <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">
+                  Provide accessible, world-class care that respects every patient as a person.
+                </p>
+              </div>
+              <div>
+                <h3 className="font-display text-lg font-bold">Our Vision</h3>
+                <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">
+                  Be the most trusted healthcare brand on the continent — a benchmark for excellence.
+                </p>
+              </div>
+            </div>
+
+            <a href="#services" className="mt-10 inline-flex items-center gap-2 font-semibold text-[hsl(var(--mc-primary))] hover:gap-3 transition-all">
+              Read our full story <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
         </div>
       </section>
 
