@@ -271,12 +271,12 @@ export const defaultSettings: MediCareSettings = {
     label: "Services",
     title: "Everything you need, one platform",
     items: [
-      { id: uid("s"), icon: "Stethoscope",  title: "General Consultation",   description: "Everyday illnesses, checkups, and concerns from licensed GPs.", image: "", order: 0, active: true, ctaLabel: "", ctaHref: "" },
-      { id: uid("s"), icon: "Brain",        title: "Mental Health Support",  description: "Therapy and counseling from accredited professionals.",        image: "", order: 1, active: true, ctaLabel: "", ctaHref: "" },
-      { id: uid("s"), icon: "Pill",         title: "Prescription & Refills", description: "Digital prescriptions sent to your local pharmacy.",          image: "", order: 2, active: true, ctaLabel: "", ctaHref: "" },
-      { id: uid("s"), icon: "FlaskConical", title: "Lab Tests & Referrals",  description: "Order labs and access specialist referrals fast.",            image: "", order: 3, active: true, ctaLabel: "", ctaHref: "" },
-      { id: uid("s"), icon: "Eye",          title: "Vision & Optical",       description: "Eye exams and optical care from board-certified doctors.",    image: "", order: 4, active: true, ctaLabel: "", ctaHref: "" },
-      { id: uid("s"), icon: "Activity",     title: "Chronic Care",           description: "Continuous monitoring for diabetes, BP and more.",            image: "", order: 5, active: true, ctaLabel: "", ctaHref: "" },
+      { id: uid("s"), icon: "Stethoscope",  title: "General Consultation",   description: "Everyday illnesses, checkups, and concerns from licensed GPs.", image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=800&auto=format&fit=crop&q=80", order: 0, active: true, ctaLabel: "", ctaHref: "" },
+      { id: uid("s"), icon: "Brain",        title: "Mental Health Support",  description: "Therapy and counseling from accredited professionals.",        image: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=800&auto=format&fit=crop&q=80", order: 1, active: true, ctaLabel: "", ctaHref: "" },
+      { id: uid("s"), icon: "Pill",         title: "Prescription & Refills", description: "Digital prescriptions sent to your local pharmacy.",          image: "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=800&auto=format&fit=crop&q=80", order: 2, active: true, ctaLabel: "", ctaHref: "" },
+      { id: uid("s"), icon: "FlaskConical", title: "Lab Tests & Referrals",  description: "Order labs and access specialist referrals fast.",            image: "https://images.unsplash.com/photo-1581093588401-fbb62a02f120?w=800&auto=format&fit=crop&q=80", order: 3, active: true, ctaLabel: "", ctaHref: "" },
+      { id: uid("s"), icon: "Eye",          title: "Vision & Optical",       description: "Eye exams and optical care from board-certified doctors.",    image: "https://images.unsplash.com/photo-1577401239170-897942555fb3?w=800&auto=format&fit=crop&q=80", order: 4, active: true, ctaLabel: "", ctaHref: "" },
+      { id: uid("s"), icon: "Activity",     title: "Chronic Care",           description: "Continuous monitoring for diabetes, BP and more.",            image: "https://images.unsplash.com/photo-1559757175-5700dde675bc?w=800&auto=format&fit=crop&q=80", order: 5, active: true, ctaLabel: "", ctaHref: "" },
     ],
   },
 
