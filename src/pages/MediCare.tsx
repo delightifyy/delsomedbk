@@ -6,7 +6,7 @@ import {
   Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, ArrowRight,
   Search, ChevronDown, Settings, Bone, Eye, Activity, Microscope, Syringe,
   Ambulance, MessageSquare, BellRing, Bot, Smartphone, Apple, Play, Quote,
-  CheckCircle2, Award, Globe2, Languages, Building2, MonitorSmartphone,
+  CheckCircle2, Award, Globe2, Languages, Building2, MonitorSmartphone, Users,
 } from "lucide-react";
 import {
   hexToHslString,
