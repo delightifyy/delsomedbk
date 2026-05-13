@@ -1,0 +1,3776 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "EMR-API",
+    "description": "EMR-API — multi-portal telemedicine + EMR platform backend.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost",
+      "description": "API server"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/activity-logs": {
+      "get": {
+        "tags": [
+          "Admin / Activity Log"
+        ],
+        "summary": "List activity log entries",
+        "operationId": "8603f1b0ec16648f2c3e3a87afde066d",
+        "parameters": [
+          {
+            "name": "causer_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "subject_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subject_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "event",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "log_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activity log entries"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/activity-logs/{id}": {
+      "get": {
+        "tags": [
+          "Admin / Activity Log"
+        ],
+        "summary": "Get a single activity log entry",
+        "operationId": "ee1dc101e5f7f82e7a74be468733f423",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activity log detail"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/adverts": {
+      "get": {
+        "tags": [
+          "Admin / Adverts"
+        ],
+        "summary": "List all adverts (all statuses)",
+        "operationId": "def1ba7bd2f72d87876826258bb1fb92",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "published",
+                "expired"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Adverts"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Admin / Adverts"
+        ],
+        "summary": "Create an advert",
+        "operationId": "ea2ca4499780b2a2de4f0d249541c3b3",
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "422": {
+            "description": "Validation error"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/adverts/{uuid}": {
+      "get": {
+        "tags": [
+          "Admin / Adverts"
+        ],
+        "summary": "Get an advert by UUID",
+        "operationId": "b21b4ddbdf41280f2743645fedff6f34",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Advert detail"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Admin / Adverts"
+        ],
+        "summary": "Update an advert",
+        "operationId": "ea67787e8c740c426ea1dad02f89c917",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated"
+          },
+          "403": {
+            "description": "Forbidden — needs adverts.publish to change status to published"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Admin / Adverts"
+        ],
+        "summary": "Delete an advert (soft delete)",
+        "operationId": "8104df7250137d2ba79ee15e2681ab07",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/adverts/bulk-publish": {
+      "post": {
+        "tags": [
+          "Admin / Adverts"
+        ],
+        "summary": "Bulk publish adverts by uuid array",
+        "operationId": "905ddc97ea9d8770c4ade610201ce5d1",
+        "responses": {
+          "200": {
+            "description": "Published"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/adverts/bulk-unpublish": {
+      "post": {
+        "tags": [
+          "Admin / Adverts"
+        ],
+        "summary": "Bulk unpublish adverts (revert to draft)",
+        "operationId": "5df82b7f33483a7f73ae26132717bc5d",
+        "responses": {
+          "200": {
+            "description": "Unpublished"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/adverts/bulk-delete": {
+      "post": {
+        "tags": [
+          "Admin / Adverts"
+        ],
+        "summary": "Bulk soft-delete adverts",
+        "operationId": "a9469d611e0720470a73f91e7a3fed37",
+        "responses": {
+          "200": {
+            "description": "Deleted"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/applications": {
+      "get": {
+        "tags": [
+          "Admin / Applications"
+        ],
+        "summary": "List all registration applications with filters and counts",
+        "operationId": "b5a2b6d9d173f81921a26c274599d71f",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "doctor",
+                "pharmacy",
+                "diagnostic_lab",
+                "organization"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "approved",
+                "rejected"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list with counts in meta"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/applications/{uuid}": {
+      "get": {
+        "tags": [
+          "Admin / Applications"
+        ],
+        "summary": "Get full application detail including documents and review log",
+        "operationId": "30fd1ec6291a5f0b1e2aec7ee3835484",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Application detail"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/applications/{uuid}/documents/{document_id}/download": {
+      "get": {
+        "tags": [
+          "Admin / Applications"
+        ],
+        "summary": "Stream an application document (does not expose storage path)",
+        "operationId": "7936b2494c42fe56d502deaee063e66f",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File stream"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/applications/{uuid}/approve": {
+      "post": {
+        "tags": [
+          "Admin / Applications"
+        ],
+        "summary": "Approve an application — creates user, assigns role, sends email",
+        "operationId": "cb90965d188d4c3c773fa8a85cff453d",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "note": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 2000
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Approved successfully"
+          },
+          "409": {
+            "description": "User with that email already exists"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/applications/{uuid}/reject": {
+      "post": {
+        "tags": [
+          "Admin / Applications"
+        ],
+        "summary": "Reject an application — reason is required and emailed to the applicant",
+        "operationId": "63aa2491d44c65649a8b54c6dc3291c4",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "required": [
+                  "reason"
+                ],
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "minLength": 10
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rejected successfully"
+          },
+          "409": {
+            "description": "Application already decided"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Validation error — reason is required"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/applications/{uuid}/notes": {
+      "post": {
+        "tags": [
+          "Admin / Applications"
+        ],
+        "summary": "Add a reviewer note without changing application status",
+        "operationId": "29426c30f467bf94586d9e579703fd57",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "required": [
+                  "note"
+                ],
+                "properties": {
+                  "note": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "minLength": 2
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Note added"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/cms/faqs": {
+      "get": {
+        "tags": [
+          "CMS / FAQs"
+        ],
+        "summary": "List all FAQs (published + draft)",
+        "operationId": "b787546f6345293f4a0c34b72adf2152",
+        "responses": {
+          "200": {
+            "description": "FAQs"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "CMS / FAQs"
+        ],
+        "summary": "Create a FAQ",
+        "operationId": "6368f348aa97116463cdcda0a9786c02",
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/cms/faqs/{faq}": {
+      "delete": {
+        "tags": [
+          "CMS / FAQs"
+        ],
+        "summary": "Delete a FAQ",
+        "operationId": "09b1869beb012c55216ed81c38c3a7f3",
+        "parameters": [
+          {
+            "name": "faq",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "CMS / FAQs"
+        ],
+        "summary": "Update a FAQ",
+        "operationId": "3eb233ed95be435b8dedb780a4d31f9d",
+        "parameters": [
+          {
+            "name": "faq",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/cms/pages": {
+      "get": {
+        "tags": [
+          "CMS / Pages"
+        ],
+        "summary": "List all pages",
+        "operationId": "dba26903675c57c7c13c0de386758e0e",
+        "responses": {
+          "200": {
+            "description": "List of pages"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "CMS / Pages"
+        ],
+        "summary": "Create a new page",
+        "operationId": "96920f1f3b0e3c1add59ad91dea4d51f",
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/cms/pages/{key}": {
+      "get": {
+        "tags": [
+          "CMS / Pages"
+        ],
+        "summary": "Get a page with all sections",
+        "operationId": "cf9d16bb3705274b0f4bee3194e16a14",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page detail"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "CMS / Pages"
+        ],
+        "summary": "Delete a page",
+        "operationId": "11315f2375d27b1059e8137c42155e4b",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "CMS / Pages"
+        ],
+        "summary": "Update page metadata",
+        "operationId": "cab977ee05fc86c1304ce514b1f7bc91",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/cms/pages/{key}/sections": {
+      "post": {
+        "tags": [
+          "CMS / Pages"
+        ],
+        "summary": "Add a section to a page",
+        "operationId": "12b3c480a595de1cdfc43ae177c5bb8f",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Section created"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/cms/pages/{key}/sections/{section}": {
+      "delete": {
+        "tags": [
+          "CMS / Pages"
+        ],
+        "summary": "Delete a page section",
+        "operationId": "5cf96c025489c44d85b7bafd44240cba",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "section",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "CMS / Pages"
+        ],
+        "summary": "Update a page section",
+        "operationId": "bef87d34af19900d9309042acbae87e1",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "section",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/cms/partners": {
+      "get": {
+        "tags": [
+          "CMS / Partners"
+        ],
+        "summary": "List all partners",
+        "operationId": "c52829e6e2bade68fd84ef6aa65c50a3",
+        "responses": {
+          "200": {
+            "description": "Partners"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "CMS / Partners"
+        ],
+        "summary": "Create a partner",
+        "operationId": "bb7f82e2a7de826866319c76f2c56dfb",
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/cms/partners/{partner}": {
+      "delete": {
+        "tags": [
+          "CMS / Partners"
+        ],
+        "summary": "Delete a partner",
+        "operationId": "a252f0bbb95a7d0bd153949aa1a3d05e",
+        "parameters": [
+          {
+            "name": "partner",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "CMS / Partners"
+        ],
+        "summary": "Update a partner",
+        "operationId": "f632f2ad70611148df068435cf4c5db6",
+        "parameters": [
+          {
+            "name": "partner",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/cms/settings": {
+      "get": {
+        "tags": [
+          "CMS / Settings"
+        ],
+        "summary": "List all site settings (including private)",
+        "operationId": "55ce3e870c347d0986f18c1d66fb3c13",
+        "responses": {
+          "200": {
+            "description": "All settings"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/cms/settings/{key}": {
+      "patch": {
+        "tags": [
+          "CMS / Settings"
+        ],
+        "summary": "Update a site setting value",
+        "operationId": "51b641a913fb63e5f26d197eeb5a6b90",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/cms/testimonials": {
+      "get": {
+        "tags": [
+          "CMS / Testimonials"
+        ],
+        "summary": "List all testimonials",
+        "operationId": "257bab32a891cbfadb850afba0ded92f",
+        "responses": {
+          "200": {
+            "description": "Testimonials"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "CMS / Testimonials"
+        ],
+        "summary": "Create a testimonial",
+        "operationId": "540027bca505f5ddcbddc60cacd4e93a",
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/cms/testimonials/{testimonial}": {
+      "delete": {
+        "tags": [
+          "CMS / Testimonials"
+        ],
+        "summary": "Delete a testimonial",
+        "operationId": "17187cbe79fc632b72f1288fa24625d0",
+        "parameters": [
+          {
+            "name": "testimonial",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "CMS / Testimonials"
+        ],
+        "summary": "Update a testimonial",
+        "operationId": "0fd9a05f849b63771f01a3b681cebdf6",
+        "parameters": [
+          {
+            "name": "testimonial",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/contact-messages": {
+      "get": {
+        "tags": [
+          "Admin / Contact Messages"
+        ],
+        "summary": "List contact messages",
+        "operationId": "8722381da063f7b1694c740eba54b640",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "new",
+                "read",
+                "archived"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contact messages"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/contact-messages/{contact_message}": {
+      "get": {
+        "tags": [
+          "Admin / Contact Messages"
+        ],
+        "summary": "Show a contact message",
+        "operationId": "2b1ef20de5c8957b514ef2c563eae283",
+        "parameters": [
+          {
+            "name": "contact_message",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contact message"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Admin / Contact Messages"
+        ],
+        "summary": "Delete a contact message",
+        "operationId": "ef0d19fa6bec21de34c9ec09b1810afb",
+        "parameters": [
+          {
+            "name": "contact_message",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Admin / Contact Messages"
+        ],
+        "summary": "Update contact message status (mark read / archive)",
+        "operationId": "8212320af817278ad2ded58f3369a3b8",
+        "parameters": [
+          {
+            "name": "contact_message",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/lookups/cities": {
+      "get": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: list cities",
+        "operationId": "6e7549fb1ea15a16f7fd21595f0492da",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: create a city",
+        "operationId": "e764af7c8c1dca1217c8b6f4b9e382e3",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/lookups/cities/{city}": {
+      "delete": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: delete a city",
+        "operationId": "9e1d206b586f62ca51a062d8685c7f8f",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: update a city",
+        "operationId": "f01698e9ec059e2e7c30a8c762b99018",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/lookups/organization-types": {
+      "get": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: list organization types",
+        "operationId": "c9311e700350f8e71e36e93f036d86bb",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: create an organization type",
+        "operationId": "9b32d786e896d86d7c4b0584e650e5b7",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/lookups/organization-types/{organization_type}": {
+      "delete": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: delete an organization type",
+        "operationId": "7a21df07b4e5d5e4cd699c61dbde5c50",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: update an organization type",
+        "operationId": "2cccb9a78b5b3d1980f64d06e5279c5e",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/lookups/post-categories": {
+      "get": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: list post categories",
+        "operationId": "3035dfc4acea5084f9188e68932ca33e",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: create a post category",
+        "operationId": "baced39448f27c229d84087d3fa13bac",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/lookups/post-categories/{post_category}": {
+      "delete": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: delete a post category",
+        "operationId": "4d783227ef5847dff4717ba1ec1cc8dd",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: update a post category",
+        "operationId": "166c4eab07927f36f57c39978edaf808",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/lookups/services": {
+      "get": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: list services",
+        "operationId": "3296b9f95936c765af56733cb8a396fb",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: create a service",
+        "operationId": "eb9a9d5d938dafd65bce9b19664e99d4",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/lookups/services/{service}": {
+      "delete": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: delete a service",
+        "operationId": "c4b2f940bafeae5861bc74915f128c6d",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: update a service",
+        "operationId": "4cfa5d54e938960f1bd35d59830e85ec",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/lookups/specialties": {
+      "get": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: list specialties",
+        "operationId": "3f43a214366187637ab05f89480a50a0",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: create a specialty",
+        "operationId": "d7e3f345bca7a0a3dd76f69383b35793",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/lookups/specialties/{specialty}": {
+      "delete": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: delete a specialty",
+        "operationId": "c82fe0a40716593e646503a12f0d53dd",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: update a specialty",
+        "operationId": "add3abf140113db458d4cb378ad0d87c",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/lookups/states": {
+      "get": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: list states",
+        "operationId": "f9abc450bc428d43806ee81476dab49f",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: create a state",
+        "operationId": "c8dc1c3f6c30fb229a4a2afc1e4a7442",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/lookups/states/{state}": {
+      "delete": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: delete a state",
+        "operationId": "176e3d8914383eee6eb38bd359cedd59",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: update a state",
+        "operationId": "86a487d6aa51358e5f4e33b4a2131530",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/lookups/sub-specialties": {
+      "get": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: list sub-specialties",
+        "operationId": "b50775042b2117096f3e724e92e664b6",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: create a sub-specialty",
+        "operationId": "fdb0a43d818a5db4f1b68261d3780edd",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/lookups/sub-specialties/{sub_specialty}": {
+      "delete": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: delete a sub-specialty",
+        "operationId": "f7978ea90e9c755fb315047b2d97eed7",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: update a sub-specialty",
+        "operationId": "3431bbb383cb901fa3abbb8eba81ff88",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/lookups/zones": {
+      "get": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: list zones (including inactive)",
+        "operationId": "d3fb08917e596f063732ff2d53f07278",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: create a zone",
+        "operationId": "520a86e838abbcd67e88e98178c0a78c",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/lookups/zones/{zone}": {
+      "delete": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: delete a zone",
+        "operationId": "14d7bad9d9309401990bb7fa61ab0b74",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "Admin: update a zone",
+        "operationId": "236539eb8b6d2246889131442f914390",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/newsletter/subscribers": {
+      "get": {
+        "tags": [
+          "Admin / Newsletter"
+        ],
+        "summary": "List newsletter subscribers",
+        "operationId": "0154a775a2139958ef4379f1a9bd30f3",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "confirmed",
+                "unsubscribed"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Subscribers"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/newsletter/export.csv": {
+      "get": {
+        "tags": [
+          "Admin / Newsletter"
+        ],
+        "summary": "Export confirmed subscribers as CSV",
+        "operationId": "4f6247fea23ed559c935f697369bf873",
+        "responses": {
+          "200": {
+            "description": "CSV stream"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/posts": {
+      "get": {
+        "tags": [
+          "Admin / Posts"
+        ],
+        "summary": "List all posts (all statuses)",
+        "operationId": "4b59702b620b035cd94fc96b35d5ef27",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "news",
+                "blog"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "published"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Posts"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Admin / Posts"
+        ],
+        "summary": "Create a post",
+        "operationId": "72ea847370d05e21835d11373172e6a5",
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "422": {
+            "description": "Validation error"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/posts/{uuid}": {
+      "get": {
+        "tags": [
+          "Admin / Posts"
+        ],
+        "summary": "Get a post by UUID",
+        "operationId": "6e3ff05bdd3dfe5ade19deb37e3a65fd",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Post detail"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Admin / Posts"
+        ],
+        "summary": "Delete a post (soft delete)",
+        "operationId": "8cda4573c8f2ad287074ba1a9de9d43f",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Admin / Posts"
+        ],
+        "summary": "Update a post",
+        "operationId": "8951b948879646bae7337d626db8e1e1",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated"
+          },
+          "403": {
+            "description": "Forbidden — needs posts.publish to change status to published"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/posts/{uuid}/notify-subscribers": {
+      "post": {
+        "tags": [
+          "Admin / Posts"
+        ],
+        "summary": "Trigger newsletter blast for a featured post (stub — not yet implemented)",
+        "operationId": "3c35b0932e22f1abbb41256080d9ea1e",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "501": {
+            "description": "Not implemented — newsletter blast wired in Batch 10"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users": {
+      "get": {
+        "tags": [
+          "Admin / Users"
+        ],
+        "summary": "List all users with filters and per-role counts in meta",
+        "operationId": "8a56520942d0a68f331a81c59dd86ce1",
+        "parameters": [
+          {
+            "name": "role",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "suspended",
+                "pending_email_verification"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "with_trashed",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "enum": [0, 1]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated user list with role counts in meta"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/{uuid}": {
+      "get": {
+        "tags": [
+          "Admin / Users"
+        ],
+        "summary": "Get full user detail with profile and recent activity",
+        "operationId": "20c257517c6f18b899fde89336203927",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User detail"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Admin / Users"
+        ],
+        "summary": "Soft-delete a user account (admin-only, silent)",
+        "operationId": "fc14584c94e28e7826336e077829defc",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Cannot delete self or last super_admin"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/{uuid}/suspend": {
+      "post": {
+        "tags": [
+          "Admin / Users"
+        ],
+        "summary": "Suspend a user account — invalidates session + sends email",
+        "operationId": "4042d535ba40c4946f33b7c107380c9d",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 1000
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Suspended"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Cannot suspend self or already suspended"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/{uuid}/activate": {
+      "post": {
+        "tags": [
+          "Admin / Users"
+        ],
+        "summary": "Activate (or reactivate) a user account",
+        "operationId": "7e9c187bbd6513664a82970b974d69a3",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Already active"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/users/{uuid}/assign-role": {
+      "post": {
+        "tags": [
+          "Admin / Users"
+        ],
+        "summary": "Assign a role to a user (replaces existing roles)",
+        "operationId": "67e045237458ad275e9162cc5a4ce01c",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "required": [
+                  "role"
+                ],
+                "properties": {
+                  "role": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Role assigned"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "409": {
+            "description": "Protected role requires super_admin"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/admin/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Admin / super_admin login (returns JWT)",
+        "operationId": "35aecd84f65a95bc7d71096a19e7976b",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          },
+          "403": {
+            "description": "Account suspended"
+          },
+          "429": {
+            "description": "Too many attempts"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/email/verify/{id}/{hash}": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Verify email via signed URL (redirects to FRONTEND_URL)",
+        "operationId": "d0d56d146db00718c6dbfe890ea88941",
+        "responses": {
+          "302": {
+            "description": "Redirect to frontend with status flag"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/email/verify/resend": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Resend verification email (auth required)",
+        "operationId": "9d7f775f7341f7af4a13435e0f130620",
+        "responses": {
+          "200": {
+            "description": "Resent"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/password/forgot": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Request a password reset link",
+        "operationId": "d5117c4bbc8af5d22c11845a3ff7aeae",
+        "responses": {
+          "200": {
+            "description": "Always 200, never leaks whether email exists"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/password/reset": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Reset password using token from email",
+        "operationId": "bc5adc1d0eaabed87a6ea0782a2a3b26",
+        "responses": {
+          "200": {
+            "description": "Password updated"
+          },
+          "422": {
+            "description": "Invalid or expired token"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/patients/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Patient login (returns JWT)",
+        "operationId": "c6fb04a056779684370071db512eec79",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          },
+          "403": {
+            "description": "Email not verified or account suspended"
+          },
+          "429": {
+            "description": "Too many attempts"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/patients/register": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Register a new patient (3-step wizard payload)",
+        "operationId": "31779ba975b098efba1203302d5a7262",
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "422": {
+            "description": "Validation failed"
+          },
+          "429": {
+            "description": "Too many attempts"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Get the authenticated user (with roles + permissions)",
+        "operationId": "7c0b1ee3ffb77f9950e783b982d6a572",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Refresh the JWT access token",
+        "operationId": "6259fecd3cfde7c678a634cb855a7dbd",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Logout (blacklists the current token)",
+        "operationId": "32064d4ef85820fbc0694c51cf9f0840",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Service health check",
+        "operationId": "5c314677ccfefc5e8fdee147503287e7",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "example": "ok"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "meta": {
+                      "type": "object"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": null,
+                      "nullable": true
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/profile": {
+      "get": {
+        "tags": [
+          "Me"
+        ],
+        "summary": "Get the authenticated doctor's profile",
+        "operationId": "4c6585b3df310058d546c68c695352c1",
+        "responses": {
+          "200": {
+            "description": "Profile"
+          },
+          "403": {
+            "description": "Not a doctor"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Me"
+        ],
+        "summary": "Update editable fields on the authenticated doctor's profile",
+        "operationId": "e4a65a4c9183f774d66e54f454f4012e",
+        "responses": {
+          "200": {
+            "description": "Updated"
+          },
+          "403": {
+            "description": "Not a doctor"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/me/profile/avatar": {
+      "post": {
+        "tags": [
+          "Me"
+        ],
+        "summary": "Upload or replace the authenticated doctor's avatar",
+        "operationId": "d9ec7466428f878e61126ed176abaab9",
+        "responses": {
+          "200": {
+            "description": "Avatar uploaded"
+          },
+          "403": {
+            "description": "Not a doctor"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/adverts": {
+      "get": {
+        "tags": [
+          "Adverts"
+        ],
+        "summary": "List published adverts (filterable by zone and service)",
+        "operationId": "53d8b7ec627f6dc9c085070095964917",
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Zone code (e.g. SW, NC)",
+              "type": "string"
+            }
+          },
+          {
+            "name": "service",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Service slug",
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "featured",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of adverts"
+          }
+        }
+      }
+    },
+    "/api/v1/adverts/{uuid}": {
+      "get": {
+        "tags": [
+          "Adverts"
+        ],
+        "summary": "Get a single published advert by UUID",
+        "operationId": "9b613f9b06d0503b2394133f0b51cee3",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Advert detail"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/applications/status/{uuid}": {
+      "get": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Public status check for a submitted application (UUID is the secret)",
+        "description": "Returns ONLY {uuid, application_type, status, submitted_at, reviewed_at}. Payload and documents are never exposed here.",
+        "operationId": "2923b8de4b10144c573908b5132c99f3",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/applications": {
+      "post": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Submit a professional registration application (multipart/form-data)",
+        "description": "Discriminates on application_type: doctor | pharmacy | diagnostic_lab | organization. Documents are uploaded under documents[\u003Ckey\u003E]. Returns 201 with {uuid, status, submitted_at}.",
+        "operationId": "661a7170550e2caf3583a857ace49ec9",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "application_type",
+                  "email",
+                  "phone",
+                  "zone_id",
+                  "state_id",
+                  "city",
+                  "consent",
+                  "documents"
+                ],
+                "properties": {
+                  "application_type": {
+                    "type": "string",
+                    "enum": [
+                      "doctor",
+                      "pharmacy",
+                      "diagnostic_lab",
+                      "organization"
+                    ]
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "zone_id": {
+                    "type": "integer"
+                  },
+                  "state_id": {
+                    "type": "integer"
+                  },
+                  "city": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "website": {
+                    "type": "string",
+                    "format": "url",
+                    "nullable": true
+                  },
+                  "bio": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 2000
+                  },
+                  "consent": {
+                    "type": "boolean"
+                  },
+                  "documents": {
+                    "description": "Document files keyed by document_type. Required keys depend on application_type.",
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Application submitted"
+          },
+          "422": {
+            "description": "Validation failed"
+          },
+          "429": {
+            "description": "Too many attempts"
+          }
+        }
+      }
+    },
+    "/api/v1/faqs": {
+      "get": {
+        "tags": [
+          "Public Content"
+        ],
+        "summary": "List all published FAQs",
+        "operationId": "be2b8a0c9bc64109ea89ef9cd8a5a0e1",
+        "responses": {
+          "200": {
+            "description": "Published FAQs"
+          }
+        }
+      }
+    },
+    "/api/v1/pages/{key}": {
+      "get": {
+        "tags": [
+          "Public Content"
+        ],
+        "summary": "Get a published page by key with all sections",
+        "operationId": "58e397e565e597872685ba1a4c388e40",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page with sections"
+          },
+          "404": {
+            "description": "Not found or not published"
+          }
+        }
+      }
+    },
+    "/api/v1/partners": {
+      "get": {
+        "tags": [
+          "Public Content"
+        ],
+        "summary": "List all published partners",
+        "operationId": "7c61f7d6719c0e98a73cb822eeb6559d",
+        "responses": {
+          "200": {
+            "description": "Published partners"
+          }
+        }
+      }
+    },
+    "/api/v1/site-settings": {
+      "get": {
+        "tags": [
+          "Public Content"
+        ],
+        "summary": "Get all public site settings in one call (cached)",
+        "operationId": "3409b04a02c65376027b428a9f597e1c",
+        "responses": {
+          "200": {
+            "description": "Key-value map of public settings"
+          }
+        }
+      }
+    },
+    "/api/v1/testimonials": {
+      "get": {
+        "tags": [
+          "Public Content"
+        ],
+        "summary": "List all published testimonials",
+        "operationId": "9953dc3651dbd955217551d37c02c086",
+        "responses": {
+          "200": {
+            "description": "Published testimonials"
+          }
+        }
+      }
+    },
+    "/api/v1/contact": {
+      "post": {
+        "tags": [
+          "Contact"
+        ],
+        "summary": "Submit a public contact message",
+        "operationId": "9a5a834f6fccda70eea1ce99f3eb1e2f",
+        "responses": {
+          "201": {
+            "description": "Submitted"
+          },
+          "422": {
+            "description": "Validation error"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      }
+    },
+    "/api/v1/doctors": {
+      "get": {
+        "tags": [
+          "Doctors"
+        ],
+        "summary": "List published doctors with filters and search",
+        "operationId": "6292cdfeaa8a3c1358818d2ef9b7dda2",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "specialty",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Specialty slug",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sub_specialty",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Sub-specialty slug",
+              "type": "string"
+            }
+          },
+          {
+            "name": "zone",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Zone code",
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "State id",
+              "type": "integer"
+            }
+          },
+          {
+            "name": "city",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of doctors"
+          }
+        }
+      }
+    },
+    "/api/v1/doctors/{uuid}": {
+      "get": {
+        "tags": [
+          "Doctors"
+        ],
+        "summary": "Get full public profile of a doctor by user UUID",
+        "operationId": "1113a22a9b57fcf27aa7d892256045a1",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Doctor detail"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/lookups/cities": {
+      "get": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "List cities (optionally filtered by state)",
+        "operationId": "48d91dc219aed1dab6c019868ed8e768",
+        "parameters": [
+          {
+            "name": "state_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of cities"
+          }
+        }
+      }
+    },
+    "/api/v1/lookups/organization-types": {
+      "get": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "List organization types",
+        "operationId": "9d05234b006ac034f712ca027ee97906",
+        "responses": {
+          "200": {
+            "description": "List of organization types"
+          }
+        }
+      }
+    },
+    "/api/v1/lookups/post-categories": {
+      "get": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "List post (news/blog) categories",
+        "operationId": "08f31e4ba640c03e068bff57bd1f5914",
+        "responses": {
+          "200": {
+            "description": "List of post categories"
+          }
+        }
+      }
+    },
+    "/api/v1/lookups/services": {
+      "get": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "List services (advert taxonomy)",
+        "operationId": "22143313af0d4ead5b6e779fe521d643",
+        "responses": {
+          "200": {
+            "description": "List of services"
+          }
+        }
+      }
+    },
+    "/api/v1/lookups/specialties": {
+      "get": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "List specialties (optionally with sub-specialties)",
+        "operationId": "d45b8c562f2858bf709a793ce3a19c42",
+        "parameters": [
+          {
+            "name": "include",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "sub_specialties"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of specialties"
+          }
+        }
+      }
+    },
+    "/api/v1/lookups/states": {
+      "get": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "List Nigerian states (optionally filtered by zone)",
+        "operationId": "e95e88e7578c533615a2dd0fd2655e8d",
+        "parameters": [
+          {
+            "name": "zone_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of states"
+          }
+        }
+      }
+    },
+    "/api/v1/lookups/sub-specialties": {
+      "get": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "List sub-specialties (optionally filtered by specialty)",
+        "operationId": "f39250d41711636ea045eeb0e167d183",
+        "parameters": [
+          {
+            "name": "specialty_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of sub-specialties"
+          }
+        }
+      }
+    },
+    "/api/v1/lookups/zones": {
+      "get": {
+        "tags": [
+          "Lookups"
+        ],
+        "summary": "List Nigerian geo-political zones",
+        "operationId": "fbdff581c068e7bae234701f283e5131",
+        "responses": {
+          "200": {
+            "description": "List of zones"
+          }
+        }
+      }
+    },
+    "/api/v1/newsletter/subscribe": {
+      "post": {
+        "tags": [
+          "Newsletter"
+        ],
+        "summary": "Subscribe to the newsletter (double opt-in)",
+        "operationId": "0b05c7bbd8b5f0ee72467107f600142a",
+        "responses": {
+          "200": {
+            "description": "Confirmation email queued (sent if email is new or pending)"
+          },
+          "422": {
+            "description": "Validation error"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      }
+    },
+    "/api/v1/newsletter/confirm/{token}": {
+      "get": {
+        "tags": [
+          "Newsletter"
+        ],
+        "summary": "Confirm a pending newsletter subscription",
+        "operationId": "abceb429bc482d0b50be2379cd2238d6",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Confirmed"
+          },
+          "404": {
+            "description": "Invalid or already used token"
+          }
+        }
+      }
+    },
+    "/api/v1/newsletter/unsubscribe/{token}": {
+      "get": {
+        "tags": [
+          "Newsletter"
+        ],
+        "summary": "One-click unsubscribe (idempotent)",
+        "operationId": "20c6abf11db7b11da9d67a5addf88c9a",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unsubscribed (or already unsubscribed)"
+          },
+          "404": {
+            "description": "Invalid token"
+          }
+        }
+      }
+    },
+    "/api/v1/posts": {
+      "get": {
+        "tags": [
+          "Posts"
+        ],
+        "summary": "List published posts (news or blog)",
+        "operationId": "785dec5cc3b017f08ae33342cf30f1ca",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "news",
+                "blog"
+              ]
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Category slug",
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "featured",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of published posts"
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{slug}": {
+      "get": {
+        "tags": [
+          "Posts"
+        ],
+        "summary": "Get a single published post by slug",
+        "operationId": "2af4bdf3784a480b7b099b4d770e6405",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Post detail"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/posts/{slug}/related": {
+      "get": {
+        "tags": [
+          "Posts"
+        ],
+        "summary": "Get related posts (same category)",
+        "operationId": "ea3b374eba51e8e55714d0d22f5ef79e",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 3
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Related posts"
+          }
+        }
+      }
+    },
+    "/api/v1/search": {
+      "get": {
+        "tags": [
+          "Search"
+        ],
+        "summary": "Site-wide search",
+        "operationId": "543467e2a662d4b60143dbcb150f9a7c",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2
+            }
+          },
+          {
+            "name": "types",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "description": "Comma-separated: pages,doctors,specialties,posts",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 5,
+              "maximum": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Grouped search results"
+          },
+          "422": {
+            "description": "Validation error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ErrorEntry": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "example": "email"
+          },
+          "message": {
+            "type": "string",
+            "example": "The email field is required."
+          }
+        },
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "data": {
+            "type": "object",
+            "example": null,
+            "nullable": true
+          },
+          "meta": {
+            "type": "object"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErrorEntry"
+            }
+          },
+          "message": {
+            "type": "string",
+            "example": "The given data was invalid."
+          }
+        },
+        "type": "object"
+      },
+      "PaginationMeta": {
+        "properties": {
+          "current_page": {
+            "type": "integer",
+            "example": 1
+          },
+          "last_page": {
+            "type": "integer",
+            "example": 5
+          },
+          "per_page": {
+            "type": "integer",
+            "example": 12
+          },
+          "total": {
+            "type": "integer",
+            "example": 60
+          }
+        },
+        "type": "object"
+      },
+      "ApiEnvelope": {
+        "description": "Standard response envelope for all endpoints. `data` is endpoint-specific and may be an object, array, or null.",
+        "properties": {
+          "data": {
+            "description": "Endpoint-specific payload"
+          },
+          "meta": {
+            "type": "object"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+
+            }
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "description": "JWT bearer token. Obtain via /api/v1/auth/* endpoints.",
+        "bearerFormat": "JWT",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Admin / Activity Log",
+      "description": "Read-only audit trail for admins"
+    },
+    {
+      "name": "Admin / Adverts",
+      "description": "Admin advert management"
+    },
+    {
+      "name": "Admin / Applications",
+      "description": "Admin approval queue for professional registration applications"
+    },
+    {
+      "name": "CMS / FAQs",
+      "description": "Admin FAQ management"
+    },
+    {
+      "name": "CMS / Pages",
+      "description": "Admin CMS page and section management"
+    },
+    {
+      "name": "CMS / Partners",
+      "description": "Admin partner management"
+    },
+    {
+      "name": "CMS / Settings",
+      "description": "Admin site settings management"
+    },
+    {
+      "name": "CMS / Testimonials",
+      "description": "Admin testimonial management"
+    },
+    {
+      "name": "Admin / Contact Messages",
+      "description": "Admin contact message management"
+    },
+    {
+      "name": "Admin / Newsletter",
+      "description": "Admin newsletter management"
+    },
+    {
+      "name": "Admin / Posts",
+      "description": "Admin post management"
+    },
+    {
+      "name": "Admin / Users",
+      "description": "Admin user management — list, suspend, activate, delete, assign role"
+    },
+    {
+      "name": "Health",
+      "description": "Service health and readiness checks."
+    },
+    {
+      "name": "Me",
+      "description": "Authenticated doctor self-profile management"
+    },
+    {
+      "name": "Adverts",
+      "description": "Public health adverts"
+    },
+    {
+      "name": "Contact",
+      "description": "Public contact form"
+    },
+    {
+      "name": "Doctors",
+      "description": "Public doctor directory (Find a Doctor)"
+    },
+    {
+      "name": "Newsletter",
+      "description": "Public newsletter subscription with double opt-in"
+    },
+    {
+      "name": "Posts",
+      "description": "Public news and blog posts"
+    },
+    {
+      "name": "Search",
+      "description": "Site-wide search across pages, doctors, specialties, and posts"
+    },
+    {
+      "name": "Lookups",
+      "description": "Lookups"
+    },
+    {
+      "name": "Auth",
+      "description": "Auth"
+    },
+    {
+      "name": "Applications",
+      "description": "Applications"
+    },
+    {
+      "name": "Public Content",
+      "description": "Public Content"
+    }
+  ]
+}

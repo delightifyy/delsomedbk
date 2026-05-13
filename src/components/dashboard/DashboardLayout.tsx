@@ -14,13 +14,17 @@ import {
   MessageCircleHeart,
   Menu,
   Stethoscope,
+  MailCheck,
+  Activity,
+  Tags,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import desolmedLogo from "@/assets/desolmed-logo.png";
-import { countPendingRegistrations, subscribeStore } from "../../lib/localStore";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { api } from "@/lib/api";
+import { collection } from "@/lib/backendAdapters";
 
 const items = [
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard, end: true },
@@ -28,11 +32,14 @@ const items = [
   { to: "/dashboard/users", label: "Users", icon: Users },
   { to: "/dashboard/doctors", label: "Doctors", icon: Stethoscope },
   { to: "/dashboard/contacts", label: "Contact Messages", icon: MessageSquare },
-  { to: "/dashboard/blog", label: "Blogs", icon: FileText },
+  { to: "/dashboard/blog", label: "Health Adverts", icon: Megaphone },
   { to: "/dashboard/news", label: "News", icon: Newspaper },
-  { to: "/dashboard/adverts", label: "Health Adverts", icon: Megaphone },
+  // { to: "/dashboard/newsletter", label: "Newsletter", icon: MailCheck },
+  { to: "/dashboard/lookups", label: "Lookups", icon: Tags },
+  
   { to: "/dashboard/faqs", label: "FAQs", icon: CircleHelp },
   { to: "/dashboard/testimonials", label: "Testimonials", icon: MessageCircleHeart },
+  { to: "/dashboard/activity-logs", label: "Activity Logs", icon: Activity },
 ];
 
 export const DashboardLayout = ({ children }: { children: ReactNode }) => {
@@ -41,9 +48,10 @@ export const DashboardLayout = ({ children }: { children: ReactNode }) => {
   const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
-    const load = () => setPendingCount(countPendingRegistrations());
-    const unsubscribe = subscribeStore(load);
-    return unsubscribe;
+    api.admin.applications
+      .list({ status: "pending", page: 1 })
+      .then((response) => setPendingCount(response.meta?.total ?? collection(response.data).length))
+      .catch(() => setPendingCount(0));
   }, []);
 
   const isActive = (to: string, end?: boolean) =>

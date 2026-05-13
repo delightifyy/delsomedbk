@@ -1,10 +1,18 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
+import { API_FALLBACK_TO_LOCAL, getStoredAuthToken } from "@/lib/api";
 
 export const AdminGuard = ({ children }: { children: ReactNode }) => {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, loading, signOut } = useAuth();
+  const hasBackendToken = API_FALLBACK_TO_LOCAL || Boolean(getStoredAuthToken());
+
+  useEffect(() => {
+    if (!loading && user && isAdmin && !hasBackendToken) {
+      signOut();
+    }
+  }, [hasBackendToken, isAdmin, loading, signOut, user]);
 
   if (loading) {
     return (
@@ -14,6 +22,13 @@ export const AdminGuard = ({ children }: { children: ReactNode }) => {
     );
   }
   if (!user) return <Navigate to="/auth" replace />;
+  if (!hasBackendToken) {
+    return (
+      <div className="min-h-screen grid place-items-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
   if (!isAdmin) {
     return (
       <div className="min-h-screen grid place-items-center px-6 text-center">

@@ -18,6 +18,7 @@ import { SPECIALTIES, ZONES, SPECIALTY_MAP } from "@/data/doctors";
 import { NIGERIA_STATES } from "@/data/nigeriaStates";
 import { submitRegistration, ApplicantType, DocumentSlot } from "@/lib/registrations";
 import { ConsentCheckbox } from "@/components/site/ConsentCheckbox";
+import { RegistrationSuccessDialog } from "@/components/site/RegistrationSuccessDialog";
 
 type TabKey = "doctor" | "organization" | "pharmacy" | "lab-diagnostics";
 
@@ -136,26 +137,62 @@ type FileFieldProps = {
   hint: string;
   required?: boolean;
   multiple?: boolean;
+  minFiles?: number;
+  maxFiles?: number;
+  maxSizeMb?: number;
   onChange: (files: File[]) => void;
 };
 
-const FileField = ({ id, label, hint, required, multiple, onChange }: FileFieldProps) => {
+const FileField = ({
+  id,
+  label,
+  hint,
+  required,
+  multiple,
+  minFiles,
+  maxFiles,
+  maxSizeMb = MAX_MB,
+  onChange,
+}: FileFieldProps) => {
   const { toast } = useToast();
   const [files, setFiles] = useState<File[]>([]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const list = Array.from(e.target.files ?? []);
-    const tooBig = list.find((f) => f.size > MAX_MB * 1024 * 1024);
-    if (tooBig) {
-      toast({ title: "File too large", description: `${tooBig.name} exceeds ${MAX_MB}MB.`, variant: "destructive" });
-      e.target.value = "";
-      onChange([]);
-      setFiles([]);
-      return;
+    const maxBytes = maxSizeMb * 1024 * 1024;
+    const accepted = list.filter((file) => file.size <= maxBytes);
+    const rejected = list.filter((file) => file.size > maxBytes);
+
+    if (rejected.length > 0) {
+      toast({
+        title: "File too large",
+        description: `${rejected.map((file) => file.name).join(", ")} ${rejected.length > 1 ? "are" : "is"} over the ${maxSizeMb}MB limit.`,
+        variant: "destructive",
+      });
     }
-    setFiles(list);
-    onChange(list);
+
+    if (maxFiles && accepted.length > maxFiles) {
+      toast({
+        title: "Too many files",
+        description: `You can upload at most ${maxFiles} file${maxFiles > 1 ? "s" : ""} here.`,
+        variant: "destructive",
+      });
+    }
+
+    const next = maxFiles ? accepted.slice(0, maxFiles) : accepted;
+    setFiles(next);
+    onChange(next);
   };
+
+  const minLabel = minFiles ?? (required ? 1 : 0);
+  const maxLabel = maxFiles ?? (multiple ? undefined : 1);
+  const limitText = [
+    minLabel ? `minimum ${minLabel} file${minLabel > 1 ? "s" : ""}` : "optional",
+    maxLabel ? `maximum ${maxLabel} file${maxLabel > 1 ? "s" : ""}` : undefined,
+    `up to ${maxSizeMb}MB each`,
+  ]
+    .filter(Boolean)
+    .join(" • ");
 
   return (
     <div className="space-y-2 sm:col-span-2">
@@ -173,6 +210,7 @@ const FileField = ({ id, label, hint, required, multiple, onChange }: FileFieldP
             : "Click to upload or drag & drop"}
         </span>
         <span className="text-xs text-muted-foreground">{hint}</span>
+        <span className="text-[11px] text-muted-foreground">{ACCEPTED.replace(/,/g, ", ").toUpperCase()} - {limitText}</span>
         <Input
           id={id}
           type="file"
@@ -248,6 +286,8 @@ const DocumentsSection = ({
           hint="Upload a clear scan or photo of your current practising licence."
           required
           onChange={(f) => update({ licence: f })}
+          minFiles={1}
+          maxFiles={1}
         />
         <FileField
           id="doc-govid"
@@ -255,6 +295,8 @@ const DocumentsSection = ({
           hint="National ID, driver's licence, international passport or voter's card."
           required
           onChange={(f) => update({ govid: f })}
+          minFiles={1}
+          maxFiles={1}
         />
         {showAffiliation && (
           <>
@@ -263,6 +305,8 @@ const DocumentsSection = ({
               label="Indemnity of Organization"
               hint="Upload your professional indemnity insurance certificate, if available."
               onChange={(f) => update({ indemnity: f })}
+              minFiles={0}
+              maxFiles={1}
             />
             <div className="space-y-4 sm:col-span-2 rounded-lg border border-border bg-background/60 p-4">
               <div>
@@ -296,12 +340,16 @@ const DocumentsSection = ({
                 id="doc-hospital-licence"
                 label="Hospital Licence"
                 hint="Upload the hospital or clinic operating licence."
+                minFiles={0}
+                maxFiles={1}
                 onChange={(f) => update({ hospital_licence: f })}
               />
               <FileField
                 id="doc-org-proof"
                 label="Proof of Address"
                 hint="Employment letter, ID badge or any document showing your link to the organization."
+                minFiles={0}
+                maxFiles={1}
                 onChange={(f) => update({ org_proof: f })}
               />
             </div>
@@ -312,6 +360,8 @@ const DocumentsSection = ({
           label="Certifications (Optional)"
           hint="Specialty certificates, fellowship awards or accreditations. You can add several."
           multiple
+          minFiles={0}
+          maxFiles={5}
           onChange={(f) => update({ certs: f })}
         />
       </div>
@@ -339,6 +389,7 @@ const DoctorForm = () => {
   const [affiliation, setAffiliation] = useState({ organization_name: "", hospital_licence_expiry: "" });
   const [submitting, setSubmitting] = useState(false);
   const [consent, setConsent] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
 
   const handleSpecialtyChange = (value: string) => {
     setSpecialty(value);
@@ -354,6 +405,14 @@ const DoctorForm = () => {
     }
     if (!consent) {
       toast({ title: "Consent required", description: "Please confirm the consent statement to continue.", variant: "destructive" });
+      return;
+    }
+    if (docs.certs.length > 5) {
+      toast({
+        title: "Too many certifications",
+        description: "Please upload at most 5 certification files.",
+        variant: "destructive",
+      });
       return;
     }
     const fd = new FormData(e.currentTarget);
@@ -381,7 +440,7 @@ const DoctorForm = () => {
         },
         documents: buildDocSlots(docs, "Medical Practising Licence"),
       });
-      toast({ title: "Application received", description: "Our medical team will review your details within 48 hours." });
+      setSuccessOpen(true);
       formRef.current?.reset();
       setDocs({ licence: [], govid: [], certs: [], indemnity: [], hospital_licence: [], org_proof: [] });
       setAffiliation({ organization_name: "", hospital_licence_expiry: "" });
@@ -397,9 +456,10 @@ const DoctorForm = () => {
   };
 
   return (
-    <form ref={formRef} onSubmit={onSubmit} className="rounded-2xl border border-border bg-card p-8 space-y-6">
-      <h2 className="font-display text-2xl font-bold">Doctor Registration</h2>
-      <div className="grid gap-5 sm:grid-cols-2">
+    <>
+      <form ref={formRef} onSubmit={onSubmit} className="rounded-2xl border border-border bg-card p-8 space-y-6">
+        <h2 className="font-display text-2xl font-bold">Doctor Registration</h2>
+        <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2">
           <Label>Name of Responsible Officer / Doctor</Label>
           <Input name="full_name" required maxLength={100} placeholder="Dr. Jane Doe" />
@@ -497,7 +557,16 @@ const DoctorForm = () => {
           {submitting && <Loader2 className="h-4 w-4 animate-spin" />} Submit Application
         </Button>
       </div>
-    </form>
+      </form>
+      <RegistrationSuccessDialog
+        open={successOpen}
+        onOpenChange={setSuccessOpen}
+        title="Application submitted successfully"
+        description="Thank you for registering as a doctor. Our verification team will review your documents, and you will receive an email once your application has been verified."
+        primaryLabel="Back to home"
+        primaryHref="/"
+      />
+    </>
   );
 };
 
@@ -508,6 +577,7 @@ const OrganizationForm = () => {
   const [docs, setDocs] = useState<DocsState>({ licence: [], govid: [], certs: [], indemnity: [], hospital_licence: [], org_proof: [] });
   const [submitting, setSubmitting] = useState(false);
   const [consent, setConsent] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -541,7 +611,7 @@ const OrganizationForm = () => {
         },
         documents: buildDocSlots(docs, "Organization registration / operating licence"),
       });
-      toast({ title: "Application received", description: "Our partnerships team will be in touch within 2 business days." });
+      setSuccessOpen(true);
       formRef.current?.reset();
       setDocs({ licence: [], govid: [], certs: [], indemnity: [], hospital_licence: [], org_proof: [] });
       setConsent(false);
@@ -553,8 +623,9 @@ const OrganizationForm = () => {
   };
 
   return (
-    <form ref={formRef} onSubmit={onSubmit} className="rounded-2xl border border-border bg-card p-8 space-y-6">
-      <h2 className="font-display text-2xl font-bold">Organization Registration</h2>
+    <>
+      <form ref={formRef} onSubmit={onSubmit} className="rounded-2xl border border-border bg-card p-8 space-y-6">
+        <h2 className="font-display text-2xl font-bold">Organization Registration</h2>
       
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2">
@@ -617,7 +688,16 @@ const OrganizationForm = () => {
           {submitting && <Loader2 className="h-4 w-4 animate-spin" />} Submit for Review
         </Button>
       </div>
-    </form>
+      </form>
+      <RegistrationSuccessDialog
+        open={successOpen}
+        onOpenChange={setSuccessOpen}
+        title="Application submitted successfully"
+        description="Thank you for registering your organization. Our verification team will review the details, and you will receive an email once the application has been verified."
+        primaryLabel="Back to home"
+        primaryHref="/"
+      />
+    </>
   );
 };
 
@@ -636,6 +716,7 @@ const PartnerForm = ({
   const [docs, setDocs] = useState<DocsState>({ licence: [], govid: [], certs: [], indemnity: [], hospital_licence: [], org_proof: [] });
   const [submitting, setSubmitting] = useState(false);
   const [consent, setConsent] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -672,7 +753,7 @@ const PartnerForm = ({
         },
         documents: buildDocSlots(docs, `${kind} operating licence`),
       });
-      toast({ title: "Application received", description: `Our partnerships team will review your ${kind.toLowerCase()} details within 2 business days.` });
+      setSuccessOpen(true);
       formRef.current?.reset();
       setDocs({ licence: [], govid: [], certs: [], indemnity: [], hospital_licence: [], org_proof: [] });
       setConsent(false);
@@ -684,9 +765,10 @@ const PartnerForm = ({
   };
 
   return (
-    <form ref={formRef} onSubmit={onSubmit} className="rounded-2xl border border-border bg-card p-8 space-y-6">
-      <h2 className="font-display text-2xl font-bold">{kind} Registration</h2>
-      <div className="grid gap-5 sm:grid-cols-2">
+    <>
+      <form ref={formRef} onSubmit={onSubmit} className="rounded-2xl border border-border bg-card p-8 space-y-6">
+        <h2 className="font-display text-2xl font-bold">{kind} Registration</h2>
+        <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2">
           <Label>{kind} Name</Label>
           <Input name="organization_name" required maxLength={150} placeholder={placeholderName} />
@@ -753,7 +835,16 @@ const PartnerForm = ({
           {submitting && <Loader2 className="h-4 w-4 animate-spin" />} Submit for Review
         </Button>
       </div>
-    </form>
+      </form>
+      <RegistrationSuccessDialog
+        open={successOpen}
+        onOpenChange={setSuccessOpen}
+        title="Application submitted successfully"
+        description={`Thank you for registering your ${kind.toLowerCase()}. Our verification team will review the details, and you will receive an email once the application has been verified.`}
+        primaryLabel="Back to home"
+        primaryHref="/"
+      />
+    </>
   );
 };
 

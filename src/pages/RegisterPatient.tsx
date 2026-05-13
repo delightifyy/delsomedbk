@@ -10,6 +10,7 @@ import { SectionLabel } from "@/components/site/SectionLabel";
 import { FormStepper } from "@/components/site/FormStepper";
 import { submitRegistration } from "@/lib/registrations";
 import { ConsentCheckbox } from "@/components/site/ConsentCheckbox";
+import { RegistrationSuccessDialog } from "@/components/site/RegistrationSuccessDialog";
 
 const STEPS = ["Account", "Details", "Confirm"];
 
@@ -34,6 +35,7 @@ const RegisterPatient = () => {
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [consent, setConsent] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
   const [data, setData] = useState<PatientData>({
     first_name: "", last_name: "", email: "", password: "",
     phone: "", city: "", source: "",
@@ -61,6 +63,7 @@ const RegisterPatient = () => {
         applicant_type: "patient",
         full_name: `${data.first_name} ${data.last_name}`.trim(),
         email: data.email,
+        password: data.password,
         phone: data.phone,
         city: data.city,
         details: {
@@ -80,7 +83,6 @@ const RegisterPatient = () => {
         },
         documents: [],
       });
-      toast({ title: "Welcome to DesolMed", description: "Your patient registration has been submitted." });
       setData({
         first_name: "", last_name: "", email: "", password: "", phone: "", city: "", source: "",
         gender: "", date_of_birth: "",
@@ -89,6 +91,7 @@ const RegisterPatient = () => {
       });
       setStep(0);
       setConsent(false);
+      setSuccessOpen(true);
     } catch (err: any) {
       toast({ title: "Submission failed", description: err.message ?? "Please try again.", variant: "destructive" });
     } finally {
@@ -261,6 +264,14 @@ const RegisterPatient = () => {
           </div>
         </aside>
       </section>
+      <RegistrationSuccessDialog
+        open={successOpen}
+        onOpenChange={setSuccessOpen}
+        title="Patient registration successful"
+        description="Your DesolMed patient account has been created. Please check your email for the verification message before signing in."
+        primaryLabel="Go to login"
+        primaryHref="/auth"
+      />
     </SiteLayout>
   );
 };

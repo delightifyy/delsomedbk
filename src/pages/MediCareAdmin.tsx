@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { DeleteConfirmDialog } from "@/components/dashboard/DeleteConfirmDialog";
 import {
   ArrowLeft,
   Save,
@@ -100,6 +101,7 @@ const MediCareAdmin = () => {
   const [saved, setSaved] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("branding");
+  const [resetOpen, setResetOpen] = useState(false);
 
   // Form states
   const [newFaq, setNewFaq] = useState<Partial<Faq>>({});
@@ -134,9 +136,13 @@ const MediCareAdmin = () => {
   };
 
   const onReset = () => {
-    if (!confirm("Reset ALL admin settings to defaults?")) return;
+    setResetOpen(true);
+  };
+
+  const confirmReset = () => {
     resetSettings();
     setS(defaultSettings);
+    setResetOpen(false);
   };
 
   // FAQ handlers
@@ -255,6 +261,7 @@ const MediCareAdmin = () => {
   };
 
   return (
+    <>
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-slate-900">
       {/* Header */}
       <header className="border-b border-slate-700 bg-slate-950 sticky top-0 z-50">
@@ -465,6 +472,15 @@ const MediCareAdmin = () => {
         </main>
       </div>
     </div>
+    <DeleteConfirmDialog
+      open={resetOpen}
+      title="Reset admin settings?"
+      description="This will restore all MediCare admin settings to their default values."
+      confirmLabel="Reset"
+      onOpenChange={setResetOpen}
+      onConfirm={confirmReset}
+    />
+    </>
   );
 };
 

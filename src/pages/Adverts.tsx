@@ -6,11 +6,10 @@ import { Search, Clock, ArrowRight, ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SectionLabel } from "@/components/site/SectionLabel";
 import { cn } from "@/lib/utils";
-import {
-  listAdverts,
-  subscribeStore,
-  type LocalAdvert,
-} from "@/lib/localStore";
+import { type LocalAdvert } from "@/lib/localStore";
+import { api } from "@/lib/api";
+import { advertFromApi, collection } from "@/lib/backendAdapters";
+import { Skeleton } from "@/components/ui/skeleton";
 import blog1 from "@/assets/blog/blog-1.jpg";
 import blog2 from "@/assets/blog/blog-2.jpg";
 import blog3 from "@/assets/blog/blog-3.jpg";
@@ -37,13 +36,29 @@ const initialsOf = (name: string) =>
 
 const Adverts = () => {
   const [items, setItems] = useState<LocalAdvert[]>([]);
+  const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>(ALL);
 
-  useEffect(
-    () => subscribeStore(() => setItems(listAdverts().filter((entry) => entry.published))),
-    []
-  );
+  useEffect(() => {
+    let cancelled = false;
+    const loadAdverts = async () => {
+      setLoading(true);
+      try {
+        const response = await api.adverts.list();
+        const mapped = collection(response.data).map(advertFromApi).filter((entry) => entry.published);
+        if (!cancelled) setItems(mapped);
+      } catch {
+        if (!cancelled) setItems([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    loadAdverts();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const categories = useMemo(
     () => Array.from(new Set(items.map((item) => item.category))).sort((a, b) => a.localeCompare(b)),
@@ -107,7 +122,26 @@ const Adverts = () => {
 
       {/* Featured hero post */}
       <section className="container py-14">
-        {featured ? (
+        {loading ? (
+          <article className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            <Skeleton className="lg:col-span-7 rounded-3xl aspect-[4/3] lg:aspect-[5/4]" />
+            <div className="lg:col-span-5">
+              <Skeleton className="h-4 w-36" />
+              <Skeleton className="mt-5 h-10 w-full" />
+              <Skeleton className="mt-3 h-10 w-4/5" />
+              <Skeleton className="mt-6 h-5 w-full" />
+              <Skeleton className="mt-3 h-5 w-5/6" />
+              <div className="mt-7 flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-3 w-36" />
+                </div>
+              </div>
+              <Skeleton className="mt-8 h-11 w-36 rounded-md" />
+            </div>
+          </article>
+        ) : featured ? (
           <article className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             <div className="lg:col-span-7 relative overflow-hidden rounded-3xl bg-muted aspect-[4/3] lg:aspect-[5/4]">
               <img
@@ -199,7 +233,23 @@ const Adverts = () => {
 
       {/* Article grid */}
       <section className="container py-16">
-        {filtered.length > 0 ? (
+        {loading ? (
+          <div className="grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <article key={index} className="flex flex-col">
+                <Skeleton className="aspect-[4/5] rounded-2xl" />
+                <div className="mt-5 flex items-center gap-3">
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+                <Skeleton className="mt-4 h-7 w-full" />
+                <Skeleton className="mt-2 h-7 w-4/5" />
+                <Skeleton className="mt-4 h-4 w-full" />
+                <Skeleton className="mt-2 h-4 w-5/6" />
+              </article>
+            ))}
+          </div>
+        ) : filtered.length > 0 ? (
           <div className="grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((p) => (
               <article key={p.id} className="group flex flex-col">

@@ -1,15 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { DeleteConfirmDialog } from "@/components/dashboard/DeleteConfirmDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
 import {
-  Search,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
   Users as UsersIcon,
   HeartPulse,
   Stethoscope,
@@ -25,23 +31,18 @@ import {
   MapPin,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  Loader2,
+  ShieldCheck,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { DOCTORS } from "@/data/doctors";
-import {
-  listProfiles,
-  listUserRoles,
-  setUserRole as setUserRoleInStore,
-  subscribeStore,
-  ensureDemoUsers,
-  type LocalProfile,
-  type LocalUserRole,
-} from "@/lib/localStore";
-
+import { api } from "@/lib/api";
+import { collection, userProfileFromApi } from "@/lib/backendAdapters";
 
 type UserType = "patient" | "doctor" | "organization" | "pharmacy" | "lab-diagnostics";
-type AppRole = "admin" | "user";
+type AppRole = "super_admin" | "admin" | "user";
+type RawRecord = Record<string, unknown>;
 
 type Profile = {
   id: string;
@@ -51,7 +52,11 @@ type Profile = {
   phone: string | null;
   organization_name: string | null;
   user_type: UserType | null;
+  website_url: string | null;
   created_at: string;
+  role?: string;
+  status?: string;
+  raw?: RawRecord;
 };
 
 type Row = {
@@ -63,29 +68,20 @@ type Row = {
   avatar_url?: string | null;
   initials: string;
   user_type: UserType | null;
+  organization_name?: string | null;
+  website_url?: string | null;
   created_at?: string;
   manageable: boolean;
   role?: AppRole;
+  roleLabel?: string;
+  status?: string;
+  raw?: RawRecord;
 };
 
 type TabKey = "all" | "patient" | "doctor" | "organization" | "pharmacy" | "lab-diagnostics";
 
-type SampleUser = {
-  id: string;
-  name: string;
-  email: string;
-  role: "Admin" | "User" | "Doctor" | "Patient" | "Pharmacy";
-  status: "Active" | "Suspended";
-};
-
-const INITIAL_SAMPLE_USERS: SampleUser[] = [
-  { id: "u1", name: "Adaeze Okafor", email: "adaeze.okafor@example.com", role: "Admin", status: "Active" },
-  { id: "u2", name: "Dr. Tunde Bello", email: "tunde.bello@example.com", role: "Doctor", status: "Active" },
-  { id: "u3", name: "Chinwe Eze", email: "chinwe.eze@example.com", role: "Patient", status: "Active" },
-  { id: "u4", name: "MedPlus Pharmacy", email: "contact@medplus.example.com", role: "Pharmacy", status: "Suspended" },
-  { id: "u5", name: "Ibrahim Musa", email: "ibrahim.musa@example.com", role: "User", status: "Active" },
-  { id: "u6", name: "Dr. Funke Adeyemi", email: "funke.adeyemi@example.com", role: "Doctor", status: "Suspended" },
-];
+const EXCLUDED_USER_EMAILS = new Set(["user@carehub.local"]);
+const PAGE_SIZE = 5;
 
 const TABS: { key: TabKey; label: string; icon: LucideIcon }[] = [
   { key: "all", label: "All users", icon: UsersIcon },
@@ -96,94 +92,223 @@ const TABS: { key: TabKey; label: string; icon: LucideIcon }[] = [
   { key: "lab-diagnostics", label: "Laboratory / Diagnostics", icon: FlaskConical },
 ];
 
-const initialsOf = (name: string) => {
-  const src = (name || "?").trim();
-  return src.split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() || "").join("") || "?";
+const HIDDEN_DETAIL_KEYS = new Set([
+  "id",
+  "uuid",
+  "profile",
+  "roles",
+  "permissions",
+  "recent_activity",
+  "activity",
+  "activities",
+  "activity_logs",
+  "logs",
+  "review_logs",
+  "properties",
+  "attributes",
+  "changes",
+  "causer",
+  "subject",
+  "password",
+  "password_confirmation",
+  "remember_token",
+  "token",
+  "access_token",
+  "refresh_token",
+  "email_verification_token",
+  "verification_token",
+  "otp",
+  "secret",
+  "api_key",
+  "ip",
+  "ip_address",
+  "user_agent",
+  "deleted_at",
+  "created_at",
+  "updated_at",
+]);
+
+const asRecord = (value: unknown): RawRecord =>
+  value && typeof value === "object" && !Array.isArray(value) ? (value as RawRecord) : {};
+
+const textOf = (value: unknown): string => {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return value.map(textOf).filter(Boolean).join(", ");
+
+  const record = asRecord(value);
+  return (
+    textOf(record.name) ||
+    textOf(record.full_name) ||
+    textOf(record.title) ||
+    textOf(record.label) ||
+    textOf(record.slug) ||
+    textOf(record.code) ||
+    ""
+  );
 };
 
-const fmtDate = (s?: string) =>
-  s ? new Date(s).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "";
+const initialsOf = (name: string) => {
+  const src = (name || "?").trim();
+  return src.split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase() || "").join("") || "?";
+};
+
+const fmtDate = (value?: string) =>
+  value ? new Date(value).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "";
+
+const normalizeRoleText = (role?: string | null) =>
+  String(role || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+
+const roleToAppRole = (role?: string | null): AppRole => {
+  const normalized = normalizeRoleText(role);
+  if (normalized === "super_admin") return "super_admin";
+  if (normalized.includes("admin")) return "admin";
+  return "user";
+};
+
+const prettyText = (value?: string | null, fallback = "Not provided") => {
+  const text = String(value ?? "").trim();
+  if (!text) return fallback;
+  return text.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+};
+
+const prettyKey = (key: string) => prettyText(key);
+
+const isVisibleDetail = ([key, value]: [string, unknown]) => {
+  const normalizedKey = key.toLowerCase();
+  if (HIDDEN_DETAIL_KEYS.has(normalizedKey)) return false;
+  if (/(password|token|secret|otp|ip|agent)/i.test(normalizedKey)) return false;
+  if (value === null || value === undefined || value === "") return false;
+  if (Array.isArray(value) && value.length === 0) return false;
+  if (typeof value === "object" && !Array.isArray(value) && Object.keys(asRecord(value)).length === 0) return false;
+  return true;
+};
+
+const formatDetailValue = (value: unknown): string => {
+  const direct = textOf(value);
+  if (direct) return direct;
+  if (Array.isArray(value)) return value.map(formatDetailValue).filter(Boolean).join(", ");
+  return "";
+};
+
+const detailRowsFor = (raw?: RawRecord) => {
+  const source = asRecord(raw);
+  const profile = asRecord(source.profile);
+  const merged = { ...profile, ...source };
+
+  return Object.entries(merged)
+    .filter(isVisibleDetail)
+    .map(([key, value]) => ({ key, label: prettyKey(key), value: formatDetailValue(value) }))
+    .filter((row) => row.value);
+};
+
+const rowFromProfile = (profile: Profile, roleOverride?: AppRole): Row => {
+  const display = profile.organization_name || profile.full_name || profile.email || "Unnamed user";
+  const roleLabel = profile.role || roleOverride || "user";
+
+  return {
+    id: profile.id,
+    display,
+    email: profile.email,
+    phone: profile.phone,
+    avatar_url: profile.avatar_url,
+    initials: initialsOf(profile.full_name || display),
+    user_type: profile.user_type,
+    organization_name: profile.organization_name,
+    website_url: profile.website_url,
+    created_at: profile.created_at,
+    manageable: true,
+    role: roleOverride ?? roleToAppRole(roleLabel),
+    roleLabel,
+    status: profile.status ?? "active",
+    raw: profile.raw,
+  };
+};
+
+const statusTone = (status?: string) => {
+  const normalized = String(status || "active").toLowerCase();
+  if (normalized === "suspended") return "bg-warning/15 text-warning";
+  if (normalized.includes("pending")) return "bg-muted text-muted-foreground";
+  return "bg-success/15 text-success";
+};
+
+const isActiveStatus = (status?: string) => String(status || "active").toLowerCase() === "active";
 
 const UsersPage = () => {
   const { toast } = useToast();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [roles, setRoles] = useState<Record<string, AppRole>>({});
   const [tab, setTab] = useState<TabKey>("all");
-  const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
-  const [sampleUsers, setSampleUsers] = useState<SampleUser[]>(INITIAL_SAMPLE_USERS);
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 5;
+  const [activeUser, setActiveUser] = useState<Row | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Row | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   useEffect(() => {
     setPage(1);
-  }, [tab, q]);
-
-  const load = () => {
-    setLoading(true);
-    const pData = listProfiles();
-    const rData = listUserRoles();
-    setProfiles(pData as LocalProfile[]);
-    const map: Record<string, AppRole> = {};
-    (rData ?? []).forEach((r: LocalUserRole) => {
-      if (map[r.user_id] !== "admin") map[r.user_id] = r.role as AppRole;
-    });
-    setRoles(map);
-    setLoading(false);
-  };
+  }, [tab]);
 
   useEffect(() => {
-    const unsubscribe = subscribeStore(() => {
-      load();
-    });
-    return unsubscribe;
-  }, []);
+    let cancelled = false;
 
-  useEffect(() => {
-    ensureDemoUsers();
-  }, []);
+    const loadBackend = async () => {
+      setLoading(true);
+      try {
+        const response = await api.admin.users.list({ page: 1 });
+        const mapped = collection(response.data).map((entry) => {
+          const profile = userProfileFromApi(entry) as Profile;
+          return { ...profile, raw: asRecord(entry) };
+        });
+        const roleMap: Record<string, AppRole> = {};
 
-  const profileRows: Row[] = useMemo(
+        mapped.forEach((profile) => {
+          roleMap[profile.id] = roleToAppRole(profile.role);
+        });
+
+        if (!cancelled) {
+          setProfiles(mapped);
+          setRoles(roleMap);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setProfiles([]);
+          setRoles({});
+          toast({
+            title: "Couldn't load users",
+            description: error instanceof Error ? error.message : "The users endpoint did not respond.",
+            variant: "destructive",
+          });
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadBackend();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [toast]);
+
+  const allRows: Row[] = useMemo(
     () =>
-      profiles.map((p) => {
-        const display = p.organization_name || p.full_name || p.email || "Unnamed user";
-        return {
-          id: p.id,
-          display,
-          email: p.email,
-          phone: p.phone,
-          avatar_url: p.avatar_url,
-          initials: initialsOf(p.full_name || display),
-          user_type: p.user_type,
-          created_at: p.created_at,
-          manageable: true,
-          role: roles[p.id] ?? "user",
-        };
-      }).filter((row) => row.role !== "admin"),
+      profiles
+        .filter((profile) => !EXCLUDED_USER_EMAILS.has((profile.email ?? "").toLowerCase()))
+        .map((profile) => rowFromProfile(profile, roles[profile.id])),
     [profiles, roles]
   );
 
-  const allRows: Row[] = profileRows;
-
-  const sampleDoctorRows: Row[] = useMemo(
-    () =>
-      DOCTORS.map((d) => ({
-        id: `sample:${d.id}`,
-        display: d.name,
-        subtitle: `${d.specialty} · ${d.city}, ${d.state}`,
-        email: undefined,
-        phone: undefined,
-        avatar_url: null,
-        initials: d.initials,
-        user_type: "doctor" as UserType,
-        manageable: false,
-      })),
-    []
-  );
-
   const counts = useMemo(() => {
-    const c: Record<TabKey, number> = {
+    const totals: Record<TabKey, number> = {
       all: allRows.length,
       patient: 0,
       doctor: 0,
@@ -191,39 +316,90 @@ const UsersPage = () => {
       pharmacy: 0,
       "lab-diagnostics": 0,
     };
-    allRows.forEach((r) => {
-      if (r.user_type && c[r.user_type as TabKey] !== undefined) c[r.user_type as TabKey]++;
+
+    allRows.forEach((row) => {
+      if (row.user_type && totals[row.user_type as TabKey] !== undefined) totals[row.user_type as TabKey]++;
     });
-    c.doctor += sampleDoctorRows.length;
-    return c;
-  }, [allRows, sampleDoctorRows]);
+
+    return totals;
+  }, [allRows]);
 
   const filterFor = (key: TabKey) => {
-    let list: Row[] = allRows;
-    if (key === "doctor") {
-      list = [...allRows.filter((r) => r.user_type === "doctor"), ...sampleDoctorRows];
-    } else if (key !== "all") {
-      list = allRows.filter((r) => r.user_type === key);
-    }
-    if (!q.trim()) return list;
-    const needle = q.toLowerCase();
-    return list.filter((r) => [r.display, r.subtitle, r.email, r.phone].some((v) => v?.toLowerCase().includes(needle)));
+    if (key === "all") return allRows;
+    return allRows.filter((row) => row.user_type === key);
   };
 
-  const handleSetUserRole = async (userId: string, next: AppRole) => {
-    const prev = roles[userId] ?? "user";
-    if (prev === next) return;
-    setSavingId(userId);
-    setRoles((r) => ({ ...r, [userId]: next }));
+  const openUserDetail = async (row: Row) => {
+    setActiveUser(row);
+    setDetailLoading(true);
+    setDetailError(null);
+
     try {
-      await setUserRoleInStore(userId, next);
-      toast({ title: "Role updated", description: `Set to ${next}.` });
-    } catch (e: unknown) {
-      setRoles((r) => ({ ...r, [userId]: prev }));
-      const description = e instanceof Error ? e.message : "Unknown error";
-      toast({ title: "Couldn't update role", description, variant: "destructive" });
+      const response = await api.admin.users.detail(row.id);
+      const profile = { ...(userProfileFromApi(response.data) as Profile), raw: asRecord(response.data) };
+      const nextRole = roleToAppRole(profile.role || row.roleLabel);
+      const detailedRow = rowFromProfile(profile, nextRole);
+
+      setRoles((prev) => ({ ...prev, [detailedRow.id]: nextRole }));
+      setProfiles((prev) => prev.map((item) => (item.id === detailedRow.id ? profile : item)));
+      setActiveUser(detailedRow);
+    } catch (error) {
+      setDetailError(error instanceof Error ? error.message : "Could not load this user's full details.");
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const handleToggleStatus = async (row: Row) => {
+    if (!row.manageable) return;
+
+    const nextStatus = isActiveStatus(row.status) ? "suspended" : "active";
+    setSavingId(row.id);
+
+    try {
+      if (nextStatus === "suspended") await api.admin.users.suspend(row.id);
+      else await api.admin.users.activate(row.id);
+
+      setProfiles((prev) =>
+        prev.map((profile) => (profile.id === row.id ? { ...profile, status: nextStatus } : profile))
+      );
+      setActiveUser((current) => (current?.id === row.id ? { ...current, status: nextStatus } : current));
+      toast({ title: nextStatus === "suspended" ? "User suspended" : "User activated", description: row.display });
+    } catch (error) {
+      toast({
+        title: "Status update failed",
+        description: error instanceof Error ? error.message : "Could not update user status.",
+        variant: "destructive",
+      });
     } finally {
       setSavingId(null);
+    }
+  };
+
+  const handleDeleteUser = async (row: Row) => {
+    if (!row.manageable) return;
+    setDeleteTarget(row);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!deleteTarget) return;
+    setDeleteBusy(true);
+    setSavingId(deleteTarget.id);
+    try {
+      await api.admin.users.delete(deleteTarget.id);
+      setProfiles((prev) => prev.filter((profile) => profile.id !== deleteTarget.id));
+      setActiveUser((current) => (current?.id === deleteTarget.id ? null : current));
+      toast({ title: "User deleted", description: deleteTarget.display });
+      setDeleteTarget(null);
+    } catch (error) {
+      toast({
+        title: "Delete failed",
+        description: error instanceof Error ? error.message : "Could not delete this user.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingId(null);
+      setDeleteBusy(false);
     }
   };
 
@@ -233,231 +409,271 @@ const UsersPage = () => {
         <div className="min-w-0">
           <h1 className="font-display text-3xl font-bold">Users</h1>
           <p className="text-muted-foreground text-sm mt-1 max-w-2xl">
-            Patients, doctors and organisations registered on Desol<span className="text-secondary">Med</span>.
+            Patients, doctors, organisations and admin users registered on Desol<span className="text-secondary">Med</span>.
           </p>
         </div>
-        <div className="relative w-full lg:w-80">
-          <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, email, phone…" className="pl-9" />
-        </div>
+        <Select value={tab} onValueChange={(value) => setTab(value as TabKey)}>
+          <SelectTrigger className="w-full sm:w-[240px]">
+            <SelectValue placeholder="Filter users" />
+          </SelectTrigger>
+          <SelectContent>
+            {TABS.map((item) => (
+              <SelectItem key={item.key} value={item.key}>
+                {item.label} ({counts[item.key]})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as TabKey)} className="mt-6">
-        <TabsList className="flex flex-wrap h-auto">
-          {TABS.map((t) => (
-            <TabsTrigger key={t.key} value={t.key} className="flex-col gap-1 h-auto py-2 px-4 whitespace-normal text-center">
-              <div className="flex items-center gap-2">
-                <t.icon className="h-4 w-4" />
-                <span>{t.label}</span>
-              </div>
-              <span className="text-xs text-muted-foreground">({counts[t.key]})</span>
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      {(() => {
+        const list = filterFor(tab);
+        const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+        const currentPage = Math.min(page, totalPages);
+        const pagedList = list.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-        {TABS.map((t) => {
-          const list = filterFor(t.key);
-          const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
-          const currentPage = Math.min(page, totalPages);
-          const pagedList = list.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-          const filteredSample = q.trim()
-            ? sampleUsers.filter((u) => [u.name, u.email, u.role, u.status].some((v) => v.toLowerCase().includes(q.toLowerCase())))
-            : sampleUsers;
-
-          return (
-            <TabsContent key={t.key} value={t.key} className="mt-4">
-              {t.key === "all" && (
-                <Card className="overflow-hidden mb-4">
-                  <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-                    <h3 className="font-medium text-sm">{t.label} — Sample</h3>
-                    <span className="text-xs text-muted-foreground">{filteredSample.length} total</span>
-                  </div>
-                  {filteredSample.length === 0 ? (
-                    <div className="p-8 text-center text-sm text-muted-foreground">No sample users match your search.</div>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Name</TableHead>
-                          <TableHead className="hidden sm:table-cell">Role</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredSample.map((u) => (
-                          <TableRow key={u.id}>
-                            <TableCell>
-                              <div className="font-medium">{u.name}</div>
-                              <div className="text-xs text-muted-foreground">{u.email}</div>
-                              <div className="sm:hidden mt-1">
-                                <Badge variant="secondary" className="bg-primary-soft text-primary text-[10px]">{u.role}</Badge>
-                              </div>
-                            </TableCell>
-                            <TableCell className="hidden sm:table-cell">
-                              <Badge variant="secondary" className="bg-primary-soft text-primary">{u.role}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                className={
-                                  u.status === "Active"
-                                    ? "bg-primary/15 text-primary hover:bg-primary/15"
-                                    : "bg-destructive/15 text-destructive hover:bg-destructive/15"
-                                }
-                              >
-                                {u.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="inline-flex gap-1.5">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 px-2 text-xs [&_svg]:size-3"
-                                  onClick={() => toast({ title: "Viewing user", description: u.name })}
-                                >
-                                  <Eye className="h-3 w-3" />
-                                  <span className="hidden sm:inline">View</span>
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 px-2 text-xs [&_svg]:size-3"
-                                  onClick={() => {
-                                    setSampleUsers((prev) =>
-                                      prev.map((x) =>
-                                        x.id === u.id ? { ...x, status: x.status === "Active" ? "Suspended" : "Active" } : x
-                                      )
-                                    );
-                                    toast({
-                                      title: u.status === "Active" ? "User suspended" : "User reactivated",
-                                      description: u.name,
-                                    });
-                                  }}
-                                >
-                                  <Ban className="h-3 w-3" />
-                                  <span className="hidden sm:inline">Suspend</span>
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  className="h-7 px-2 text-xs [&_svg]:size-3"
-                                  onClick={() => {
-                                    setSampleUsers((prev) => prev.filter((x) => x.id !== u.id));
-                                    toast({ title: "User deleted", description: u.name });
-                                  }}
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                  <span className="hidden sm:inline">Delete</span>
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </Card>
-              )}
+        return (
+          <div className="mt-4 space-y-4">
+            {loading ? (
               <Card className="overflow-hidden">
-                {loading ? (
-                  <div className="p-10 text-center text-sm text-muted-foreground">Loading…</div>
-                ) : list.length === 0 ? (
-                  <div className="p-10 text-center">
-                    <UsersIcon className="h-10 w-10 mx-auto text-muted-foreground/40" />
-                    <p className="mt-3 text-sm text-muted-foreground">
-                      {q ? "No users match your search." : `No ${t.label.toLowerCase()} yet.`}
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <ul className="divide-y divide-border">
-                      {pagedList.map((r) => (
-                        <li key={r.id} className="p-4 flex flex-col lg:flex-row lg:items-center gap-4">
-                          <div className="flex items-start gap-4 min-w-0 flex-1">
-                            <Avatar className="h-11 w-11 flex-shrink-0">
-                              {r.avatar_url ? <AvatarImage src={r.avatar_url} alt="" /> : null}
-                              <AvatarFallback className="bg-primary-soft text-primary text-sm font-medium">
-                                {r.initials}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <p className="font-medium truncate">{r.display}</p>
-                              </div>
-                              <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                                {r.subtitle && <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{r.subtitle}</span>}
-                                {r.email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" />{r.email}</span>}
-                                {r.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />{r.phone}</span>}
-                                {r.created_at && <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" />Joined {fmtDate(r.created_at)}</span>}
-                              </div>
+                <div className="p-10 text-center text-sm text-muted-foreground">Loading users...</div>
+              </Card>
+            ) : list.length > 0 ? (
+              <Card className="overflow-hidden">
+                <ul className="divide-y divide-border">
+                  {pagedList.map((row) => (
+                      <li key={row.id} className="p-4 flex flex-col lg:flex-row lg:items-center gap-4">
+                        <div className="flex items-start gap-4 min-w-0 flex-1">
+                          <Avatar className="h-11 w-11 flex-shrink-0">
+                            {row.avatar_url ? <AvatarImage src={row.avatar_url} alt="" /> : null}
+                            <AvatarFallback className="bg-primary-soft text-primary text-sm font-medium">
+                              {row.initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-medium truncate">{row.display}</p>
+                              <Badge variant="secondary" className={statusTone(row.status)}>
+                                {prettyText(row.status, "Active")}
+                              </Badge>
+                              <Badge variant="outline" className="capitalize">
+                                {row.role === "admin" || row.role === "super_admin" ? (
+                                  <ShieldCheck className="mr-1 h-3 w-3" />
+                                ) : null}
+                                {prettyText(row.roleLabel)}
+                              </Badge>
+                            </div>
+                            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                              {row.subtitle && (
+                                <span className="inline-flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />
+                                  {row.subtitle}
+                                </span>
+                              )}
+                              {row.email && (
+                                <span className="inline-flex items-center gap-1">
+                                  <Mail className="h-3 w-3" />
+                                  {row.email}
+                                </span>
+                              )}
+                              {row.phone && (
+                                <span className="inline-flex items-center gap-1">
+                                  <Phone className="h-3 w-3" />
+                                  {row.phone}
+                                </span>
+                              )}
+                              {row.created_at && (
+                                <span className="inline-flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  Joined {fmtDate(row.created_at)}
+                                </span>
+                              )}
                             </div>
                           </div>
-
-                          <div className="flex items-center justify-between lg:justify-end gap-2 lg:ml-auto w-full lg:w-auto">
-                            {r.manageable ? (
-                              <Select
-                                value={r.role ?? "user"}
-                                onValueChange={(v) => handleSetUserRole(r.id, v as AppRole)}
-                                disabled={savingId === r.id}
-                              >
-                                <SelectTrigger className="h-9 w-[120px]">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="user">User</SelectItem>
-                                  <SelectItem value="admin">Admin</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            ) : null}
-
-                            {r.user_type === "doctor" && (
-                              <Button size="icon" variant="outline" title="View">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                    {totalPages > 1 && (
-                      <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-border">
-                        <span className="text-xs text-muted-foreground">
-                          Page {currentPage} of {totalPages} · {list.length} total
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 px-2"
-                            disabled={currentPage <= 1}
-                            onClick={() => setPage((p) => Math.max(1, p - 1))}
-                          >
-                            <ChevronLeft className="h-4 w-4" />
-                            <span className="hidden sm:inline ml-1">Prev</span>
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 px-2"
-                            disabled={currentPage >= totalPages}
-                            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                          >
-                            <span className="hidden sm:inline mr-1">Next</span>
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
                         </div>
-                      </div>
-                    )}
-                  </>
+
+                        <div className="flex items-center justify-between lg:justify-end gap-2 lg:ml-auto w-full lg:w-auto">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="icon" variant="outline" className="h-8 w-8" aria-label="Open user actions">
+                                <ChevronDown className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => openUserDetail(row)}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View full details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleToggleStatus(row)} disabled={savingId === row.id}>
+                                <Ban className="h-4 w-4 mr-2" />
+                                {isActiveStatus(row.status) ? "Suspend" : "Activate"}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => handleDeleteUser(row)}
+                                disabled={savingId === row.id}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </li>
+                    ))}
+                </ul>
+
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-border">
+                    <span className="text-xs text-muted-foreground">
+                      Page {currentPage} of {totalPages} - {list.length} total
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 px-2"
+                        disabled={currentPage <= 1}
+                        onClick={() => setPage((current) => Math.max(1, current - 1))}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        <span className="hidden sm:inline ml-1">Prev</span>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 px-2"
+                        disabled={currentPage >= totalPages}
+                        onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                      >
+                        <span className="hidden sm:inline mr-1">Next</span>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 )}
               </Card>
-            </TabsContent>
-          );
-        })}
-      </Tabs>
+            ) : (
+              <Card className="p-10 text-center text-sm text-muted-foreground">
+                No users found from the backend for this filter.
+              </Card>
+            )}
+          </div>
+        );
+      })()}
+
+      <Dialog
+        open={Boolean(activeUser)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setActiveUser(null);
+            setDetailError(null);
+          }
+        }}
+      >
+        <DialogContent className="w-[calc(100vw-1.5rem)] max-w-2xl max-h-[86vh] overflow-hidden p-0">
+          {activeUser && (
+            <>
+              <DialogHeader className="border-b border-border px-5 py-4 sm:px-6">
+                <div className="flex items-start gap-3 pr-7">
+                  <Avatar className="h-12 w-12 flex-shrink-0">
+                    {activeUser.avatar_url ? <AvatarImage src={activeUser.avatar_url} alt="" /> : null}
+                    <AvatarFallback className="bg-primary-soft text-primary font-medium">
+                      {activeUser.initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <DialogTitle className="text-base sm:text-lg">{activeUser.display}</DialogTitle>
+                    <DialogDescription className="mt-1 flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary" className={statusTone(activeUser.status)}>
+                        {prettyText(activeUser.status, "Active")}
+                      </Badge>
+                      <Badge variant="outline">{prettyText(activeUser.roleLabel)}</Badge>
+                      {activeUser.user_type && <span>{prettyText(activeUser.user_type)}</span>}
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="max-h-[54vh] overflow-y-auto px-5 py-5 sm:px-6">
+                {detailLoading && (
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading full user details...
+                  </div>
+                )}
+
+                {detailError && (
+                  <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    {detailError}
+                  </div>
+                )}
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <InfoField label="Role" value={prettyText(activeUser.roleLabel)} />
+                  <InfoField label="Email" value={activeUser.email} />
+                  <InfoField label="Phone" value={activeUser.phone} />
+                  <InfoField label="User type" value={prettyText(activeUser.user_type)} />
+                  <InfoField label="Status" value={prettyText(activeUser.status, "Active")} />
+                  <InfoField label="Organization" value={activeUser.organization_name} />
+                  <InfoField label="Website" value={activeUser.website_url} />
+                  <InfoField label="Joined" value={fmtDate(activeUser.created_at)} />
+                </div>
+
+                {detailRowsFor(activeUser.raw).length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="text-sm font-semibold">Additional information</h3>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {detailRowsFor(activeUser.raw).map((row) => (
+                        <InfoField key={row.key} label={row.label} value={row.value} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter className="border-t border-border px-5 py-4 sm:flex-row sm:justify-end sm:space-x-0 gap-2 sm:px-6">
+                <Button
+                  variant="outline"
+                  onClick={() => handleToggleStatus(activeUser)}
+                  disabled={savingId === activeUser.id}
+                  className="w-full sm:w-auto"
+                >
+                  <Ban className="h-4 w-4" />
+                  {isActiveStatus(activeUser.status) ? "Suspend user" : "Activate user"}
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => handleDeleteUser(activeUser)}
+                  disabled={savingId === activeUser.id}
+                  className="w-full sm:w-auto"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete user
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+      <DeleteConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Delete user?"
+        description={`This will remove ${deleteTarget?.display ?? "this user"} from the admin user list.`}
+        loading={deleteBusy}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        onConfirm={confirmDeleteUser}
+      />
     </DashboardLayout>
   );
 };
+
+const InfoField = ({ label, value }: { label: string; value?: string | null }) => (
+  <div className="rounded-md border border-border bg-muted/20 px-3 py-2">
+    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+    <p className="mt-1 break-words text-sm text-foreground">{value || "Not provided"}</p>
+  </div>
+);
 
 export default UsersPage;

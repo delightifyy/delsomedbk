@@ -1,6 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import { SiteLayout } from "@/components/site/SiteLayout";
-import { DOCTORS } from "@/data/doctors";
+import { type Doctor } from "@/data/doctors";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SectionLabel } from "@/components/site/SectionLabel";
@@ -9,20 +9,116 @@ import {
   MapPin, ShieldCheck, ArrowLeft, Stethoscope, CalendarClock,
   Phone, Mail, Globe, Star, Wallet, Clock,
 } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+import { collection, doctorFromApi } from "@/lib/backendAdapters";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const DoctorProfile = () => {
   const { id } = useParams<{ id: string }>();
-  const { doctor, missingDoctor } = useMemo(() => {
-    const found = DOCTORS.find((d) => d.id === id);
-    return { doctor: found ?? DOCTORS[0], missingDoctor: !found };
+  const [doctor, setDoctor] = useState<Doctor | null>(null);
+  const [related, setRelated] = useState<Doctor[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    const loadDoctor = async () => {
+      if (!id) return;
+      try {
+        const response = await api.doctors.detail(id);
+        const mapped = doctorFromApi(response.data);
+        if (!cancelled) {
+          setDoctor(mapped);
+          const listResponse = await api.doctors.list({ per_page: 8 });
+          const nextRelated = collection(listResponse.data)
+            .map((entry, index) => doctorFromApi(entry, index))
+            .filter((entry) => entry.id !== mapped.id && entry.specialty === mapped.specialty)
+            .slice(0, 3);
+          if (!cancelled) setRelated(nextRelated);
+        }
+      } catch {
+        if (!cancelled) {
+          setDoctor(null);
+          setRelated([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadDoctor();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   useEffect(() => {
     if (doctor) document.title = `${doctor.name} · DesolMed`;
   }, [doctor]);
 
-  const related = DOCTORS.filter((d) => d.id !== doctor.id && d.specialty === doctor.specialty).slice(0, 3);
+  if (loading) {
+    return (
+      <SiteLayout>
+        <div className="container py-8 sm:py-12 grid lg:grid-cols-12 gap-8 items-center">
+          <div className="lg:col-span-4 flex justify-center lg:justify-start">
+            <Skeleton className="h-44 w-44 sm:h-56 sm:w-56 rounded-3xl" />
+          </div>
+          <div className="lg:col-span-8">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="mt-4 h-12 w-3/4" />
+            <Skeleton className="mt-3 h-6 w-44" />
+            <Skeleton className="mt-5 h-5 w-full max-w-2xl" />
+            <Skeleton className="mt-3 h-5 w-5/6 max-w-xl" />
+            <div className="mt-5 flex flex-wrap gap-2">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <Skeleton key={index} className="h-7 w-28 rounded-full" />
+              ))}
+            </div>
+            <div className="mt-6 flex gap-3">
+              <Skeleton className="h-11 w-40 rounded-md" />
+              <Skeleton className="h-11 w-28 rounded-md" />
+            </div>
+          </div>
+        </div>
+        <section className="container py-10 sm:py-14 grid lg:grid-cols-12 gap-8">
+          <div className="lg:col-span-8 space-y-8">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index}>
+                <Skeleton className="h-7 w-40" />
+                <Skeleton className="mt-4 h-4 w-full" />
+                <Skeleton className="mt-3 h-4 w-11/12" />
+              </div>
+            ))}
+          </div>
+          <aside className="lg:col-span-4">
+            <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+              <Skeleton className="h-5 w-24" />
+              {Array.from({ length: 5 }).map((_, index) => (
+                <Skeleton key={index} className="h-4 w-full" />
+              ))}
+            </div>
+          </aside>
+        </section>
+      </SiteLayout>
+    );
+  }
+
+  if (!doctor) {
+    return (
+      <SiteLayout>
+        <div className="container py-20 text-center space-y-4">
+          <h1 className="font-display text-3xl font-bold">Doctor not found</h1>
+          <p className="text-muted-foreground">This profile is not available from the backend.</p>
+          <Button asChild variant="outline">
+            <Link to="/doctors"><ArrowLeft className="h-4 w-4" /> All Doctors</Link>
+          </Button>
+        </div>
+      </SiteLayout>
+    );
+  }
+  const missingDoctor = false;
 
   return (
     <SiteLayout>
@@ -93,8 +189,8 @@ const DoctorProfile = () => {
 
             <div className="mt-6 flex flex-wrap gap-3">
               <Button variant="hero" size="lg" asChild>
-                <Link to={`/medicare/${doctor.id}`}>
-                  <Globe className="h-4 w-4 mr-2" /> Visit Website
+                <Link to={`/doctor-portal?doctor=${doctor.id}`}>
+                  <Globe className="h-4 w-4 mr-2" /> Doctor Website
                 </Link>
               </Button>
               <Button variant="outline" size="lg">
@@ -113,7 +209,7 @@ const DoctorProfile = () => {
             <p className="mt-3 text-muted-foreground leading-relaxed">{doctor.bio}</p>
             <p className="mt-3 text-muted-foreground leading-relaxed">
               {doctor.name} is a verified member of the DesolMed network, practising in {doctor.city}, {doctor.state}.
-              Patients can connect through DesolMed for in-person consultations, follow-ups and second opinions.
+              DesolMed helps patients discover and verify this profile; appointment booking continues on the doctor's own website.
             </p>
           </div>
 
@@ -131,9 +227,9 @@ const DoctorProfile = () => {
 
           <div>
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <h2 className="font-display text-2xl font-bold">Available Time Slots</h2>
+              <h2 className="font-display text-2xl font-bold">Availability Preview</h2>
               <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <Clock className="h-3.5 w-3.5" /> Times shown in WAT
+                <Clock className="h-3.5 w-3.5" /> Final booking happens on the doctor website
               </span>
             </div>
             <div className="mt-4 grid sm:grid-cols-2 gap-3">
@@ -142,13 +238,12 @@ const DoctorProfile = () => {
                   <p className="text-xs font-semibold tracking-wider text-muted-foreground">{day.day}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {day.slots.map((s) => (
-                      <button
+                      <span
                         key={s}
-                        type="button"
-                        className="text-xs font-medium px-2.5 py-1.5 rounded-lg border border-border bg-background hover:border-secondary hover:bg-secondary/10 hover:text-secondary transition-colors"
+                        className="text-xs font-medium px-2.5 py-1.5 rounded-lg border border-border bg-background text-muted-foreground"
                       >
                         {s}
-                      </button>
+                      </span>
                     ))}
                   </div>
                 </div>
@@ -205,25 +300,25 @@ const DoctorProfile = () => {
                 <Phone className="h-4 w-4 mt-0.5 text-muted-foreground" />
                 <div>
                   <dt className="text-xs text-muted-foreground">Phone</dt>
-                  <dd className="font-medium">Available after booking</dd>
+                  <dd className="font-medium">Managed on doctor website</dd>
                 </div>
               </div>
               <div className="flex items-start gap-2">
                 <Globe className="h-4 w-4 mt-0.5 text-muted-foreground" />
                 <div>
                   <dt className="text-xs text-muted-foreground">Website</dt>
-                  <dd className="font-medium text-muted-foreground">desolmed.com/doctors/{doctor.id}</dd>
+                  <dd className="font-medium text-muted-foreground">Doctor Medicare website</dd>
                 </div>
               </div>
             </dl>
           </div>
 
           <div className="rounded-2xl border border-border bg-primary-soft p-5">
-            <h3 className="font-display text-base font-semibold">Schedule an Appointment</h3>
-            <p className="mt-2 text-sm text-muted-foreground">Book a consultation with {doctor.name} on their booking page.</p>
+            <h3 className="font-display text-base font-semibold">Doctor Website</h3>
+            <p className="mt-2 text-sm text-muted-foreground">DesolMed verifies and lists {doctor.name}. Open the doctor's Medicare website, then book the appointment there.</p>
             <Button variant="hero" className="w-full mt-4" asChild>
-              <Link to={`/medicare/${doctor.id}`}>
-                <Globe className="h-4 w-4 mr-2" /> Visit Website
+              <Link to={`/doctor-portal?doctor=${doctor.id}`}>
+                <Globe className="h-4 w-4 mr-2" /> Doctor Website
               </Link>
             </Button>
           </div>

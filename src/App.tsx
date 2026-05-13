@@ -28,7 +28,10 @@ import DashContacts from "./pages/dashboard/Contacts.tsx";
 import DashBlog from "./pages/dashboard/Blog.tsx";
 import DashNotifications from "./pages/dashboard/Notifications.tsx";
 import DashNews from "./pages/dashboard/News.tsx";
-import DashAdverts from "./pages/dashboard/Adverts.tsx";
+import DashNewsletter from "./pages/dashboard/Newsletter.tsx";
+import DashActivityLogs from "./pages/dashboard/ActivityLogs.tsx";
+import DashLookups from "./pages/dashboard/Lookups.tsx";
+
 import DashFaqs from "./pages/dashboard/Faqs.tsx";
 import DashTestimonials from "./pages/dashboard/Testimonials.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -76,7 +79,10 @@ const App = () => (
             <Route path="/dashboard/contacts" element={<AdminGuard><DashContacts /></AdminGuard>} />
             <Route path="/dashboard/blog" element={<AdminGuard><DashBlog /></AdminGuard>} />
             <Route path="/dashboard/news" element={<AdminGuard><DashNews /></AdminGuard>} />
-            <Route path="/dashboard/adverts" element={<AdminGuard><DashAdverts /></AdminGuard>} />
+            <Route path="/dashboard/newsletter" element={<AdminGuard><DashNewsletter /></AdminGuard>} />
+            <Route path="/dashboard/lookups" element={<AdminGuard><DashLookups /></AdminGuard>} />
+            <Route path="/dashboard/activity-logs" element={<AdminGuard><DashActivityLogs /></AdminGuard>} />
+            
             <Route path="/dashboard/faqs" element={<AdminGuard><DashFaqs /></AdminGuard>} />
             <Route path="/dashboard/testimonials" element={<AdminGuard><DashTestimonials /></AdminGuard>} />
             <Route path="/dashboard/notifications" element={<AdminGuard><DashNotifications /></AdminGuard>} />

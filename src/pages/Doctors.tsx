@@ -9,7 +9,7 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter, SheetClose,
 } from "@/components/ui/sheet";
 import { useMemo, useState } from "react";
-import { DOCTORS, SPECIALTIES, ZONES } from "@/data/doctors";
+import { type Doctor } from "@/data/doctors";
 import { DoctorCard } from "@/components/site/DoctorCard";
 import { SectionLabel } from "@/components/site/SectionLabel";
 import { Search, LayoutGrid, Rows3, X, SlidersHorizontal } from "lucide-react";
@@ -18,6 +18,9 @@ import {
   PaginationNext, PaginationPrevious, PaginationEllipsis,
 } from "@/components/ui/pagination";
 import { useEffect } from "react";
+import { api } from "@/lib/api";
+import { collection, doctorFromApi } from "@/lib/backendAdapters";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const ALL = "all";
 const PAGE_SIZE = 6;
@@ -30,12 +33,56 @@ const Doctors = () => {
   const [spec, setSpec] = useState(ALL);
   const [density, setDensity] = useState<"comfortable" | "compact">("comfortable");
   const [page, setPage] = useState(1);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [lookupSpecialties, setLookupSpecialties] = useState<string[]>([]);
+  const [lookupZones, setLookupZones] = useState<string[]>([]);
 
-  const states = useMemo(() => Array.from(new Set(DOCTORS.map((d) => d.state))).sort(), []);
-  const cities = useMemo(() => Array.from(new Set(DOCTORS.map((d) => d.city))).sort(), []);
+  useEffect(() => {
+    let cancelled = false;
+    const loadDoctors = async () => {
+      setLoading(true);
+      try {
+        const [response, specialtyResponse, zoneResponse] = await Promise.all([
+          api.doctors.list({ per_page: 60 }),
+          api.lookups.specialties(),
+          api.lookups.zones(),
+        ]);
+        const mapped = collection(response.data).map((entry, index) => doctorFromApi(entry, index));
+        if (!cancelled) {
+          setDoctors(mapped);
+          setLookupSpecialties(collection(specialtyResponse.data).map((entry: any) => String(entry?.name ?? entry?.title ?? "")).filter(Boolean));
+          setLookupZones(collection(zoneResponse.data).map((entry: any) => String(entry?.name ?? entry?.code ?? "")).filter(Boolean));
+        }
+      } catch {
+        if (!cancelled) {
+          setDoctors([]);
+          setLookupSpecialties([]);
+          setLookupZones([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    loadDoctors();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const states = useMemo(() => Array.from(new Set(doctors.map((d) => d.state).filter(Boolean))).sort(), [doctors]);
+  const cities = useMemo(() => Array.from(new Set(doctors.map((d) => d.city).filter(Boolean))).sort(), [doctors]);
+  const specialties = useMemo(
+    () => Array.from(new Set([...lookupSpecialties, ...doctors.map((d) => d.specialty)].filter(Boolean))).sort(),
+    [doctors, lookupSpecialties]
+  );
+  const zones = useMemo(
+    () => Array.from(new Set([...lookupZones, ...doctors.map((d) => d.zone)].filter(Boolean))).sort(),
+    [doctors, lookupZones]
+  );
 
   const filtered = useMemo(() => {
-    return DOCTORS.filter((d) => {
+    return doctors.filter((d) => {
       if (zone !== ALL && d.zone !== zone) return false;
       if (state !== ALL && d.state !== state) return false;
       if (city !== ALL && d.city !== city) return false;
@@ -43,7 +90,7 @@ const Doctors = () => {
       if (q && !`${d.name} ${d.specialty} ${d.city}`.toLowerCase().includes(q.toLowerCase())) return false;
       return true;
     });
-  }, [q, zone, state, city, spec]);
+  }, [doctors, q, zone, state, city, spec]);
 
   // Reset to first page when filters change
   useEffect(() => { setPage(1); }, [q, zone, state, city, spec]);
@@ -62,6 +109,36 @@ const Doctors = () => {
     setPage(Math.min(Math.max(1, p), totalPages));
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  const DoctorGridSkeleton = (
+    <div
+      className={
+        density === "comfortable"
+          ? "grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4 sm:gap-5 items-stretch"
+          : "grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch"
+      }
+    >
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className="rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-start gap-4">
+            <Skeleton className="h-12 w-12 rounded-xl" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-5 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          </div>
+          <div className="mt-5 space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+          </div>
+          <div className="mt-5 flex gap-2">
+            <Skeleton className="h-7 w-20 rounded-full" />
+            <Skeleton className="h-7 w-24 rounded-full" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   // Build a compact page list with ellipses
   const pageItems: (number | "ellipsis")[] = [];
@@ -93,7 +170,7 @@ const Doctors = () => {
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>All Specialties</SelectItem>
-            {SPECIALTIES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            {specialties.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -104,7 +181,7 @@ const Doctors = () => {
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>All Zones</SelectItem>
-            {ZONES.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+            {zones.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -167,10 +244,14 @@ const Doctors = () => {
         <div className="lg:col-span-9">
           {/* Mobile toolbar */}
           <div className="flex items-center justify-between gap-3 mb-5 pb-4 border-b border-border">
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">{filtered.length}</span>
-              <span className="hidden sm:inline"> of {DOCTORS.length}</span> Doctors
-            </p>
+            {loading ? (
+              <Skeleton className="h-4 w-36" />
+            ) : (
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                <span className="font-semibold text-foreground">{filtered.length}</span>
+                <span className="hidden sm:inline"> of {doctors.length}</span> Doctors
+              </p>
+            )}
             <div className="flex items-center gap-2">
               {/* Filters button – mobile only */}
               <Sheet>
@@ -224,7 +305,9 @@ const Doctors = () => {
             </div>
           </div>
 
-          {filtered.length > 0 ? (
+          {loading ? (
+            DoctorGridSkeleton
+          ) : filtered.length > 0 ? (
             <>
               <div
                 className={

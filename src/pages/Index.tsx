@@ -9,7 +9,7 @@ import {
   ShieldCheck, Search, ArrowRight, UserPlus, HeartPulse, Sparkles,
 } from "lucide-react";
 import heroDoctor from "@/assets/hero-doctor-v5.jpg";
-import { DOCTORS, SPECIALTIES } from "@/data/doctors";
+import { SPECIALTIES, type Doctor } from "@/data/doctors";
 import { DoctorCard } from "@/components/site/DoctorCard";
 import { SectionLabel } from "@/components/site/SectionLabel";
 import { StatsStrip } from "@/components/site/StatsStrip";
@@ -19,10 +19,10 @@ import { LogoWall } from "@/components/site/LogoWall";
 import { Testimonials } from "@/components/site/Testimonials";
 import { FaqSection } from "@/components/site/FaqSection";
 import { DualCta } from "@/components/site/DualCta";
-import { useState } from "react";
-import { NIGERIA_STATES } from "@/data/nigeriaStates";
-
-const STATES = NIGERIA_STATES;
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+import { collection, doctorFromApi } from "@/lib/backendAdapters";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const TIMELINE = [
   { icon: UserPlus, title: "Create your account", desc: "Sign up as a patient, doctor or organization in under two minutes. No paperwork, no friction." },
@@ -30,9 +30,45 @@ const TIMELINE = [
   { icon: HeartPulse, title: "Get the care you need", desc: "Reach out directly. Connect with a doctor who fits your needs and your context." },
 ];
 
+const REGISTRATION_SPECIALTIES = SPECIALTIES.filter((specialty) => specialty !== "Others");
+
 const Index = () => {
-  const featured = DOCTORS.slice(0, 4);
+  const [featured, setFeatured] = useState<Doctor[]>([]);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
   const [hero, setHero] = useState({ specialty: "", state: "" });
+  const [specialties, setSpecialties] = useState<string[]>(REGISTRATION_SPECIALTIES);
+  const [states, setStates] = useState<string[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadFeaturedDoctors = async () => {
+      setFeaturedLoading(true);
+      try {
+        const [response, stateResponse] = await Promise.all([
+          api.doctors.list({ per_page: 4 }),
+          api.lookups.states(),
+        ]);
+        const mapped = collection(response.data).map((entry, index) => doctorFromApi(entry, index)).slice(0, 4);
+        if (!cancelled) {
+          setFeatured(mapped);
+          setSpecialties(REGISTRATION_SPECIALTIES);
+          setStates(collection(stateResponse.data).map((entry: any) => String(entry?.name ?? entry?.title ?? "")).filter(Boolean));
+        }
+      } catch {
+        if (!cancelled) {
+          setFeatured([]);
+          setSpecialties(REGISTRATION_SPECIALTIES);
+          setStates([]);
+        }
+      } finally {
+        if (!cancelled) setFeaturedLoading(false);
+      }
+    };
+    loadFeaturedDoctors();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <SiteLayout>
@@ -60,7 +96,7 @@ const Index = () => {
                   <SelectValue placeholder="Any specialty" />
                 </SelectTrigger>
                 <SelectContent>
-                  {SPECIALTIES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  {specialties.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={hero.state} onValueChange={(v) => setHero((p) => ({ ...p, state: v }))}>
@@ -68,7 +104,7 @@ const Index = () => {
                   <SelectValue placeholder="Any state" />
                 </SelectTrigger>
                 <SelectContent>
-                  {STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  {states.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Button type="submit" variant="hero" size="lg" className="h-12">
@@ -135,12 +171,42 @@ const Index = () => {
               Care for every chapter of life.
             </h2>
           </div>
-          <Link to="/doctors" className="text-sm font-semibold text-primary hover:text-secondary inline-flex items-center gap-1">
-            See All Specialties <ArrowRight className="h-4 w-4" />
-          </Link>
         </div>
         <SpecialtyRail />
       </section>
+
+      {/* {(featuredLoading || featured.length > 0) && (
+        <section className="container py-14 sm:py-20 border-t border-border">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
+            <div className="space-y-3">
+              <SectionLabel number="" label="Verified doctors" />
+              <h2 className="font-display text-3xl sm:text-4xl font-bold leading-tight max-w-xl">
+                Start from trusted profiles.
+              </h2>
+            </div>
+            <Link to="/doctors" className="text-sm font-semibold text-primary hover:text-secondary inline-flex items-center gap-1">
+              Browse Directory <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {featuredLoading ? Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="rounded-2xl border border-border bg-card p-5">
+                <div className="flex items-start gap-4">
+                  <Skeleton className="h-12 w-12 rounded-xl" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                </div>
+                <Skeleton className="mt-5 h-4 w-full" />
+                <Skeleton className="mt-2 h-4 w-5/6" />
+              </div>
+            )) : featured.map((doctor) => (
+              <DoctorCard key={doctor.id} doctor={doctor} />
+            ))}
+          </div>
+        </section>
+      )} */}
 
       {/* 03 / HOW IT WORKS — vertical timeline */}
       <section className="border-y border-border bg-muted/30">
