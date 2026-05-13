@@ -13,6 +13,7 @@ import {
   useMediCareSettings,
 } from "@/lib/medicareSettings";
 import { DOCTORS, type Doctor } from "@/data/doctors";
+import aboutHospitalImg from "@/assets/about-hospital.jpg";
 import serviceGeneralImg from "@/assets/service-general.jpg";
 import serviceMentalImg from "@/assets/service-mental.jpg";
 import servicePrescriptionImg from "@/assets/service-prescription.jpg";
