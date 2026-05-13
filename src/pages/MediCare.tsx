@@ -570,11 +570,22 @@ const MediCare = () => {
   }, []);
 
   useEffect(() => {
-    document.title = `${settings.siteName} — Advanced Healthcare Designed Around You`;
+    document.title = settings.seo.pageTitle || `${settings.siteName} — Advanced Healthcare`;
     const meta = document.querySelector('meta[name="description"]') || (() => {
       const m = document.createElement("meta"); m.setAttribute("name", "description"); document.head.appendChild(m); return m;
     })();
-    meta.setAttribute("content", "Book appointments, consult certified doctors, access medical records and receive world-class healthcare digitally and physically with MediCare.");
+    meta.setAttribute("content", settings.seo.metaDescription);
+
+    const kw = document.querySelector('meta[name="keywords"]') || (() => {
+      const m = document.createElement("meta"); m.setAttribute("name", "keywords"); document.head.appendChild(m); return m;
+    })();
+    kw.setAttribute("content", settings.seo.keywords);
+
+    if (settings.seo.favicon) {
+      let link = document.querySelector("link[rel='icon']") as HTMLLinkElement | null;
+      if (!link) { link = document.createElement("link"); link.rel = "icon"; document.head.appendChild(link); }
+      link.href = settings.seo.favicon;
+    }
 
     const ld = document.createElement("script");
     ld.type = "application/ld+json";
@@ -582,7 +593,7 @@ const MediCare = () => {
       "@context": "https://schema.org",
       "@type": "Hospital",
       name: settings.siteName,
-      description: "Premium hospital and telemedicine platform.",
+      description: settings.seo.metaDescription,
       url: typeof window !== "undefined" ? window.location.href : "",
       telephone: settings.contact.phone,
       medicalSpecialty: ["Cardiology", "Neurology", "Pediatrics", "Dermatology", "Oncology"],
