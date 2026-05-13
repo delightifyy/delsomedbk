@@ -17,7 +17,11 @@ export const DoctorCard = ({ doctor, featured = false }: { doctor: Doctor; featu
               featured ? "h-16 w-16 text-xl" : "h-11 w-11 sm:h-12 sm:w-12 text-sm sm:text-base"
             }`}
           >
-            {doctor.initials}
+            {doctor.photo ? (
+              <img src={doctor.photo} alt={doctor.name} className="h-full w-full rounded-xl object-cover" loading="lazy" />
+            ) : (
+              doctor.initials
+            )}
           </span>
           <div className="min-w-0 flex-1">
             <h3

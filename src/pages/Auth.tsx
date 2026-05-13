@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { signInWithPassword } from "@/lib/localStore";
+import { API_FALLBACK_TO_LOCAL, getStoredAuthToken } from "@/lib/api";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -17,7 +18,9 @@ const Auth = () => {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) navigate("/dashboard", { replace: true });
+    if (!loading && user && (API_FALLBACK_TO_LOCAL || getStoredAuthToken())) {
+      navigate("/dashboard", { replace: true });
+    }
   }, [user, loading, navigate]);
 
   const onSubmit = async (e: React.FormEvent) => {

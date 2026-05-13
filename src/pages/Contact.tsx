@@ -6,32 +6,85 @@ import { Label } from "@/components/ui/label";
 import { Mail, Phone, MapPin, Send, Clock, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { SectionLabel } from "@/components/site/SectionLabel";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { NIGERIA_STATES } from "@/data/nigeriaStates";
-import { addContactMessage } from "@/lib/localStore";
+import { ApiError, api } from "@/lib/api";
+import { collection } from "@/lib/backendAdapters";
+
+type StateOption = {
+  id: string;
+  name: string;
+};
+
+const fieldErrors = (error: unknown) => {
+  if (!(error instanceof ApiError)) return error instanceof Error ? error.message : "Please try again.";
+  if (!Array.isArray(error.errors)) return error.message;
+
+  const messages = error.errors
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") return "";
+      const record = entry as Record<string, unknown>;
+      return [record.field, record.message].filter(Boolean).join(": ");
+    })
+    .filter(Boolean);
+
+  return messages.length ? messages.join(" ") : error.message;
+};
 
 const Contact = () => {
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
+  const [states, setStates] = useState<StateOption[]>([]);
+  const [stateId, setStateId] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    api.lookups.states()
+      .then((response) => {
+        if (!cancelled) {
+          setStates(
+            collection(response.data)
+              .map((entry: any) => ({
+                id: String(entry?.id ?? entry?.uuid ?? ""),
+                name: String(entry?.name ?? entry?.title ?? ""),
+              }))
+              .filter((entry) => entry.id && entry.name)
+          );
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setStates([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const fd = new FormData(form);
-    setBusy(true);
-    await addContactMessage({
-      name: String(fd.get("name") || ""),
+    const payload = {
+      full_name: String(fd.get("full_name") || "").trim(),
       email: String(fd.get("email") || ""),
+      phone: String(fd.get("phone") || "").trim() || undefined,
+      state_id: stateId ? Number(stateId) : undefined,
       subject: String(fd.get("subject") || ""),
       message: String(fd.get("message") || ""),
-      state: String(fd.get("state") || "") || null,
-    });
-    setBusy(false);
-    toast({ title: "Message sent", description: "Our team will get back to you within one business day." });
-    form.reset();
+    };
+    setBusy(true);
+    try {
+      await api.contact.submit(payload);
+      toast({ title: "Message sent", description: "Our team will get back to you within one business day." });
+      form.reset();
+      setStateId("");
+    } catch (error) {
+      toast({ title: "Unable to send message", description: fieldErrors(error), variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -55,33 +108,37 @@ const Contact = () => {
           <p className="text-sm text-muted-foreground mt-1">We typically respond within one business day.</p>
           <form onSubmit={onSubmit} className="mt-8 grid gap-5 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="name">Full name</Label>
-              <Input id="name" name="name" required maxLength={100} />
+              <Label htmlFor="full_name">Full Name</Label>
+              <Input id="full_name" name="full_name" required maxLength={150} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" name="email" type="email" required maxLength={255} />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input id="phone" name="phone" type="tel" maxLength={30} />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="state">State</Label>
-              <Select name="state">
+              <Select value={stateId} onValueChange={setStateId}>
                 <SelectTrigger id="state">
                   <SelectValue placeholder="Select a state" />
                 </SelectTrigger>
                 <SelectContent className="max-h-72">
-                  {NIGERIA_STATES.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  {states.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="subject">Subject</Label>
-              <Input id="subject" name="subject" required maxLength={150} />
+              <Input id="subject" name="subject" required maxLength={200} />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="message">Message</Label>
-              <Textarea id="message" name="message" required maxLength={1000} rows={6} placeholder="Tell us a bit more…" />
+              <Textarea id="message" name="message" required maxLength={5000} rows={6} placeholder="Tell us a bit more..." />
             </div>
             <div className="sm:col-span-2 flex justify-end">
               <Button type="submit" variant="hero" size="lg" disabled={busy}>

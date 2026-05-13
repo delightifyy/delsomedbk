@@ -5,18 +5,69 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, User } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { listNewsArticles, subscribeStore, type LocalNewsArticle } from "@/lib/localStore";
+import { type LocalNewsArticle } from "@/lib/localStore";
+import { api } from "@/lib/api";
+import { collection, newsArticleFromApi } from "@/lib/backendAdapters";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const HealthNewsArticle = () => {
   const { slug } = useParams();
   const [items, setItems] = useState<LocalNewsArticle[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(
-    () => subscribeStore(() => setItems(listNewsArticles().filter((entry) => entry.published))),
-    []
-  );
+  useEffect(() => {
+    let cancelled = false;
+    const loadArticle = async () => {
+      setLoading(true);
+      try {
+        const [listResponse, detailResponse] = await Promise.all([
+          api.posts.list({ type: "news" }),
+          slug ? api.posts.detail(slug) : Promise.resolve(null),
+        ]);
+        const list = collection(listResponse.data).map(newsArticleFromApi).filter((entry) => entry.published);
+        const detail = detailResponse ? newsArticleFromApi(detailResponse.data) : null;
+        const next = detail ? [detail, ...list.filter((entry) => entry.slug !== detail.slug)] : list;
+        if (!cancelled) setItems(next);
+      } catch {
+        if (!cancelled) setItems([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    loadArticle();
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
 
   const article = useMemo(() => items.find((n) => n.slug === slug), [items, slug]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <SiteHeader />
+        <main className="flex-1">
+          <article className="container py-14 sm:py-20 max-w-3xl">
+            <Skeleton className="mb-6 h-5 w-32" />
+            <Skeleton className="h-6 w-24 rounded-full" />
+            <Skeleton className="mt-5 h-12 w-full" />
+            <Skeleton className="mt-3 h-12 w-4/5" />
+            <div className="mt-5 flex gap-4">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+            <Skeleton className="mt-8 h-6 w-11/12" />
+            <div className="mt-8 space-y-4">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <Skeleton key={index} className="h-4 w-full" />
+              ))}
+            </div>
+          </article>
+        </main>
+        <SiteFooter />
+      </div>
+    );
+  }
 
   if (!article) {
     return (
@@ -61,6 +112,12 @@ const HealthNewsArticle = () => {
               )}
             </div>
           </div>
+
+          {article.cover_image && (
+            <div className="mb-8 overflow-hidden rounded-2xl bg-muted aspect-[16/9]">
+              <img src={article.cover_image} alt={article.title} className="h-full w-full object-cover" />
+            </div>
+          )}
 
           <p className="text-lg text-foreground/90 leading-relaxed mb-6 font-medium">
             {article.excerpt}

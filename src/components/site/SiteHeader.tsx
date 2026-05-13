@@ -2,7 +2,7 @@ import { Link, NavLink as RouterNavLink, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Search, ChevronDown, Stethoscope, Building2, Pill, FlaskConical } from "lucide-react";
 import desolmedLogo from "@/assets/desolmed-logo.png";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { MegaMenu } from "./MegaMenu";
 import {
@@ -19,7 +19,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DOCTORS, SPECIALTIES } from "@/data/doctors";
+import { api } from "@/lib/api";
+import { collection, doctorFromApi } from "@/lib/backendAdapters";
+import { type Doctor } from "@/data/doctors";
 
 const REGISTER_OPTIONS = [
   { to: "/register?type=doctor", label: "Doctor", icon: Stethoscope, blurb: "Join as a clinician" },
@@ -39,7 +41,34 @@ const links = [
 export const SiteHeader = () => {
   const [open, setOpen] = useState(false);
   const [cmd, setCmd] = useState(false);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [specialties, setSpecialties] = useState<string[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadSearchData = async () => {
+      try {
+        const [doctorResponse, specialtyResponse] = await Promise.all([
+          api.doctors.list({ per_page: 5 }),
+          api.lookups.specialties(),
+        ]);
+        if (!cancelled) {
+          setDoctors(collection(doctorResponse.data).map((entry, index) => doctorFromApi(entry, index)).slice(0, 5));
+          setSpecialties(collection(specialtyResponse.data).map((entry: any) => String(entry?.name ?? entry?.title ?? "")).filter(Boolean).slice(0, 6));
+        }
+      } catch {
+        if (!cancelled) {
+          setDoctors([]);
+          setSpecialties([]);
+        }
+      }
+    };
+    loadSearchData();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const go = (to: string) => {
     setCmd(false);
@@ -202,14 +231,14 @@ export const SiteHeader = () => {
             <CommandItem onSelect={() => go("/contact")}>Contact</CommandItem>
           </CommandGroup>
           <CommandGroup heading="Specialties">
-            {SPECIALTIES.slice(0, 6).map((s) => (
+            {specialties.map((s) => (
               <CommandItem key={s} onSelect={() => go("/doctors")}>
                 {s}
               </CommandItem>
             ))}
           </CommandGroup>
           <CommandGroup heading="Doctors">
-            {DOCTORS.slice(0, 5).map((d) => (
+            {doctors.map((d) => (
               <CommandItem key={d.id} onSelect={() => go("/doctors")}>
                 {d.name} · <span className="text-muted-foreground ml-1">{d.specialty}</span>
               </CommandItem>

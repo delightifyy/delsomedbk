@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { DeleteConfirmDialog } from "@/components/dashboard/DeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Trash2, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { deleteContactMessage, ensureDemoContactMessages, listContactMessages, markContactMessageRead, subscribeStore, type LocalContactMessage } from "@/lib/localStore";
+import { api } from "@/lib/api";
+import { collection, contactMessageFromApi } from "@/lib/backendAdapters";
 
 type Msg = {
   id: string;
@@ -20,32 +22,52 @@ const ContactsPage = () => {
   const { toast } = useToast();
   const [items, setItems] = useState<Msg[]>([]);
   const [open, setOpen] = useState<Msg | null>(null);
-
-  const load = () => {
-    setItems(listContactMessages() as LocalContactMessage[]);
-  };
-  useEffect(() => {
-    const unsubscribe = subscribeStore(() => {
-      load();
-    });
-    return unsubscribe;
-  }, []);
+  const [deleting, setDeleting] = useState<Msg | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   useEffect(() => {
-    ensureDemoContactMessages();
+    let cancelled = false;
+    const loadBackend = async () => {
+      try {
+        const response = await api.admin.contactMessages.list();
+        const mapped = collection(response.data).map(contactMessageFromApi);
+        if (!cancelled) setItems(mapped);
+      } catch {
+        if (!cancelled) setItems([]);
+      }
+    };
+    loadBackend();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const view = async (m: Msg) => {
     setOpen(m);
     if (!m.read) {
-      await markContactMessageRead(m.id);
+      await api.admin.contactMessages.updateStatus(m.id, "read");
+      setItems((prev) => prev.map((item) => item.id === m.id ? { ...item, read: true } : item));
     }
   };
 
-  const remove = async (id: string) => {
-    if (!confirm("Delete this message?")) return;
-    await deleteContactMessage(id);
-    toast({ title: "Message deleted" });
+  const remove = async () => {
+    if (!deleting) return;
+    setDeleteBusy(true);
+    try {
+      await api.admin.contactMessages.delete(deleting.id);
+      setItems((prev) => prev.filter((item) => item.id !== deleting.id));
+      setOpen((current) => (current?.id === deleting.id ? null : current));
+      toast({ title: "Message deleted" });
+      setDeleting(null);
+    } catch (error) {
+      toast({
+        title: "Message delete failed",
+        description: error instanceof Error ? error.message : "Could not delete this message.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteBusy(false);
+    }
   };
 
   return (
@@ -71,7 +93,7 @@ const ContactsPage = () => {
                   <span className="text-xs text-muted-foreground hidden sm:block">
                     {new Date(m.created_at).toLocaleDateString()}
                   </span>
-                  <Button size="icon" variant="ghost" onClick={() => remove(m.id)}><Trash2 className="h-4 w-4" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => setDeleting(m)}><Trash2 className="h-4 w-4" /></Button>
                 </div>
               </li>
             ))}
@@ -95,6 +117,14 @@ const ContactsPage = () => {
           )}
         </DialogContent>
       </Dialog>
+      <DeleteConfirmDialog
+        open={Boolean(deleting)}
+        title="Delete contact message?"
+        description={`This will remove the message from ${deleting?.name ?? "this sender"}.`}
+        loading={deleteBusy}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        onConfirm={remove}
+      />
     </DashboardLayout>
   );
 };

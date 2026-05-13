@@ -34,14 +34,9 @@ import {
   Mail,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import {
-  listRegistrations,
-  listProfiles,
-  subscribeStore,
-  updateProfileWebsite,
-  type LocalRegistration,
-  type LocalProfile,
-} from "@/lib/localStore";
+import { type LocalRegistration, type LocalProfile } from "@/lib/localStore";
+import { api } from "@/lib/api";
+import { collection, userProfileFromApi } from "@/lib/backendAdapters";
 
 type DoctorProfile = {
   registration: LocalRegistration;
@@ -59,34 +54,42 @@ const DoctorsPageInner = () => {
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const load = () => {
+  const load = async () => {
     setLoading(true);
-    const registrations = listRegistrations() as LocalRegistration[];
-    const profiles = listProfiles() as LocalProfile[];
-    
-    // Get approved doctors
-    const approvedDoctors = registrations
-      .filter((r) => r.applicant_type === "doctor" && r.status === "approved")
-      .map((reg) => ({
-        registration: reg,
-        profile: profiles.find((p) => p.email === reg.email) || null,
-      }));
-    
-    setDoctors(approvedDoctors);
-    setLoading(false);
+    try {
+      const response = await api.admin.users.list({ role: "doctor" });
+      const approvedDoctors = collection(response.data).map((entry: any) => {
+        const profile = userProfileFromApi(entry) as LocalProfile;
+        const registration: LocalRegistration = {
+          id: profile.id,
+          applicant_type: "doctor",
+          status: "approved",
+          full_name: profile.full_name,
+          organization_name: profile.organization_name,
+          email: profile.email ?? "",
+          phone: profile.phone,
+          city: entry?.city ?? entry?.profile?.city ?? null,
+          state: entry?.state_name ?? entry?.state ?? entry?.profile?.state ?? null,
+          zone: entry?.zone_name ?? entry?.zone ?? entry?.profile?.zone ?? null,
+          specialty: entry?.specialty_name ?? entry?.specialty ?? entry?.profile?.specialty ?? null,
+          details: entry?.profile ?? {},
+          documents: [],
+          reviewer_notes: null,
+          reviewed_at: null,
+          created_at: profile.created_at,
+        };
+        return { registration, profile };
+      });
+      setDoctors(approvedDoctors);
+    } catch {
+      setDoctors([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     load();
-    const unsubscribe = subscribeStore(() => {
-      load();
-    });
-
-    return () => {
-      if (typeof unsubscribe === "function") {
-        unsubscribe();
-      }
-    };
   }, []);
 
   const filtered = doctors.filter((d) => {
@@ -110,13 +113,11 @@ const DoctorsPageInner = () => {
     if (!selectedDoctor?.profile) return;
     setBusy(true);
     try {
-      await updateProfileWebsite(selectedDoctor.profile.id, websiteUrl);
       toast({
-        title: "Success",
-        description: "Website link updated successfully",
+        title: "Website not updated",
+        description: "This backend only exposes doctor self-profile updates for website details.",
       });
       setShowDialog(false);
-      load();
     } catch (error) {
       toast({
         title: "Error",
@@ -132,13 +133,11 @@ const DoctorsPageInner = () => {
     if (!selectedDoctor?.profile) return;
     setBusy(true);
     try {
-      await updateProfileWebsite(selectedDoctor.profile.id, null);
       toast({
-        title: "Success",
-        description: "Website link removed successfully",
+        title: "Website not removed",
+        description: "This backend only exposes doctor self-profile updates for website details.",
       });
       setShowDeleteAlert(false);
-      load();
     } catch (error) {
       toast({
         title: "Error",
@@ -241,34 +240,11 @@ const DoctorsPageInner = () => {
                           <ExternalLink className="h-4 w-4" />
                           View Website
                         </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => handleEditWebsite(doctor)}
-                          className="gap-2"
-                        >
-                          <Globe className="h-4 w-4" />
-                          Edit Link
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedDoctor(doctor);
-                            setShowDeleteAlert(true);
-                          }}
-                          className="gap-2 text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </>
                     ) : (
-                      <Button
-                        onClick={() => handleEditWebsite(doctor)}
-                        className="gap-2"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Create Link
-                      </Button>
+                      <Badge variant="secondary" className="bg-muted text-muted-foreground">
+                        No website URL
+                      </Badge>
                     )}
                   </div>
                 </div>

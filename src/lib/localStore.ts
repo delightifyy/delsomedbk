@@ -3,6 +3,7 @@ import { BLOG_POSTS } from "@/data/blogs";
 import { NEWS } from "@/data/news";
 import { FAQS } from "@/data/faqs";
 import { TESTIMONIALS } from "@/data/testimonials";
+import { API_FALLBACK_TO_LOCAL, ApiError, api, clearStoredAuthToken, setStoredAuthToken } from "@/lib/api";
 
 export type LocalRole = "admin" | "user";
 export type UserType = "patient" | "doctor" | "organization" | "pharmacy" | "lab-diagnostics";
@@ -17,6 +18,10 @@ export type LocalUser = {
 
 export type LocalSession = {
   user: Omit<LocalUser, "password">;
+  token?: string;
+  roles?: string[];
+  token_type?: string;
+  expires_in?: number;
 };
 
 export type LocalProfile = {
@@ -115,6 +120,7 @@ export type LocalNewsArticle = {
   date: string;
   excerpt: string;
   body: string[];
+  cover_image?: string | null;
   author: string | null;
   published: boolean;
   created_at: string;
@@ -124,6 +130,8 @@ export type LocalFaq = {
   id: string;
   q: string;
   a: string;
+  published?: boolean;
+  sort_order?: number | null;
   created_at: string;
 };
 
@@ -133,6 +141,7 @@ export type LocalTestimonial = {
   name: string;
   role: string;
   initials: string;
+  avatar_url?: string | null;
   published: boolean;
   created_at: string;
 };
@@ -369,6 +378,21 @@ const publicUser = (user: LocalUser): LocalSession["user"] => ({
   created_at: user.created_at,
 });
 
+const normalizeRoleList = (roles: unknown): string[] => {
+  if (!Array.isArray(roles)) return [];
+  return roles
+    .map((role) => {
+      if (typeof role === "string") return role;
+      if (role && typeof role === "object") {
+        const record = role as Record<string, unknown>;
+        return String(record.name ?? record.role ?? record.slug ?? "");
+      }
+      return "";
+    })
+    .map((role) => role.trim())
+    .filter(Boolean);
+};
+
 const save = (mutate: (state: StoreState) => void) => {
   const next = safeClone(readStore());
   mutate(next);
@@ -414,6 +438,11 @@ export const getCurrentUser = () => readSession()?.user ?? null;
 
 export const getCurrentUserRole = (userId?: string | null) => {
   if (!userId) return null;
+  const session = readSession();
+  if (session?.user.id === userId && session.roles?.length) {
+    if (session.roles.includes("super_admin")) return "admin";
+    if (session.roles.includes("admin")) return "admin";
+  }
   return readStore().roles.find((role) => role.user_id === userId)?.role ?? null;
 };
 
@@ -454,6 +483,34 @@ export const signUp = async ({ email, password, fullName }: { email: string; pas
 };
 
 export const signInWithPassword = async ({ email, password }: { email: string; password: string }) => {
+  try {
+    const response = await api.auth.adminLogin({ email, password });
+    const backendUser = response.data.user;
+    const fullName = [backendUser?.first_name, backendUser?.last_name].filter(Boolean).join(" ").trim();
+    const token = response.data.token;
+    if (!token) throw new Error("Login succeeded but the backend did not return an admin token.");
+    const roles = normalizeRoleList(backendUser?.roles);
+    const session: LocalSession = {
+      user: {
+        id: String(backendUser?.uuid ?? backendUser?.id ?? email),
+        email: backendUser?.email ?? email,
+        full_name: fullName || backendUser?.name || null,
+        created_at: backendUser?.created_at ?? new Date().toISOString(),
+      },
+      token,
+      roles,
+      token_type: response.data.token_type,
+      expires_in: response.data.expires_in,
+    };
+
+    setStoredAuthToken(token);
+    writeSession(session);
+    return { data: { session } };
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    if (!API_FALLBACK_TO_LOCAL) throw error;
+  }
+
   const store = readStore();
   const normalizedEmail = email.trim().toLowerCase();
   let user = store.users.find((candidate) => candidate.email.toLowerCase() === normalizedEmail);
@@ -504,6 +561,12 @@ export const signInWithPassword = async ({ email, password }: { email: string; p
 };
 
 export const signOut = async () => {
+  try {
+    await api.auth.logout();
+  } catch {
+    // Local fallback sessions do not have a server token to invalidate.
+  }
+  clearStoredAuthToken();
   writeSession(null);
   return { error: null };
 };

@@ -1,12 +1,13 @@
 import { Link } from "react-router-dom";
 import { ChevronDown, ArrowRight } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { SPECIALTIES } from "@/data/doctors";
-
-const STATES = ["North East", "North West", "South East", "South South", "South West"];
+import { api } from "@/lib/api";
+import { collection } from "@/lib/backendAdapters";
 
 export const MegaMenu = () => {
   const [open, setOpen] = useState(false);
+  const [specialties, setSpecialties] = useState<string[]>([]);
+  const [zones, setZones] = useState<string[]>([]);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -15,6 +16,31 @@ export const MegaMenu = () => {
     };
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadLookups = async () => {
+      try {
+        const [specialtyResponse, zoneResponse] = await Promise.all([
+          api.lookups.specialties(),
+          api.lookups.zones(),
+        ]);
+        if (!cancelled) {
+          setSpecialties(collection(specialtyResponse.data).map((entry: any) => String(entry?.name ?? entry?.title ?? "")).filter(Boolean).slice(0, 6));
+          setZones(collection(zoneResponse.data).map((entry: any) => String(entry?.name ?? entry?.code ?? "")).filter(Boolean).slice(0, 6));
+        }
+      } catch {
+        if (!cancelled) {
+          setSpecialties([]);
+          setZones([]);
+        }
+      }
+    };
+    loadLookups();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -33,7 +59,7 @@ export const MegaMenu = () => {
             <div>
               <p className="text-[11px] font-semibold tracking-wider text-muted-foreground mb-3">Top Specialties</p>
               <ul className="space-y-2">
-                {SPECIALTIES.slice(0, 6).map((s) => (
+                {specialties.map((s) => (
                   <li key={s}>
                     <Link
                       to="/doctors"
@@ -49,7 +75,7 @@ export const MegaMenu = () => {
             <div>
               <p className="text-[11px] font-semibold tracking-wider text-muted-foreground mb-3">By Zones</p>
               <ul className="space-y-2">
-                {STATES.slice(0, 6).map((s) => (
+                {zones.map((s) => (
                   <li key={s}>
                     <Link
                       to="/doctors"
@@ -64,7 +90,7 @@ export const MegaMenu = () => {
             </div>
           </div>
           <div className="mt-6 pt-5 border-t border-border flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">Verified Doctors Across 36 States</p>
+            <p className="text-xs text-muted-foreground">Verified doctors</p>
             <Link
               to="/doctors"
               onClick={() => setOpen(false)}
