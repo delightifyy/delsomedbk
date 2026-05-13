@@ -146,11 +146,18 @@ const submitApplicationToApi = async (payload: RegistrationPayload) => {
     appendFormValue(form, "sub_specialty_id", subSpecialtyId ?? payload.details.sub_specialty_id);
     appendFormValue(form, "is_specialist", Boolean(payload.details.sub_specialty));
     appendFormValue(form, "years_experience", payload.details.years_experience);
+    appendFormValue(form, "organization_name", payload.details.organization_name ?? payload.organization_name);
+    appendFormValue(form, "applicant_role", payload.details.role);
+    appendFormValue(form, "address", payload.details.address);
+    appendFormValue(form, "services_rendered", payload.details.services);
+    appendFormValue(form, "review_note", payload.details.review_note);
+    appendFormValue(form, "hospital_licence_expiry", payload.details.hospital_licence_expiry);
     appendFile(form, "documents[medical_practising_licence]", firstFile(documents.get("doc-licence")));
     appendFile(form, "documents[government_id]", firstFile(documents.get("doc-govid")));
     appendFile(form, "documents[indemnity]", firstFile(documents.get("doc-indemnity")));
     appendFile(form, "documents[hospital_licence]", firstFile(documents.get("doc-hospital-licence")));
     appendFile(form, "documents[proof_of_address]", firstFile(documents.get("doc-org-proof")));
+    appendFiles(form, "documents[other_documents][]", documents.get("doc-other")?.files);
 
     const certFiles = documents.get("doc-certs")?.files ?? [];
     certFiles.slice(0, 5).forEach((file) => {
@@ -186,6 +193,8 @@ const submitApplicationToApi = async (payload: RegistrationPayload) => {
     appendFile(form, "documents[business_registration]", firstFile(documents.get("doc-certs")) ?? firstFile(documents.get("doc-org-proof")));
     appendFile(form, "documents[pharmacist_id]", firstFile(documents.get("doc-govid")));
     appendFile(form, "documents[premises_photo]", firstFile(documents.get("doc-hospital-licence")));
+    appendFile(form, "documents[indemnity]", firstFile(documents.get("doc-indemnity")));
+    appendFiles(form, "documents[other_documents][]", documents.get("doc-other")?.files);
   }
 
   if (payload.applicant_type === "lab-diagnostics") {
@@ -197,8 +206,12 @@ const submitApplicationToApi = async (payload: RegistrationPayload) => {
     appendFile(form, "documents[facility_licence]", firstFile(documents.get("doc-licence")));
     appendFile(form, "documents[business_registration]", firstFile(documents.get("doc-govid")));
     appendFile(form, "documents[lab_director_credentials]", firstFile(documents.get("doc-certs")) ?? firstFile(documents.get("doc-org-proof")));
-    appendFile(form, "documents[accreditation_certificate]", firstFile(documents.get("doc-indemnity")));
+    appendFile(form, "documents[accreditation_certificate]", firstFile(documents.get("doc-certs")));
+    appendFile(form, "documents[proof_of_address]", firstFile(documents.get("doc-org-proof")));
+    appendFile(form, "documents[indemnity]", firstFile(documents.get("doc-indemnity")));
     appendFile(form, "documents[equipment_inventory]", firstFile(documents.get("doc-hospital-licence")));
+    appendFiles(form, "documents[certifications][]", documents.get("doc-certs")?.files);
+    appendFiles(form, "documents[other_documents][]", documents.get("doc-other")?.files);
   }
 
   try {

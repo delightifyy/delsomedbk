@@ -243,33 +243,41 @@ type DocsState = {
   indemnity: File[];
   hospital_licence: File[];
   org_proof: File[];
+  other: File[];
 };
+
+type DocumentProfile = "doctor" | "organization" | "pharmacy" | "lab-diagnostics";
+
+const emptyDocs = (): DocsState => ({
+  licence: [],
+  govid: [],
+  certs: [],
+  indemnity: [],
+  hospital_licence: [],
+  org_proof: [],
+  other: [],
+});
 
 const DocumentsSection = ({
   licenceLabel = "Medical licence",
-  showAffiliation = false,
-  onAffiliationChange,
+  profile = "organization",
   onChange,
 }: {
   licenceLabel?: string;
-  showAffiliation?: boolean;
-  onAffiliationChange?: (data: { organization_name: string; hospital_licence_expiry: string }) => void;
+  profile?: DocumentProfile;
   onChange: (docs: DocsState) => void;
 }) => {
-  const [docs, setDocs] = useState<DocsState>({
-    licence: [], govid: [], certs: [], indemnity: [], hospital_licence: [], org_proof: [],
-  });
-  const [affiliation, setAffiliation] = useState({ organization_name: "", hospital_licence_expiry: "" });
+  const [docs, setDocs] = useState<DocsState>(emptyDocs());
   const update = (patch: Partial<DocsState>) => {
     const next = { ...docs, ...patch };
     setDocs(next);
     onChange(next);
   };
-  const updateAff = (patch: Partial<typeof affiliation>) => {
-    const next = { ...affiliation, ...patch };
-    setAffiliation(next);
-    onAffiliationChange?.(next);
-  };
+
+  const isDoctor = profile === "doctor";
+  const isPharmacy = profile === "pharmacy";
+  const isLab = profile === "lab-diagnostics";
+
   return (
     <div className="space-y-5 rounded-xl border border-border bg-muted/20 p-5">
       <div className="flex items-center gap-2">
@@ -280,10 +288,35 @@ const DocumentsSection = ({
         PDF, JPG, PNG or WEBP. Max {MAX_MB}MB per file.
       </p>
       <div className="grid gap-5">
+        {isDoctor && (
+          <>
+            <FileField
+              id="doc-hospital-licence"
+              label="Hospital License"
+              hint="Upload the hospital or clinic operating licence."
+              required
+              minFiles={1}
+              maxFiles={1}
+              onChange={(f) => update({ hospital_licence: f })}
+            />
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="hospital-licence-expiry">
+                Hospital License Expiry Date <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="hospital-licence-expiry"
+                name="hospital_licence_expiry"
+                type="date"
+                required
+              />
+            </div>
+          </>
+        )}
+
         <FileField
           id="doc-licence"
           label={licenceLabel}
-          hint="Upload a clear scan or photo of your current practising licence."
+          hint="Upload a clear scan or photo of the current licence."
           required
           onChange={(f) => update({ licence: f })}
           minFiles={1}
@@ -291,78 +324,65 @@ const DocumentsSection = ({
         />
         <FileField
           id="doc-govid"
-          label="Government-Issued ID"
+          label="Government ID"
           hint="National ID, driver's licence, international passport or voter's card."
           required
           onChange={(f) => update({ govid: f })}
           minFiles={1}
           maxFiles={1}
         />
-        {showAffiliation && (
-          <>
-            <FileField
-              id="doc-indemnity"
-              label="Indemnity of Organization"
-              hint="Upload your professional indemnity insurance certificate, if available."
-              onChange={(f) => update({ indemnity: f })}
-              minFiles={0}
-              maxFiles={1}
-            />
-            <div className="space-y-4 sm:col-span-2 rounded-lg border border-border bg-background/60 p-4">
-              <div>
-                <h4 className="text-sm font-semibold"></h4>
-                <p className="text-xs text-muted-foreground mt-1">
-                  If you practice at a hospital or clinic, share the organization details and licence.
-                </p>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="affil-org-name">Name of Organization</Label>
-                  <Input
-                    id="affil-org-name"
-                    value={affiliation.organization_name}
-                    onChange={(e) => updateAff({ organization_name: e.target.value })}
-                    maxLength={150}
-                    placeholder="e.g. St. Mary's Hospital"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="affil-expiry">Hospital Licence Expiry Date</Label>
-                  <Input
-                    id="affil-expiry"
-                    type="date"
-                    value={affiliation.hospital_licence_expiry}
-                    onChange={(e) => updateAff({ hospital_licence_expiry: e.target.value })}
-                  />
-                </div>
-              </div>
-              <FileField
-                id="doc-hospital-licence"
-                label="Hospital Licence"
-                hint="Upload the hospital or clinic operating licence."
-                minFiles={0}
-                maxFiles={1}
-                onChange={(f) => update({ hospital_licence: f })}
-              />
-              <FileField
-                id="doc-org-proof"
-                label="Proof of Address"
-                hint="Employment letter, ID badge or any document showing your link to the organization."
-                minFiles={0}
-                maxFiles={1}
-                onChange={(f) => update({ org_proof: f })}
-              />
-            </div>
-          </>
+        {(isDoctor || isLab) && (
+          <FileField
+            id="doc-org-proof"
+            label="Proof of Address"
+            hint="Utility bill, tenancy document, facility address proof or official letter."
+            required={isDoctor}
+            minFiles={isDoctor ? 1 : 0}
+            maxFiles={1}
+            onChange={(f) => update({ org_proof: f })}
+          />
+        )}
+        {(isDoctor || isPharmacy || isLab) && (
+          <FileField
+            id="doc-indemnity"
+            label="Indemnity of Organization"
+            hint="Upload the organization indemnity or insurance document."
+            required={isDoctor}
+            minFiles={isDoctor ? 1 : 0}
+            maxFiles={1}
+            onChange={(f) => update({ indemnity: f })}
+          />
+        )}
+        {isLab && (
+          <FileField
+            id="doc-certs"
+            label="Certifications"
+            hint="Upload relevant diagnostic, laboratory or accreditation certificates."
+            multiple
+            minFiles={0}
+            maxFiles={5}
+            onChange={(f) => update({ certs: f })}
+          />
+        )}
+        {(profile === "organization" || isPharmacy) && (
+          <FileField
+            id="doc-certs"
+            label={isPharmacy ? "Business Registration / Certifications (Optional)" : "Certifications (Optional)"}
+            hint={isPharmacy ? "Business registration, PCN support documents or other pharmacy certificates." : "Accreditations, regulatory documents or supporting certificates."}
+            multiple
+            minFiles={0}
+            maxFiles={5}
+            onChange={(f) => update({ certs: f })}
+          />
         )}
         <FileField
-          id="doc-certs"
-          label="Certifications (Optional)"
-          hint="Specialty certificates, fellowship awards or accreditations. You can add several."
+          id="doc-other"
+          label="Other Documents"
+          hint="Upload any other supporting documents."
           multiple
           minFiles={0}
           maxFiles={5}
-          onChange={(f) => update({ certs: f })}
+          onChange={(f) => update({ other: f })}
         />
       </div>
     </div>
@@ -374,8 +394,9 @@ const buildDocSlots = (docs: DocsState, licenceLabel: string): DocumentSlot[] =>
   { field: "doc-govid", label: "Government-Issued ID", files: docs.govid },
   { field: "doc-indemnity", label: "Indemnity insurance", files: docs.indemnity },
   { field: "doc-hospital-licence", label: "Hospital Licence", files: docs.hospital_licence },
-  { field: "doc-org-proof", label: "Proof of Affiliation", files: docs.org_proof },
+  { field: "doc-org-proof", label: "Proof of Address", files: docs.org_proof },
   { field: "doc-certs", label: "Certifications", files: docs.certs },
+  { field: "doc-other", label: "Other Documents", files: docs.other },
 ];
 
 /* ---------- Doctor form ---------- */
@@ -385,8 +406,7 @@ const DoctorForm = () => {
   const [specialty, setSpecialty] = useState<string>("");
   const [subSpecialty, setSubSpecialty] = useState<string>("");
   const [otherSpecialty, setOtherSpecialty] = useState<string>("");
-  const [docs, setDocs] = useState<DocsState>({ licence: [], govid: [], certs: [], indemnity: [], hospital_licence: [], org_proof: [] });
-  const [affiliation, setAffiliation] = useState({ organization_name: "", hospital_licence_expiry: "" });
+  const [docs, setDocs] = useState<DocsState>(emptyDocs());
   const [submitting, setSubmitting] = useState(false);
   const [consent, setConsent] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
@@ -399,8 +419,12 @@ const DoctorForm = () => {
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!docs.licence.length || !docs.govid.length) {
-      toast({ title: "Documents required", description: "Please upload your licence and government ID.", variant: "destructive" });
+    if (!docs.hospital_licence.length || !docs.licence.length || !docs.govid.length || !docs.org_proof.length || !docs.indemnity.length) {
+      toast({
+        title: "Documents required",
+        description: "Please upload the hospital license, doctor practicing licence, government ID, proof of address and indemnity document.",
+        variant: "destructive",
+      });
       return;
     }
     if (!consent) {
@@ -431,19 +455,23 @@ const DoctorForm = () => {
         details: {
           sub_specialty: specialty === "Others" ? otherSpecialty : subSpecialty,
           years_experience: get("years_experience"),
-          bio: get("bio"),
           website: get("website"),
-          affiliated_organization_name: affiliation.organization_name,
-          hospital_licence_expiry: affiliation.hospital_licence_expiry,
+          organization_name: get("organization_name"),
+          role: get("role"),
+          address: get("address"),
+          services: get("services") || get("bio"),
+          review_note: get("review_note"),
+          notes: get("review_note"),
+          bio: get("review_note"),
+          hospital_licence_expiry: get("hospital_licence_expiry"),
           consent_agreed: true,
           consent_agreed_at: new Date().toISOString(),
         },
-        documents: buildDocSlots(docs, "Medical Practising Licence"),
+        documents: buildDocSlots(docs, "Doctor Practicing Licence"),
       });
       setSuccessOpen(true);
       formRef.current?.reset();
-      setDocs({ licence: [], govid: [], certs: [], indemnity: [], hospital_licence: [], org_proof: [] });
-      setAffiliation({ organization_name: "", hospital_licence_expiry: "" });
+      setDocs(emptyDocs());
       setConsent(false);
       setSpecialty("");
       setSubSpecialty("");
@@ -461,18 +489,18 @@ const DoctorForm = () => {
         <h2 className="font-display text-2xl font-bold">Doctor Registration</h2>
         <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2">
-          <Label>Name of Responsible Officer / Doctor</Label>
+          <Label>Name of Organization</Label>
+          <Input name="organization_name" required maxLength={150} placeholder="e.g. St. Mary's Hospital" />
+        </div>
+        <div className="space-y-2 sm:col-span-2">
+          <Label>Name of Responsible Officer</Label>
           <Input name="full_name" required maxLength={100} placeholder="Dr. Jane Doe" />
         </div>
         <div className="space-y-2">
-          <Label>Email</Label>
-          <Input name="email" type="email" required maxLength={255} placeholder="you@example.com" />
+          <Label>Role</Label>
+          <Input name="role" required maxLength={100} placeholder="e.g. Medical Director" />
         </div>
         <div className="space-y-2">
-          <Label>Phone</Label>
-          <Input name="phone" type="tel" required maxLength={20} placeholder="+234..." />
-        </div>
-        <div className="space-y-2 sm:col-span-2">
           <Label>Specialization</Label>
           <Select value={specialty} onValueChange={handleSpecialtyChange} required>
             <SelectTrigger><SelectValue placeholder="Select Specialty" /></SelectTrigger>
@@ -482,7 +510,7 @@ const DoctorForm = () => {
           </Select>
         </div>
         {specialty && (
-          <div className="space-y-2 sm:col-span-2">
+          <div className="space-y-2">
             {specialty === "Others" ? (
               <>
                 <Label>Specify Specialty or Profession</Label>
@@ -498,7 +526,7 @@ const DoctorForm = () => {
             ) : (
               <>
                 <Label>Sub-Specialty</Label>
-                <Select value={subSpecialty} onValueChange={setSubSpecialty} required>
+                <Select value={subSpecialty} onValueChange={setSubSpecialty} required={Boolean(specialty)}>
                   <SelectTrigger><SelectValue placeholder="Select Sub-Specialty" /></SelectTrigger>
                   <SelectContent>
                     {SPECIALTY_MAP[specialty as keyof typeof SPECIALTY_MAP]?.map((sub) => (
@@ -513,6 +541,18 @@ const DoctorForm = () => {
         <div className="space-y-2">
           <Label>Years of Experience</Label>
           <Input name="years_experience" type="number" min={0} max={60} placeholder="e.g. 8" />
+        </div>
+        <div className="space-y-2">
+          <Label>Phone</Label>
+          <Input name="phone" type="tel" required maxLength={20} placeholder="+234..." />
+        </div>
+        <div className="space-y-2">
+          <Label>Organization Email</Label>
+          <Input name="email" type="email" required maxLength={255} placeholder="admin@hospital.com" />
+        </div>
+        <div className="space-y-2 sm:col-span-2">
+          <Label>Address</Label>
+          <Input name="address" required maxLength={200} placeholder="Street address" />
         </div>
         <div className="space-y-2">
           <Label>Zone</Label>
@@ -537,18 +577,21 @@ const DoctorForm = () => {
           <Input name="city" required maxLength={60} placeholder="e.g. Ikeja" />
         </div>
         <div className="space-y-2 sm:col-span-2">
-          <Label>Website (Optional)</Label>
+          <Label>Website</Label>
           <Input name="website" type="url" maxLength={255} placeholder="https://your-website.com" />
         </div>
         <div className="space-y-2 sm:col-span-2">
-          <Label>Short Bio</Label>
-          <Textarea name="bio" maxLength={500} rows={4} placeholder="Tell patients about your practice…" />
+          <Label>Services Rendered</Label>
+          <Textarea name="services" maxLength={1000} rows={4} placeholder="Briefly describe the services rendered by your organization..." />
+        </div>
+        <div className="space-y-2 sm:col-span-2">
+          <Label>Review Note</Label>
+          <Textarea name="review_note" maxLength={1000} rows={4} placeholder="Any note for the verification team..." />
         </div>
       </div>
       <DocumentsSection
-        licenceLabel="Medical Practising Licence"
-        showAffiliation
-        onAffiliationChange={setAffiliation}
+        profile="doctor"
+        licenceLabel="Doctor Practicing Licence"
         onChange={setDocs}
       />
       <ConsentCheckbox checked={consent} onCheckedChange={setConsent} id="consent-doctor" />
@@ -574,7 +617,7 @@ const DoctorForm = () => {
 const OrganizationForm = () => {
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
-  const [docs, setDocs] = useState<DocsState>({ licence: [], govid: [], certs: [], indemnity: [], hospital_licence: [], org_proof: [] });
+  const [docs, setDocs] = useState<DocsState>(emptyDocs());
   const [submitting, setSubmitting] = useState(false);
   const [consent, setConsent] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
@@ -613,7 +656,7 @@ const OrganizationForm = () => {
       });
       setSuccessOpen(true);
       formRef.current?.reset();
-      setDocs({ licence: [], govid: [], certs: [], indemnity: [], hospital_licence: [], org_proof: [] });
+      setDocs(emptyDocs());
       setConsent(false);
     } catch (err: any) {
       toast({ title: "Submission failed", description: err.message ?? "Please try again.", variant: "destructive" });
@@ -713,7 +756,7 @@ const PartnerForm = ({
 }) => {
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
-  const [docs, setDocs] = useState<DocsState>({ licence: [], govid: [], certs: [], indemnity: [], hospital_licence: [], org_proof: [] });
+  const [docs, setDocs] = useState<DocsState>(emptyDocs());
   const [submitting, setSubmitting] = useState(false);
   const [consent, setConsent] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
@@ -755,7 +798,7 @@ const PartnerForm = ({
       });
       setSuccessOpen(true);
       formRef.current?.reset();
-      setDocs({ licence: [], govid: [], certs: [], indemnity: [], hospital_licence: [], org_proof: [] });
+      setDocs(emptyDocs());
       setConsent(false);
     } catch (err: any) {
       toast({ title: "Submission failed", description: err.message ?? "Please try again.", variant: "destructive" });
@@ -828,7 +871,11 @@ const PartnerForm = ({
           <Textarea name="services" rows={4} maxLength={1000} placeholder="Briefly describe your main services…" />
         </div>
       </div>
-      <DocumentsSection licenceLabel={`${kind} Operating Licence`} onChange={setDocs} />
+      <DocumentsSection
+        profile={type === "lab-diagnostics" ? "lab-diagnostics" : "pharmacy"}
+        licenceLabel={`${kind} Operating Licence`}
+        onChange={setDocs}
+      />
       <ConsentCheckbox checked={consent} onCheckedChange={setConsent} id={`consent-${type}`} />
       <div className="flex justify-end pt-4 border-t border-border">
         <Button type="submit" variant="hero" size="lg" disabled={submitting}>
