@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Mail, Phone, MapPin, MessageCircle, Stethoscope, ArrowRight } from "lucide-react";
+import { Mail, Phone, MapPin, MessageCircle, Stethoscope, ArrowRight, Heart, Building2 } from "lucide-react";
 import desolmedLogo from "@/assets/desolmed-logo.png";
 import { useState, type FormEvent } from "react";
 import { api } from "@/lib/api";
@@ -28,6 +28,44 @@ export const SiteFooter = () => {
 
   return (
     <footer className="border-t border-border bg-card mt-16 sm:mt-24">
+      {/* Portals access strip */}
+      <div className="border-b border-border bg-gradient-to-br from-primary/[0.04] via-transparent to-secondary/30">
+        <div className="container py-10 sm:py-14">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Portals</p>
+              <h3 className="font-display text-2xl sm:text-3xl font-bold mt-1">Sign in to your workspace</h3>
+            </div>
+            <p className="text-sm text-muted-foreground max-w-md">Secure, role-based access for patients, doctors and organizations.</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[
+              { to: "/patient", label: "Patient Portal", desc: "Appointments, records & prescriptions", icon: Heart },
+              { to: "/doctor", label: "Doctor Portal", desc: "EMR, consultations & patients", icon: Stethoscope },
+              { to: "/organization", label: "Organization / HMO", desc: "Staff, usage & billing", icon: Building2 },
+            ].map((p) => (
+              <Link
+                key={p.to}
+                to={p.to}
+                className="group relative overflow-hidden rounded-xl border border-border bg-background p-5 hover:border-primary/40 hover:shadow-lg hover:-translate-y-0.5 transition-all"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/0 group-hover:from-primary/[0.04] group-hover:to-secondary/40 transition-colors" />
+                <div className="relative flex items-start gap-4">
+                  <div className="h-11 w-11 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                    <p.icon className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-display font-semibold text-base">{p.label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{p.desc}</p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="container py-12 sm:py-16 grid gap-10 grid-cols-2 md:grid-cols-12">
         <div className="col-span-2 md:col-span-4 space-y-4">
           <Link to="/" className="flex items-center gap-3">

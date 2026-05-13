@@ -6,13 +6,15 @@ import {
   Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, ArrowRight,
   Search, ChevronDown, Settings, Bone, Eye, Activity, Microscope, Syringe,
   Ambulance, MessageSquare, BellRing, Bot, Smartphone, Apple, Play, Quote,
-  CheckCircle2, Award, Globe2, Languages, Building2, MonitorSmartphone,
+  CheckCircle2, Award, Globe2, Languages, Building2, MonitorSmartphone, Users,
 } from "lucide-react";
 import {
   hexToHslString,
   useMediCareSettings,
 } from "@/lib/medicareSettings";
+import { Icon as McIcon } from "@/components/medicare-admin/icons";
 import { DOCTORS, type Doctor } from "@/data/doctors";
+import aboutHospitalImg from "@/assets/about-hospital.jpg";
 
 /* ---------- Scoped design tokens & styles ---------- */
 const tokenStyles = `
@@ -119,7 +121,6 @@ const navLinks = [
   { href: "#services", label: "Services" },
   { href: "#telemedicine", label: "Telemedicine" },
   { href: "#about", label: "About" },
-  { href: "#contact", label: "Contact" },
 ];
 
 const quickAccess = [
@@ -142,14 +143,7 @@ const specialties = [
   { icon: Stethoscope,name: "General Medicine",  img: "https://images.unsplash.com/photo-1666214280391-8ff5bd3c0bf0?w=800&auto=format&fit=crop&q=80" },
 ];
 
-const services = [
-  { icon: Stethoscope,  title: "General Consultation", desc: "Everyday illnesses, checkups, and concerns from licensed GPs." },
-  { icon: Brain,        title: "Mental Health Support", desc: "Therapy and counseling from accredited professionals." },
-  { icon: Pill,         title: "Prescription & Refills", desc: "Digital prescriptions sent to your local pharmacy." },
-  { icon: FlaskConical, title: "Lab Tests & Referrals", desc: "Order labs and access specialist referrals fast." },
-  { icon: Eye,          title: "Vision & Optical",      desc: "Eye exams and optical care from board-certified doctors." },
-  { icon: Activity,     title: "Chronic Care",          desc: "Continuous monitoring for diabetes, BP and more." },
-];
+// services / reasons content now comes from settings (admin-managed)
 
 const reasons = [
   { icon: ShieldCheck, title: "Certified Specialists", desc: "Every doctor is board-licensed and verified." },
@@ -576,11 +570,22 @@ const MediCare = () => {
   }, []);
 
   useEffect(() => {
-    document.title = `${settings.siteName} — Advanced Healthcare Designed Around You`;
+    document.title = settings.seo.pageTitle || `${settings.siteName} — Advanced Healthcare`;
     const meta = document.querySelector('meta[name="description"]') || (() => {
       const m = document.createElement("meta"); m.setAttribute("name", "description"); document.head.appendChild(m); return m;
     })();
-    meta.setAttribute("content", "Book appointments, consult certified doctors, access medical records and receive world-class healthcare digitally and physically with MediCare.");
+    meta.setAttribute("content", settings.seo.metaDescription);
+
+    const kw = document.querySelector('meta[name="keywords"]') || (() => {
+      const m = document.createElement("meta"); m.setAttribute("name", "keywords"); document.head.appendChild(m); return m;
+    })();
+    kw.setAttribute("content", settings.seo.keywords);
+
+    if (settings.seo.favicon) {
+      let link = document.querySelector("link[rel='icon']") as HTMLLinkElement | null;
+      if (!link) { link = document.createElement("link"); link.rel = "icon"; document.head.appendChild(link); }
+      link.href = settings.seo.favicon;
+    }
 
     const ld = document.createElement("script");
     ld.type = "application/ld+json";
@@ -588,7 +593,7 @@ const MediCare = () => {
       "@context": "https://schema.org",
       "@type": "Hospital",
       name: settings.siteName,
-      description: "Premium hospital and telemedicine platform.",
+      description: settings.seo.metaDescription,
       url: typeof window !== "undefined" ? window.location.href : "",
       telephone: settings.contact.phone,
       medicalSpecialty: ["Cardiology", "Neurology", "Pediatrics", "Dermatology", "Oncology"],
@@ -605,23 +610,6 @@ const MediCare = () => {
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" />
 
-      {/* ============ TOP UTILITY BAR ============ */}
-      <div className={`relative z-50 hidden md:block text-xs transition-colors ${scrolled ? "bg-transparent text-transparent h-0 overflow-hidden" : "bg-[hsl(var(--mc-dark))] text-white/80"}`}>
-        <div className="mx-auto max-w-7xl px-6 h-9 flex items-center justify-between">
-          <div className="flex items-center gap-5">
-            <span className="inline-flex items-center gap-1.5"><Languages className="h-3.5 w-3.5" /> EN · ES · FR</span>
-            <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> Global · 36 locations</span>
-          </div>
-          <div className="flex items-center gap-5">
-            <a href={`tel:${settings.contact.phone}`} className="inline-flex items-center gap-1.5 font-semibold text-rose-300">
-              <span className="relative flex h-2 w-2"><span className="absolute inset-0 rounded-full bg-rose-400 opacity-75 animate-ping" /><span className="relative rounded-full h-2 w-2 bg-rose-400" /></span>
-              Emergency: {settings.contact.phone}
-            </a>
-            <a href="#cta" className="hover:text-white transition">Patient Portal</a>
-          </div>
-        </div>
-      </div>
-
       {/* ============ NAVBAR ============ */}
       <header className={`sticky top-0 z-40 w-full transition-all duration-300 ${scrolled ? "mc-glass mc-shadow-card" : "bg-transparent"}`}>
         <nav className="mx-auto max-w-7xl px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-4">
@@ -636,7 +624,7 @@ const MediCare = () => {
             <span className="font-display font-bold text-xl tracking-tight">{settings.siteName}</span>
           </a>
 
-          <ul className="hidden lg:flex items-center gap-1 text-sm font-semibold text-slate-900">
+          <ul className="hidden lg:flex items-center gap-1 text-sm font-semibold text-white">
             {navLinks.map((l) => (
               <li
                 key={l.href}
@@ -652,7 +640,7 @@ const MediCare = () => {
                   <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 w-[640px] z-50">
                     <div className="mc-glass mc-shadow-elegant rounded-3xl p-6 grid grid-cols-2 gap-2">
                       {specialties.map((s) => (
-                        <a key={s.name} href="#specialties" className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-[hsl(var(--mc-muted-soft))] transition">
+                        <a key={s.name} href="#specialties" className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-[hsl(215_50%_85%)] hover:text-[hsl(215_60%_25%)] transition">
                           <span className="grid place-items-center h-9 w-9 rounded-xl mc-grad-primary text-white">
                             <s.icon className="h-4 w-4" />
                           </span>
@@ -703,9 +691,7 @@ const MediCare = () => {
           <div className="lg:col-span-7 text-white">
             <span className="inline-flex items-center gap-2 rounded-full mc-glass-dark px-4 py-1.5 text-xs sm:text-sm font-semibold mc-anim-fade-up">
               <span className="h-2 w-2 rounded-full bg-[hsl(var(--mc-accent-glow))] mc-anim-pulse-dot" />
-              Live consultations available now
-              <span className="opacity-30">·</span>
-              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" /> 4.9 / 5
+              Live 24/7
             </span>
 
             <h1 className="mt-6 font-display text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-[1.05] text-balance mc-anim-fade-up">
@@ -716,7 +702,7 @@ const MediCare = () => {
             </h1>
 
             <p className="mt-6 max-w-xl text-base sm:text-lg leading-relaxed text-white/80 mc-anim-fade-up">
-              Book appointments, consult certified doctors, access medical records, and receive world-class healthcare — digitally and physically.
+              Book Appointments, Consult Certified Doctors, Receive World class Healthcare Digitally and physically.
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3 mc-anim-fade-up">
@@ -729,15 +715,6 @@ const MediCare = () => {
               </button>
             </div>
 
-            {/* Mini stats */}
-            <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl">
-              {stats.map((s) => (
-                <div key={s.label} className="mc-glass-dark rounded-2xl px-4 py-3">
-                  <p className="font-display text-2xl sm:text-3xl font-bold bg-gradient-to-r from-white to-[hsl(174_80%_75%)] bg-clip-text text-transparent">{s.value}</p>
-                  <p className="mt-0.5 text-[11px] sm:text-xs text-white/70">{s.label}</p>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Floating dashboard cards */}
@@ -814,62 +791,61 @@ const MediCare = () => {
         </div>
       </section>
 
-      {/* ============ QUICK ACCESS CARE ============ */}
-      <section className="relative py-20 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="text-center max-w-2xl mx-auto">
-            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Quick Access Care</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Healthcare in <span className="mc-grad-text">one click</span></h2>
-            <p className="mt-4 text-[hsl(var(--mc-muted))]">Everything you need to manage your health — beautifully unified.</p>
-          </div>
-
-          <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {quickAccess.map((q) => (
-              <div key={q.title} className="group relative overflow-hidden rounded-3xl border border-[hsl(var(--mc-border))] bg-[hsl(var(--mc-card))] p-7 mc-shadow-card mc-card-hover">
-                <div className={`absolute -top-16 -right-16 h-40 w-40 rounded-full bg-gradient-to-br ${q.tone} opacity-10 group-hover:opacity-25 transition-opacity`} />
-                <span className={`relative grid place-items-center h-14 w-14 rounded-2xl bg-gradient-to-br ${q.tone} text-white mc-shadow-glow`}>
-                  <q.icon className="h-6 w-6" />
-                </span>
-                <h3 className="relative mt-5 font-display text-xl font-bold">{q.title}</h3>
-                <p className="relative mt-2 text-sm text-[hsl(var(--mc-muted))]">{q.desc}</p>
-                <div className="relative mt-5 inline-flex items-center gap-1 text-sm font-semibold text-[hsl(var(--mc-primary))]">
-                  Start now <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ============ SPECIALTIES ============ */}
-      <section id="specialties" className="relative py-20 sm:py-28 bg-[hsl(var(--mc-muted-soft))] overflow-hidden">
-        <div className="absolute inset-0 mc-grad-mesh opacity-50" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <div>
-              <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Specialties</p>
-              <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold max-w-xl">World-class care across <span className="mc-grad-text">every discipline</span></h2>
+      {/* ============ ABOUT ============ */}
+      <section id="about" className="py-20 sm:py-28">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          {/* Image side */}
+          <div className="relative">
+            <div className="relative rounded-[2rem] overflow-hidden mc-shadow-elegant aspect-[4/5]">
+              <img
+                src={aboutHospitalImg}
+                alt="Modern hospital facility"
+                width={1000}
+                height={1200}
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
             </div>
-            <a href="#doctors" className="inline-flex items-center gap-2 text-sm font-semibold text-[hsl(var(--mc-primary))] hover:gap-3 transition-all">
-              View all specialties <ArrowRight className="h-4 w-4" />
-            </a>
+            {/* Floating stat card */}
+            <div className="absolute -bottom-6 left-6 sm:left-10 bg-[hsl(var(--mc-card))] rounded-2xl px-6 py-4 mc-shadow-elegant border border-[hsl(var(--mc-border))] flex items-center gap-4">
+              <span className="grid place-items-center h-12 w-12 rounded-xl bg-[hsl(var(--mc-primary)/.1)] text-[hsl(var(--mc-primary))]">
+                <Users className="h-6 w-6" />
+              </span>
+              <div>
+                <p className="font-display text-2xl font-bold leading-none">98%</p>
+                <p className="text-xs text-[hsl(var(--mc-muted))] mt-1">Patient satisfaction</p>
+              </div>
+            </div>
           </div>
 
-          <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5">
-            {specialties.map((s) => (
-              <a key={s.name} href="#doctors" className="group relative overflow-hidden rounded-3xl mc-shadow-card mc-card-hover bg-[hsl(var(--mc-card))]">
-                <div className="aspect-[4/5] overflow-hidden">
-                  <img src={s.img} alt={s.name} loading="lazy" className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--mc-dark)/.9)] via-[hsl(var(--mc-dark)/.4)] to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 text-white">
-                  <span className="grid place-items-center h-10 w-10 rounded-xl mc-glass-dark mb-3">
-                    <s.icon className="h-5 w-5" />
-                  </span>
-                  <h3 className="font-display text-base sm:text-lg font-bold">{s.name}</h3>
-                </div>
-              </a>
-            ))}
+          {/* Content side */}
+          <div>
+            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">About MediCare</p>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold leading-[1.1]">
+              {settings.about.title}
+            </h2>
+            <p className="mt-6 text-base sm:text-lg text-[hsl(var(--mc-muted))] leading-relaxed whitespace-pre-line">
+              {settings.about.body}
+            </p>
+
+            <div className="mt-10 grid sm:grid-cols-2 gap-8">
+              <div>
+                <h3 className="font-display text-lg font-bold">Our Mission</h3>
+                <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">
+                  Provide accessible, world-class care that respects every patient as a person.
+                </p>
+              </div>
+              <div>
+                <h3 className="font-display text-lg font-bold">Our Vision</h3>
+                <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">
+                  Be the most trusted healthcare brand on the continent — a benchmark for excellence.
+                </p>
+              </div>
+            </div>
+
+            <a href="#services" className="mt-10 inline-flex items-center gap-2 font-semibold text-[hsl(var(--mc-primary))] hover:gap-3 transition-all">
+              Read our full story <ArrowRight className="h-4 w-4" />
+            </a>
           </div>
         </div>
       </section>
@@ -881,22 +857,6 @@ const MediCare = () => {
             <div className="relative rounded-[2.5rem] overflow-hidden mc-shadow-elegant aspect-[4/5] sm:aspect-[5/6]">
               <img src="https://images.unsplash.com/photo-1666214280557-f1b5022eb634?w=1200&auto=format&fit=crop&q=80" alt="Doctor attending to a patient" className="h-full w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--mc-dark)/.7)] via-transparent to-transparent" />
-              <div className="absolute bottom-6 left-6 right-6 mc-glass-dark rounded-2xl p-4 text-white">
-                <div className="flex items-center gap-3">
-                  <span className="grid place-items-center h-11 w-11 rounded-xl mc-grad-primary"><Award className="h-5 w-5" /></span>
-                  <div>
-                    <p className="font-display font-bold">Accredited by JCI & ISO</p>
-                    <p className="text-xs text-white/70">Meeting global healthcare standards</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="hidden md:block absolute -top-8 -right-8 w-48 mc-glass mc-shadow-elegant rounded-3xl p-5 mc-anim-float">
-              <div className="flex items-center gap-2 text-[hsl(var(--mc-accent))]">
-                {Array.from({ length: 5 }).map((_, i) => <Star key={i} className="h-4 w-4 fill-current" />)}
-              </div>
-              <p className="mt-2 font-display text-3xl font-bold">4.9</p>
-              <p className="text-xs text-[hsl(var(--mc-muted))]">12,480+ reviews</p>
             </div>
           </div>
 
@@ -926,17 +886,34 @@ const MediCare = () => {
       <section id="services" className="py-20 sm:py-28 mc-grad-soft">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto">
-            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Services</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Everything you need, <span className="mc-grad-text">one platform</span></h2>
+            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">{settings.services.label}</p>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">{settings.services.title}</h2>
           </div>
           <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {services.map((s) => (
-              <div key={s.title} className="group bg-[hsl(var(--mc-card))] rounded-3xl p-7 border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover">
-                <span className="grid place-items-center h-14 w-14 rounded-2xl mc-grad-primary text-white mc-shadow-glow">
-                  <s.icon className="h-6 w-6" />
-                </span>
-                <h3 className="mt-5 font-display text-xl font-bold">{s.title}</h3>
-                <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">{s.desc}</p>
+            {settings.services.items.filter((x) => x.active).sort((a, b) => a.order - b.order).map((svc) => (
+              <div key={svc.id} className="group bg-[hsl(var(--mc-card))] rounded-3xl overflow-hidden border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover">
+                {svc.image && (
+                  <div className="relative aspect-[4/3] overflow-hidden">
+                    <img src={svc.image} alt={svc.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    <span className="absolute bottom-3 left-3 grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow">
+                      <McIcon name={svc.icon} className="h-5 w-5" />
+                    </span>
+                  </div>
+                )}
+                <div className="p-7">
+                  {!svc.image && (
+                    <span className="inline-grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow mb-4">
+                      <McIcon name={svc.icon} className="h-5 w-5" />
+                    </span>
+                  )}
+                  <h3 className="font-display text-xl font-bold">{svc.title}</h3>
+                  <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">{svc.description}</p>
+                  {svc.ctaLabel && svc.ctaHref && (
+                    <a href={svc.ctaHref} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[hsl(var(--mc-primary))]">
+                      {svc.ctaLabel} <ArrowRight className="h-4 w-4" />
+                    </a>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -955,15 +932,15 @@ const MediCare = () => {
               <Bot className="h-3.5 w-3.5 text-[hsl(var(--mc-accent-glow))]" /> AI-powered Telemedicine
             </span>
             <h2 className="mt-5 font-display text-3xl sm:text-5xl font-bold leading-tight">
-              The future of care, <br />
-              <span className="bg-gradient-to-r from-[hsl(174_80%_75%)] to-[hsl(200_95%_75%)] bg-clip-text text-transparent">in your pocket</span>
+              Virtual Care Designed <br />
+              <span className="bg-gradient-to-r from-[hsl(174_80%_75%)] to-[hsl(200_95%_75%)] bg-clip-text text-transparent">Around Your Schedule</span>
             </h2>
-            <p className="mt-4 text-white/75 max-w-lg">High-fidelity video consultations, AI symptom triage, secure prescriptions and continuous monitoring — all in one beautifully crafted experience.</p>
+            <p className="mt-4 text-white/75 max-w-lg">Access smarter healthcare through crystal-clear virtual consultations, intelligent symptom guidance, secure prescriptions, and connected patient monitoring in one seamless experience.</p>
 
             <ul className="mt-8 space-y-3">
               {[
                 "HD video & encrypted chat consultations",
-                "AI-assisted symptom checker & triage",
+                "Get Connected to Care Within 60 Seconds",
                 "Real-time vitals monitoring",
                 "Digital prescriptions & e-referrals",
               ].map((t) => (
@@ -979,9 +956,6 @@ const MediCare = () => {
             <div className="mt-9 flex flex-wrap gap-3">
               <a href="#cta" className="inline-flex items-center gap-2 rounded-full mc-grad-primary text-white px-6 py-3 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition">
                 Start consultation <ArrowRight className="h-4 w-4" />
-              </a>
-              <a href="#cta" className="inline-flex items-center gap-2 rounded-full mc-glass-dark text-white px-6 py-3 text-sm font-semibold hover:bg-white/15 transition">
-                <Play className="h-4 w-4" /> Watch demo
               </a>
             </div>
           </div>
@@ -1080,61 +1054,6 @@ const MediCare = () => {
         </div>
       </section>
 
-      {/* ============ MOBILE APP ============ */}
-      <section className="py-20 sm:py-28 bg-[hsl(var(--mc-muted-soft))]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 grid lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Mobile App</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Your hospital, <span className="mc-grad-text">in your pocket</span></h2>
-            <p className="mt-4 text-[hsl(var(--mc-muted))] max-w-lg">Book doctors, attend video visits, manage prescriptions, and track your health — anywhere, anytime.</p>
-
-            <ul className="mt-8 grid sm:grid-cols-2 gap-3">
-              {[
-                "Doctor booking", "Video consultation", "E-prescriptions",
-                "Smart notifications", "Medical reports", "Family profiles",
-              ].map((f) => (
-                <li key={f} className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 className="h-4 w-4 text-[hsl(var(--mc-accent))]" /> {f}
-                </li>
-              ))}
-            </ul>
-
-            <div className="mt-9 flex flex-wrap gap-3">
-              <a href="#" className="inline-flex items-center gap-3 rounded-2xl bg-[hsl(var(--mc-dark))] text-white px-5 py-3 hover:opacity-90 transition">
-                <Apple className="h-7 w-7" />
-                <span className="text-left leading-tight">
-                  <span className="block text-[10px] opacity-70">Download on</span>
-                  <span className="block text-sm font-bold">App Store</span>
-                </span>
-              </a>
-              <a href="#" className="inline-flex items-center gap-3 rounded-2xl bg-[hsl(var(--mc-dark))] text-white px-5 py-3 hover:opacity-90 transition">
-                <Play className="h-7 w-7" />
-                <span className="text-left leading-tight">
-                  <span className="block text-[10px] opacity-70">Get it on</span>
-                  <span className="block text-sm font-bold">Google Play</span>
-                </span>
-              </a>
-            </div>
-          </div>
-
-          <div className="relative h-[520px] flex items-center justify-center">
-            <div className="absolute inset-0 mc-grad-mesh opacity-70 blur-2xl" />
-            <div className="relative flex gap-5">
-              {[
-                { src: "https://images.unsplash.com/photo-1620912189865-cd4d7203ee71?w=600&auto=format&fit=crop&q=80", delay: "0s" },
-                { src: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=600&auto=format&fit=crop&q=80", delay: ".4s" },
-              ].map((p, i) => (
-                <div key={i} className="w-52 sm:w-60 rounded-[2.5rem] bg-[hsl(222_47%_6%)] p-2 mc-shadow-elegant border border-white/10 mc-anim-float" style={{ animationDelay: p.delay, transform: i === 1 ? "translateY(40px)" : "none" }}>
-                  <div className="rounded-[2rem] overflow-hidden bg-white aspect-[9/19] relative">
-                    <img src={p.src} alt="App preview" className="h-full w-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[hsl(212_88%_15%/.6)]" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ============ FINAL CTA ============ */}
       <section id="cta" className="relative py-24 sm:py-32 overflow-hidden">
@@ -1163,60 +1082,12 @@ const MediCare = () => {
         </div>
       </section>
 
-      {/* ============ ABOUT (compact) ============ */}
-      <section id="about" className="py-20 sm:py-24">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
-          <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">About Us</p>
-          <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">{settings.about.title}</h2>
-          <p className="mt-6 text-base sm:text-lg text-[hsl(var(--mc-muted))] leading-relaxed whitespace-pre-line">
-            {settings.about.body}
-          </p>
-        </div>
-      </section>
 
-      {/* ============ CONTACT ============ */}
-      <section id="contact" className="py-20 sm:py-24 bg-[hsl(var(--mc-muted-soft))]">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="text-center max-w-2xl mx-auto">
-            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Contact</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">We're here, <span className="mc-grad-text">always</span></h2>
-          </div>
-          <div className="mt-12 grid sm:grid-cols-3 gap-5">
-            <a href={`mailto:${settings.contact.email}`} className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover">
-              <span className="grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow"><Mail className="h-5 w-5" /></span>
-              <h3 className="mt-5 font-display text-lg font-bold">Email</h3>
-              <p className="mt-1 text-sm text-[hsl(var(--mc-muted))] break-all">{settings.contact.email}</p>
-            </a>
-            <a href={`tel:${settings.contact.phone}`} className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover">
-              <span className="grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow"><Phone className="h-5 w-5" /></span>
-              <h3 className="mt-5 font-display text-lg font-bold">Phone</h3>
-              <p className="mt-1 text-sm text-[hsl(var(--mc-muted))]">{settings.contact.phone}</p>
-            </a>
-            <div className="bg-[hsl(var(--mc-card))] rounded-3xl p-6 border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover">
-              <span className="grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow"><MapPin className="h-5 w-5" /></span>
-              <h3 className="mt-5 font-display text-lg font-bold">Location</h3>
-              <p className="mt-1 text-sm text-[hsl(var(--mc-muted))]">{settings.contact.address}</p>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ============ FOOTER (premium dark) ============ */}
       <footer className="relative mc-grad-dark text-white pt-20">
         <div className="absolute inset-0 mc-grid-pattern opacity-10" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
-          {/* Newsletter */}
-          <div className="mc-glass-dark rounded-3xl p-8 sm:p-10 grid md:grid-cols-2 gap-6 items-center mb-16">
-            <div>
-              <h3 className="font-display text-2xl sm:text-3xl font-bold">Stay informed about your health</h3>
-              <p className="mt-2 text-white/70 text-sm">Get weekly health tips, new specialist alerts and platform updates.</p>
-            </div>
-            <form className="flex gap-2" onSubmit={(e) => e.preventDefault()}>
-              <input type="email" required placeholder="you@example.com" className="flex-1 rounded-full bg-white/10 border border-white/15 px-5 py-3 text-sm placeholder:text-white/50 outline-none focus:border-[hsl(var(--mc-accent-glow))]" />
-              <button className="rounded-full mc-grad-primary text-white px-5 py-3 text-sm font-semibold mc-shadow-glow">Subscribe</button>
-            </form>
-          </div>
-
           {/* Columns */}
           <div className="grid gap-10 md:grid-cols-5 pb-12">
             <div className="md:col-span-2">
@@ -1238,22 +1109,17 @@ const MediCare = () => {
                   </a>
                 ))}
               </div>
-              <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-rose-500/15 border border-rose-400/30 px-3 py-1.5 text-xs text-rose-200">
-                <Ambulance className="h-3.5 w-3.5" /> Emergency: {settings.contact.phone}
-              </div>
             </div>
 
             {[
-              { title: "Specialties", items: specialties.slice(0, 5).map(s => ({ label: s.name, href: "#specialties" })) },
+              { title: "Specialties", items: specialties.filter(s => s.name.toLowerCase() !== "dermatology").slice(0, 5).map(s => ({ label: s.name, href: "#specialties" })) },
               { title: "Quick Links", items: [
-                { label: "Find Doctor", href: "#doctors" },
                 { label: "Telemedicine", href: "#telemedicine" },
                 { label: "Services", href: "#services" },
                 { label: "About", href: "#about" },
               ]},
               { title: "Support", items: [
-                { label: "Contact", href: "#contact" },
-                { label: "Patient Portal", href: "#cta" },
+                { label: "\n", href: "#contact" },
                 { label: "Privacy Policy", href: "#" },
                 { label: "Terms", href: "#" },
               ]},

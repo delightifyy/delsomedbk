@@ -33,6 +33,22 @@ import DashActivityLogs from "./pages/dashboard/ActivityLogs.tsx";
 import DashLookups from "./pages/dashboard/Lookups.tsx";
 
 import DashFaqs from "./pages/dashboard/Faqs.tsx";
+import PatientDashboard from "./pages/patient/Dashboard.tsx";
+import PatientAppointments from "./pages/patient/Appointments.tsx";
+import PatientRecords from "./pages/patient/MedicalRecords.tsx";
+import PatientPrescriptions from "./pages/patient/Prescriptions.tsx";
+import PatientPayments from "./pages/patient/Payments.tsx";
+import PatientSettings from "./pages/patient/Settings.tsx";
+import DoctorPortalDashboard from "./pages/doctor/Dashboard.tsx";
+import DoctorSchedule from "./pages/doctor/Schedule.tsx";
+import DoctorConsultations from "./pages/doctor/Consultations.tsx";
+import DoctorConsultationRoom from "./pages/doctor/ConsultationRoom.tsx";
+import DoctorPatients from "./pages/doctor/Patients.tsx";
+import { DoctorPrescriptions, DoctorInvestigations, DoctorReferrals, DoctorSettings } from "./pages/doctor/Misc.tsx";
+import OrgDashboard from "./pages/organization/Dashboard.tsx";
+import OrgStaff from "./pages/organization/Staff.tsx";
+import OrgUsage from "./pages/organization/Usage.tsx";
+import { Billing as OrgBilling, Invoices as OrgInvoices, OrgSettings } from "./pages/organization/Misc.tsx";
 import DashTestimonials from "./pages/dashboard/Testimonials.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.tsx";
@@ -86,6 +102,34 @@ const App = () => (
             <Route path="/dashboard/faqs" element={<AdminGuard><DashFaqs /></AdminGuard>} />
             <Route path="/dashboard/testimonials" element={<AdminGuard><DashTestimonials /></AdminGuard>} />
             <Route path="/dashboard/notifications" element={<AdminGuard><DashNotifications /></AdminGuard>} />
+
+            {/* Patient Portal */}
+            <Route path="/patient" element={<PatientDashboard />} />
+            <Route path="/patient/appointments" element={<PatientAppointments />} />
+            <Route path="/patient/records" element={<PatientRecords />} />
+            <Route path="/patient/prescriptions" element={<PatientPrescriptions />} />
+            <Route path="/patient/payments" element={<PatientPayments />} />
+            <Route path="/patient/settings" element={<PatientSettings />} />
+
+            {/* Doctor EMR Portal */}
+            <Route path="/doctor" element={<DoctorPortalDashboard />} />
+            <Route path="/doctor/schedule" element={<DoctorSchedule />} />
+            <Route path="/doctor/consultations" element={<DoctorConsultations />} />
+            <Route path="/doctor/consultations/:id" element={<DoctorConsultationRoom />} />
+            <Route path="/doctor/patients" element={<DoctorPatients />} />
+            <Route path="/doctor/prescriptions" element={<DoctorPrescriptions />} />
+            <Route path="/doctor/investigations" element={<DoctorInvestigations />} />
+            <Route path="/doctor/referrals" element={<DoctorReferrals />} />
+            <Route path="/doctor/settings" element={<DoctorSettings />} />
+
+            {/* Organization / HMO Portal */}
+            <Route path="/organization" element={<OrgDashboard />} />
+            <Route path="/organization/staff" element={<OrgStaff />} />
+            <Route path="/organization/usage" element={<OrgUsage />} />
+            <Route path="/organization/billing" element={<OrgBilling />} />
+            <Route path="/organization/invoices" element={<OrgInvoices />} />
+            <Route path="/organization/settings" element={<OrgSettings />} />
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
