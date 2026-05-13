@@ -1084,18 +1084,6 @@ const MediCare = () => {
       <footer className="relative mc-grad-dark text-white pt-20">
         <div className="absolute inset-0 mc-grid-pattern opacity-10" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
-          {/* Newsletter */}
-          <div className="mc-glass-dark rounded-3xl p-8 sm:p-10 grid md:grid-cols-2 gap-6 items-center mb-16">
-            <div>
-              <h3 className="font-display text-2xl sm:text-3xl font-bold">Stay informed about your health</h3>
-              <p className="mt-2 text-white/70 text-sm">Get weekly health tips, new specialist alerts and platform updates.</p>
-            </div>
-            <form className="flex gap-2" onSubmit={(e) => e.preventDefault()}>
-              <input type="email" required placeholder="you@example.com" className="flex-1 rounded-full bg-white/10 border border-white/15 px-5 py-3 text-sm placeholder:text-white/50 outline-none focus:border-[hsl(var(--mc-accent-glow))]" />
-              <button className="rounded-full mc-grad-primary text-white px-5 py-3 text-sm font-semibold mc-shadow-glow">Subscribe</button>
-            </form>
-          </div>
-
           {/* Columns */}
           <div className="grid gap-10 md:grid-cols-5 pb-12">
             <div className="md:col-span-2">
