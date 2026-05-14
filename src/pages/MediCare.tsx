@@ -654,12 +654,13 @@ const MediCare = () => {
             ))}
           </ul>
 
-          <a
-            href="#book-appointment"
+          <button
+            type="button"
+            onClick={() => setBookingOpen(true)}
             className="hidden lg:inline-flex items-center gap-2 rounded-full mc-grad-primary text-white px-5 py-2.5 text-sm font-bold hover:opacity-90 transition mc-shadow-card"
           >
             Book Appointment <ArrowRight className="h-4 w-4" />
-          </a>
+          </button>
 
           <button
             type="button"
