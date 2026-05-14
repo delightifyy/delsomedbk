@@ -1154,11 +1154,9 @@ const MediCare = () => {
           </div>
         </div>
       </footer>
-      <AppointmentPopup
-        doctor={selectedDoctor}
+      <BookingFlow
         open={bookingOpen}
         onClose={() => setBookingOpen(false)}
-        siteName={settings.siteName}
       />
     </div>
   );
