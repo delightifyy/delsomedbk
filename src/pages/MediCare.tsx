@@ -119,7 +119,6 @@ const navLinks = [
   { href: "#top", label: "Home" },
   { href: "#specialties", label: "Specialties", hasMenu: true },
   { href: "#services", label: "Services" },
-  { href: "#book-appointment", label: "Book Appointment" },
   { href: "#about", label: "About" },
 ];
 
