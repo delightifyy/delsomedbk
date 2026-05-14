@@ -1136,7 +1136,7 @@ const MediCare = () => {
             <div className="py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/60">
               <p>© {new Date().getFullYear()} {settings.siteName}. All rights reserved.</p>
               <div className="flex items-center gap-3">
-                <span className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" /> JCI Accredited</span>
+                
                 <Link to="/doctor-portal/admin" className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 hover:text-white hover:border-white/40 transition">
                   <Settings className="h-3.5 w-3.5" /> Admin
                 </Link>
