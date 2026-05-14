@@ -153,6 +153,10 @@ const MediCareAdmin = () => {
                 <span>{t.label}</span>
               </button>
             ))}
+            <div className="my-3 border-t border-slate-200" />
+            <Link to="/doctor-portal/admin/booking" className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100">
+              <ChevronRight className="h-4 w-4" /> Booking Engine →
+            </Link>
           </nav>
         </div>
       </aside>
