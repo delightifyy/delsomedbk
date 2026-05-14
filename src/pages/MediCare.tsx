@@ -13,6 +13,7 @@ import {
   useMediCareSettings,
 } from "@/lib/medicareSettings";
 import { Icon as McIcon } from "@/components/medicare-admin/icons";
+import BookingFlow from "@/components/medicare/BookingFlow";
 import { DOCTORS, type Doctor } from "@/data/doctors";
 import aboutHospitalImg from "@/assets/about-hospital.jpg";
 
@@ -653,12 +654,13 @@ const MediCare = () => {
             ))}
           </ul>
 
-          <a
-            href="#book-appointment"
+          <button
+            type="button"
+            onClick={() => setBookingOpen(true)}
             className="hidden lg:inline-flex items-center gap-2 rounded-full mc-grad-primary text-white px-5 py-2.5 text-sm font-bold hover:opacity-90 transition mc-shadow-card"
           >
             Book Appointment <ArrowRight className="h-4 w-4" />
-          </a>
+          </button>
 
           <button
             type="button"
@@ -1152,11 +1154,9 @@ const MediCare = () => {
           </div>
         </div>
       </footer>
-      <AppointmentPopup
-        doctor={selectedDoctor}
+      <BookingFlow
         open={bookingOpen}
         onClose={() => setBookingOpen(false)}
-        siteName={settings.siteName}
       />
     </div>
   );
