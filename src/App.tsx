@@ -16,6 +16,7 @@ import HealthNewsArticle from "./pages/HealthNewsArticle.tsx";
 import AdvertArticle from "./pages/AdvertArticle.tsx";
 import DoctorPortal from "./pages/MediCare.tsx";
 import MediCareAdmin from "./pages/MediCareAdmin.tsx";
+import BookingAdmin from "./pages/BookingAdmin.tsx";
 import DoctorMediCare from "./pages/DoctorMediCare.tsx";
 import RegisterPatient from "./pages/RegisterPatient.tsx";
 import Register from "./pages/Register.tsx";
@@ -80,6 +81,7 @@ const App = () => (
             <Route path="/adverts/:id" element={<AdvertArticle />} />
             <Route path="/doctor-portal" element={<DoctorPortal />} />
             <Route path="/doctor-portal/admin" element={<MediCareAdmin />} />
+            <Route path="/doctor-portal/admin/booking" element={<BookingAdmin />} />
             <Route path="/register" element={<Register />} />
             <Route path="/register/doctor" element={<Navigate to="/register?type=doctor" replace />} />
             <Route path="/register/organization" element={<Navigate to="/register?type=organization" replace />} />
