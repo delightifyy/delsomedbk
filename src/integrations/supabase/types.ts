@@ -89,6 +89,539 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_clinician_types: {
+        Row: {
+          active: boolean
+          badge: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          image_url: string | null
+          price_cents: number
+          sort_order: number
+          title: string
+          treats: string | null
+          updated_at: string
+          wait_time_minutes: number
+        }
+        Insert: {
+          active?: boolean
+          badge?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          image_url?: string | null
+          price_cents?: number
+          sort_order?: number
+          title: string
+          treats?: string | null
+          updated_at?: string
+          wait_time_minutes?: number
+        }
+        Update: {
+          active?: boolean
+          badge?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          image_url?: string | null
+          price_cents?: number
+          sort_order?: number
+          title?: string
+          treats?: string | null
+          updated_at?: string
+          wait_time_minutes?: number
+        }
+        Relationships: []
+      }
+      booking_concern_categories: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      booking_concern_clinician_map: {
+        Row: {
+          clinician_type_id: string
+          concern_id: string
+          created_at: string
+          id: string
+          priority: number
+          recommended: boolean
+        }
+        Insert: {
+          clinician_type_id: string
+          concern_id: string
+          created_at?: string
+          id?: string
+          priority?: number
+          recommended?: boolean
+        }
+        Update: {
+          clinician_type_id?: string
+          concern_id?: string
+          created_at?: string
+          id?: string
+          priority?: number
+          recommended?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_concern_clinician_map_clinician_type_id_fkey"
+            columns: ["clinician_type_id"]
+            isOneToOne: false
+            referencedRelation: "booking_clinician_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_concern_clinician_map_concern_id_fkey"
+            columns: ["concern_id"]
+            isOneToOne: false
+            referencedRelation: "booking_concerns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_concerns: {
+        Row: {
+          active: boolean
+          category_id: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          severity: string | null
+          sort_order: number
+          tags: string[]
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          severity?: string | null
+          sort_order?: number
+          tags?: string[]
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          severity?: string | null
+          sort_order?: number
+          tags?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_concerns_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "booking_concern_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_hmo_providers: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      booking_intake_fields: {
+        Row: {
+          created_at: string
+          field_key: string
+          field_type: string
+          id: string
+          label: string
+          options: Json | null
+          placeholder: string | null
+          required: boolean
+          sort_order: number
+          updated_at: string
+          visible: boolean
+        }
+        Insert: {
+          created_at?: string
+          field_key: string
+          field_type?: string
+          id?: string
+          label: string
+          options?: Json | null
+          placeholder?: string | null
+          required?: boolean
+          sort_order?: number
+          updated_at?: string
+          visible?: boolean
+        }
+        Update: {
+          created_at?: string
+          field_key?: string
+          field_type?: string
+          id?: string
+          label?: string
+          options?: Json | null
+          placeholder?: string | null
+          required?: boolean
+          sort_order?: number
+          updated_at?: string
+          visible?: boolean
+        }
+        Relationships: []
+      }
+      booking_legal_agreements: {
+        Row: {
+          active: boolean
+          agreement_type: string
+          body: string
+          created_at: string
+          id: string
+          key: string
+          required: boolean
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          agreement_type?: string
+          body: string
+          created_at?: string
+          id?: string
+          key: string
+          required?: boolean
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          agreement_type?: string
+          body?: string
+          created_at?: string
+          id?: string
+          key?: string
+          required?: boolean
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      booking_payment_methods: {
+        Row: {
+          created_at: string
+          description: string | null
+          enabled: boolean
+          icon: string | null
+          id: string
+          key: string
+          label: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          icon?: string | null
+          id?: string
+          key: string
+          label: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          icon?: string | null
+          id?: string
+          key?: string
+          label?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      booking_settings: {
+        Row: {
+          booking_notice: string
+          confirmation_message: string
+          created_at: string
+          currency: string
+          currency_symbol: string
+          emergency_warning: string
+          id: string
+          singleton: boolean
+          tax_percent: number
+          updated_at: string
+        }
+        Insert: {
+          booking_notice?: string
+          confirmation_message?: string
+          created_at?: string
+          currency?: string
+          currency_symbol?: string
+          emergency_warning?: string
+          id?: string
+          singleton?: boolean
+          tax_percent?: number
+          updated_at?: string
+        }
+        Update: {
+          booking_notice?: string
+          confirmation_message?: string
+          created_at?: string
+          currency?: string
+          currency_symbol?: string
+          emergency_warning?: string
+          id?: string
+          singleton?: boolean
+          tax_percent?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      booking_subscription_plans: {
+        Row: {
+          active: boolean
+          billing_period: string
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          name: string
+          perks: Json
+          price_cents: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          billing_period?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          name: string
+          perks?: Json
+          price_cents?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          billing_period?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          name?: string
+          perks?: Json
+          price_cents?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      booking_time_slots: {
+        Row: {
+          booked_count: number
+          capacity: number
+          clinician_type_id: string | null
+          created_at: string
+          id: string
+          slot_date: string
+          slot_time: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          booked_count?: number
+          capacity?: number
+          clinician_type_id?: string | null
+          created_at?: string
+          id?: string
+          slot_date: string
+          slot_time: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          booked_count?: number
+          capacity?: number
+          clinician_type_id?: string | null
+          created_at?: string
+          id?: string
+          slot_date?: string
+          slot_time?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_time_slots_clinician_type_id_fkey"
+            columns: ["clinician_type_id"]
+            isOneToOne: false
+            referencedRelation: "booking_clinician_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookings: {
+        Row: {
+          agreements: Json
+          amount_cents: number
+          category_name: string | null
+          clinician_type_id: string | null
+          clinician_type_name: string | null
+          concern_id: string | null
+          concern_name: string | null
+          created_at: string
+          currency: string
+          id: string
+          notes: string | null
+          patient_data: Json
+          payment_meta: Json
+          payment_method: string | null
+          reference: string
+          slot_date: string | null
+          slot_id: string | null
+          slot_time: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agreements?: Json
+          amount_cents?: number
+          category_name?: string | null
+          clinician_type_id?: string | null
+          clinician_type_name?: string | null
+          concern_id?: string | null
+          concern_name?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          patient_data?: Json
+          payment_meta?: Json
+          payment_method?: string | null
+          reference?: string
+          slot_date?: string | null
+          slot_id?: string | null
+          slot_time?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agreements?: Json
+          amount_cents?: number
+          category_name?: string | null
+          clinician_type_id?: string | null
+          clinician_type_name?: string | null
+          concern_id?: string | null
+          concern_name?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          patient_data?: Json
+          payment_meta?: Json
+          payment_method?: string | null
+          reference?: string
+          slot_date?: string | null
+          slot_id?: string | null
+          slot_time?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_clinician_type_id_fkey"
+            columns: ["clinician_type_id"]
+            isOneToOne: false
+            referencedRelation: "booking_clinician_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_concern_id_fkey"
+            columns: ["concern_id"]
+            isOneToOne: false
+            referencedRelation: "booking_concerns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "booking_time_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_messages: {
         Row: {
           created_at: string
