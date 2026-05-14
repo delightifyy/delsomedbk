@@ -16,6 +16,7 @@ import HealthNewsArticle from "./pages/HealthNewsArticle.tsx";
 import AdvertArticle from "./pages/AdvertArticle.tsx";
 import DoctorPortal from "./pages/MediCare.tsx";
 import MediCareAdmin from "./pages/MediCareAdmin.tsx";
+import BookingAdmin from "./pages/BookingAdmin.tsx";
 import DoctorMediCare from "./pages/DoctorMediCare.tsx";
 import RegisterPatient from "./pages/RegisterPatient.tsx";
 import Register from "./pages/Register.tsx";
