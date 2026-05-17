@@ -846,6 +846,7 @@ const OrganizationForm = ({ lookups }: { lookups: RegistrationLookups }) => {
           role: get("role"),
           address: get("address"),
           notes: get("notes"),
+          organization_provider: get("organization_provider"),
           consent_agreed: true,
           consent_agreed_at: new Date().toISOString(),
         },
@@ -929,6 +930,10 @@ const OrganizationForm = ({ lookups }: { lookups: RegistrationLookups }) => {
         <div className="space-y-2 sm:col-span-2">
           <Label>Address</Label>
           <Input name="address" required maxLength={200} placeholder="Street address" />
+        </div>
+        <div className="space-y-2 sm:col-span-2">
+          <Label>Organization Provider</Label>
+          <Textarea name="organization_provider" rows={4} maxLength={1000} placeholder="Provide details about the organization provider..." />
         </div>
         <div className="space-y-2 sm:col-span-2">
           <Label>What are you hoping DesolMed can help with?</Label>
