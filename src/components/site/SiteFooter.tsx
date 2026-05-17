@@ -29,7 +29,7 @@ export const SiteFooter = () => {
   return (
     <footer className="border-t border-border bg-card mt-16 sm:mt-24">
       {/* Portals access strip */}
-      <div className="border-b border-border bg-gradient-to-br from-primary/[0.04] via-transparent to-secondary/30">
+      {/* <div className="border-b border-border bg-gradient-to-br from-primary/[0.04] via-transparent to-secondary/30">
         <div className="container py-10 sm:py-14">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
             <div>
@@ -64,7 +64,7 @@ export const SiteFooter = () => {
             ))}
           </div>
         </div>
-      </div>
+      </div> */}
 
       <div className="container py-12 sm:py-16 grid gap-10 grid-cols-2 md:grid-cols-12">
         <div className="col-span-2 md:col-span-4 space-y-4">

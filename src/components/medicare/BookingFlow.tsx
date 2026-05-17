@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   ArrowLeft, ArrowRight, Check, X, Search, Sparkles, Brain, Heart, Baby, Ear,
   Activity, Stethoscope, Clock, ShieldCheck, CreditCard, BadgeCheck, Briefcase,
   Calendar as CalendarIcon, Loader2, Video, Download, CalendarPlus, AlertTriangle,
-  ChevronDown, MapPin, User as UserIcon,
+  User as UserIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -12,6 +12,8 @@ import {
   type TimeSlot, type IntakeField, type LegalAgreement, type PaymentMethod,
   type HmoProvider, type SubscriptionPlan, type BookingSettings,
 } from "@/lib/bookingApi";
+import { useAuth } from "@/hooks/useAuth";
+import { signInPatientWithPassword, signUpPatient } from "@/lib/localStore";
 import { toast } from "sonner";
 
 const ICON_MAP: Record<string, any> = {
@@ -20,13 +22,25 @@ const ICON_MAP: Record<string, any> = {
 };
 
 const STEPS = [
-  "Concern", "Clinician", "Date & Time", "Patient Info",
+  "Concern", "Date & Time", "Patient Info",
   "Verification", "Payment", "Confirmation",
 ] as const;
+
+const CONSULTATION_DURATIONS = [
+  { minutes: 30, label: "30 minutes", priceCents: 200000 },
+  { minutes: 60, label: "1 hour", priceCents: 400000 },
+] as const;
+
+const ACTIVE_SUBSCRIPTION_USER_IDS = new Set(["local-demo-user"]);
+
+function normalizeCurrencySymbol(symbol?: string | null) {
+  return symbol && symbol.length <= 2 ? symbol : "N";
+}
 
 type Props = { open: boolean; onClose: () => void };
 
 export default function BookingFlow({ open, onClose }: Props) {
+  const { user, loading: authLoading } = useAuth();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -46,9 +60,9 @@ export default function BookingFlow({ open, onClose }: Props) {
 
   // Selections
   const [search, setSearch] = useState("");
-  const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [selectedConcern, setSelectedConcern] = useState<Concern | null>(null);
   const [selectedClinician, setSelectedClinician] = useState<ClinicianType | null>(null);
+  const [selectedDurationMinutes, setSelectedDurationMinutes] = useState<(typeof CONSULTATION_DURATIONS)[number]["minutes"]>(30);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [patient, setPatient] = useState<Record<string, string>>({});
@@ -57,7 +71,8 @@ export default function BookingFlow({ open, onClose }: Props) {
   const [paymentMeta, setPaymentMeta] = useState<Record<string, string>>({});
   const [bookingRef, setBookingRef] = useState<string | null>(null);
 
-  const sym = settings?.currency_symbol || "₦";
+  const displayCurrencySymbol = normalizeCurrencySymbol(settings?.currency_symbol);
+  const selectedDuration = CONSULTATION_DURATIONS.find((item) => item.minutes === selectedDurationMinutes) ?? CONSULTATION_DURATIONS[0];
 
   useEffect(() => {
     if (!open) return;
@@ -83,8 +98,8 @@ export default function BookingFlow({ open, onClose }: Props) {
     if (!open) {
       setTimeout(() => {
         setStep(0); setSelectedConcern(null); setSelectedClinician(null);
-        setSelectedDate(null); setSelectedSlot(null); setPatient({}); setAgreed({});
-        setBookingRef(null); setSearch(""); setExpandedCat(null);
+        setSelectedDurationMinutes(30); setSelectedDate(null); setSelectedSlot(null); setPatient({}); setAgreed({});
+        setBookingRef(null); setSearch(""); setPaymentMeta({});
       }, 300);
     }
   }, [open]);
@@ -97,6 +112,18 @@ export default function BookingFlow({ open, onClose }: Props) {
     fetchSlotsFor(selectedClinician.id, today, to).then(setSlots);
   }, [selectedClinician]);
 
+  useEffect(() => {
+    if (!open || !user) return;
+    const nameParts = (user.full_name || "").trim().split(/\s+/).filter(Boolean);
+    setPatient((current) => ({
+      ...current,
+      first_name: current.first_name || nameParts[0] || "",
+      last_name: current.last_name || nameParts.slice(1).join(" "),
+      email: current.email || user.email || "",
+      confirm_email: current.confirm_email || user.email || "",
+    }));
+  }, [open, user]);
+
   const filteredConcerns = useMemo(() => {
     if (!search.trim()) return concerns;
     const q = search.toLowerCase();
@@ -105,18 +132,19 @@ export default function BookingFlow({ open, onClose }: Props) {
     );
   }, [concerns, search]);
 
-  const recommendedClinicians = useMemo(() => {
-    if (!selectedConcern) return [];
-    const links = map.filter((m) => m.concern_id === selectedConcern.id);
-    return links
-      .map((l) => ({
-        c: clinicians.find((c) => c.id === l.clinician_type_id)!,
-        recommended: l.recommended,
-        priority: l.priority,
+  const getClinicianForConcern = (concern: Concern) => {
+    const linked = map
+      .filter((item) => item.concern_id === concern.id)
+      .map((item) => ({
+        clinician: clinicians.find((candidate) => candidate.id === item.clinician_type_id) ?? null,
+        priority: item.priority,
+        recommended: item.recommended,
       }))
-      .filter((x) => x.c)
-      .sort((a, b) => a.priority - b.priority);
-  }, [selectedConcern, map, clinicians]);
+      .filter((item) => item.clinician)
+      .sort((a, b) => Number(b.recommended) - Number(a.recommended) || a.priority - b.priority);
+
+    return linked[0]?.clinician ?? clinicians[0] ?? null;
+  };
 
   const slotsByDate = useMemo(() => {
     const groups: Record<string, TimeSlot[]> = {};
@@ -136,18 +164,21 @@ export default function BookingFlow({ open, onClose }: Props) {
 
   const canNext = (() => {
     switch (step) {
-      case 0: return !!selectedConcern;
-      case 1: return !!selectedClinician;
-      case 2: return !!selectedSlot;
-      case 3: return allRequiredFields && emailsMatch;
-      case 4: return allRequiredAgreed;
-      case 5: return !!paymentKey;
+      case 0: return !!selectedConcern && !!selectedClinician;
+      case 1: return !!selectedSlot;
+      case 2: return !!user && allRequiredFields && emailsMatch;
+      case 3: return allRequiredAgreed;
+      case 4:
+        if (!paymentKey) return false;
+        if (paymentKey === "subscription") return paymentMeta.subscription_status === "active";
+        return true;
       default: return true;
     }
   })();
 
-  const totalCents = (selectedClinician?.price_cents || 0) +
-    Math.round((selectedClinician?.price_cents || 0) * (Number(settings?.tax_percent) || 0) / 100);
+  const consultationCents = selectedDuration.priceCents;
+  const totalCents = consultationCents +
+    Math.round(consultationCents * (Number(settings?.tax_percent) || 0) / 100);
 
   async function submitBooking() {
     if (!selectedConcern || !selectedClinician || !selectedSlot) return;
@@ -164,10 +195,18 @@ export default function BookingFlow({ open, onClose }: Props) {
         slot_id: selectedSlot.id,
         slot_date: selectedSlot.slot_date,
         slot_time: selectedSlot.slot_time,
-        patient_data: patient,
+        patient_data: {
+          ...patient,
+          user_id: user?.id,
+          consultation_duration_minutes: selectedDuration.minutes,
+        },
         agreements: Object.keys(agreed).filter((k) => agreed[k]),
         payment_method: paymentKey,
-        payment_meta: paymentMeta,
+        payment_meta: {
+          ...paymentMeta,
+          consultation_duration_minutes: String(selectedDuration.minutes),
+          consultation_price_cents: String(consultationCents),
+        },
         amount_cents: totalCents,
         currency: settings?.currency || "NGN",
         status: "confirmed",
@@ -241,23 +280,20 @@ export default function BookingFlow({ open, onClose }: Props) {
                     concerns={filteredConcerns}
                     search={search}
                     setSearch={setSearch}
-                    expandedCat={expandedCat}
-                    setExpandedCat={setExpandedCat}
                     selected={selectedConcern}
-                    onSelect={(c) => { setSelectedConcern(c); setSelectedClinician(null); }}
+                    onSelect={(c) => {
+                      const clinician = getClinicianForConcern(c);
+                      setSelectedConcern(c);
+                      setSelectedClinician(clinician);
+                      setSelectedDate(null);
+                      setSelectedSlot(null);
+                    }}
+                    sym={displayCurrencySymbol}
+                    priceCents={CONSULTATION_DURATIONS[0].priceCents}
                   />
                 )}
 
                 {step === 1 && (
-                  <ClinicianStep
-                    items={recommendedClinicians}
-                    selected={selectedClinician}
-                    onSelect={setSelectedClinician}
-                    sym={sym}
-                  />
-                )}
-
-                {step === 2 && (
                   <DateTimeStep
                     dates={availableDates}
                     slotsByDate={slotsByDate}
@@ -265,20 +301,24 @@ export default function BookingFlow({ open, onClose }: Props) {
                     setSelectedDate={setSelectedDate}
                     selectedSlot={selectedSlot}
                     setSelectedSlot={setSelectedSlot}
-                    duration={selectedClinician?.duration_minutes || 20}
+                    durationMinutes={selectedDurationMinutes}
+                    setDurationMinutes={setSelectedDurationMinutes}
+                    sym={displayCurrencySymbol}
                   />
                 )}
 
-                {step === 3 && (
+                {step === 2 && (
                   <IntakeStep
                     fields={intakeFields}
                     values={patient}
                     setValues={setPatient}
                     emailsMatch={emailsMatch}
+                    user={user}
+                    authLoading={authLoading}
                   />
                 )}
 
-                {step === 4 && (
+                {step === 3 && (
                   <VerificationStep
                     legal={legal}
                     agreed={agreed}
@@ -288,7 +328,7 @@ export default function BookingFlow({ open, onClose }: Props) {
                   />
                 )}
 
-                {step === 5 && (
+                {step === 4 && (
                   <PaymentStep
                     methods={methods}
                     hmos={hmos}
@@ -297,18 +337,21 @@ export default function BookingFlow({ open, onClose }: Props) {
                     setPaymentKey={setPaymentKey}
                     meta={paymentMeta}
                     setMeta={setPaymentMeta}
+                    currentUserId={user?.id || ""}
                     summary={{
                       concern: selectedConcern,
                       clinician: selectedClinician,
                       slot: selectedSlot,
-                      sym,
+                      sym: displayCurrencySymbol,
                       taxPct: Number(settings?.tax_percent) || 0,
                       total: totalCents,
+                      consultation: consultationCents,
+                      duration: selectedDuration,
                     }}
                   />
                 )}
 
-                {step === 6 && bookingRef && (
+                {step === 5 && bookingRef && (
                   <ConfirmationStep
                     reference={bookingRef}
                     summary={{
@@ -316,8 +359,9 @@ export default function BookingFlow({ open, onClose }: Props) {
                       clinician: selectedClinician,
                       slot: selectedSlot,
                       patient,
-                      sym,
+                      sym: displayCurrencySymbol,
                       total: totalCents,
+                      duration: selectedDuration,
                     }}
                     message={settings?.confirmation_message || ""}
                     onClose={onClose}
@@ -328,7 +372,7 @@ export default function BookingFlow({ open, onClose }: Props) {
           </div>
 
           {/* Footer */}
-          {!loading && step < 6 && (
+          {!loading && step < STEPS.length - 1 && (
             <div className="sticky bottom-0 bg-[hsl(var(--mc-bg))]/95 backdrop-blur border-t border-[hsl(var(--mc-border))] px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
               <button
                 type="button"
@@ -344,11 +388,11 @@ export default function BookingFlow({ open, onClose }: Props) {
                   <span className="font-semibold text-[hsl(var(--mc-fg))] mr-1">
                     {selectedClinician.title}
                   </span>
-                  · {formatPrice(totalCents, sym)}
+                  / {selectedDuration.label} / {formatPrice(totalCents, displayCurrencySymbol)}
                 </div>
               )}
 
-              {step < 5 ? (
+              {step < 4 ? (
                 <button
                   type="button"
                   onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}
@@ -365,7 +409,7 @@ export default function BookingFlow({ open, onClose }: Props) {
                   className="inline-flex items-center gap-2 rounded-full mc-grad-primary text-white px-6 py-2.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 disabled:opacity-40 disabled:cursor-not-allowed transition"
                 >
                   {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                  Pay {formatPrice(totalCents, sym)}
+                  Pay {formatPrice(totalCents, displayCurrencySymbol)}
                 </button>
               )}
             </div>
@@ -378,13 +422,13 @@ export default function BookingFlow({ open, onClose }: Props) {
 
 /* ----------------- STEP 1: Concern ----------------- */
 function ConcernStep({
-  categories, concerns, search, setSearch, expandedCat, setExpandedCat, selected, onSelect,
+  categories, concerns, search, setSearch, selected, onSelect, sym, priceCents,
 }: any) {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div>
-        <h2 className="font-display text-2xl sm:text-3xl font-bold">What can we help with today?</h2>
-        <p className="text-[hsl(var(--mc-muted))] mt-1">Pick a category and choose your concern. We'll match you with the right clinician.</p>
+        <h2 className="font-display text-2xl sm:text-3xl font-bold">Choose appointment type</h2>
+        <p className="text-[hsl(var(--mc-muted))] mt-1">Pick the care you need. Pricing is shown on the right before you continue.</p>
       </div>
 
       <div className="relative">
@@ -398,19 +442,14 @@ function ConcernStep({
         />
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-3">
+      <div className="space-y-4">
         {categories.map((cat: ConcernCategory) => {
           const Icon = ICON_MAP[cat.icon || ""] || Stethoscope;
           const items = concerns.filter((c: Concern) => c.category_id === cat.id);
           if (search.trim() && items.length === 0) return null;
-          const expanded = expandedCat === cat.id || !!search.trim();
           return (
-            <div key={cat.id} className="rounded-3xl bg-white border border-[hsl(var(--mc-border))] overflow-hidden hover:border-[hsl(var(--mc-primary))]/40 transition">
-              <button
-                type="button"
-                onClick={() => setExpandedCat(expanded ? null : cat.id)}
-                className="w-full flex items-center gap-3 p-4 text-left"
-              >
+            <section key={cat.id} className="rounded-3xl bg-white border border-[hsl(var(--mc-border))] overflow-hidden">
+              <div className="flex items-center gap-3 p-4 border-b border-[hsl(var(--mc-border))] bg-[hsl(var(--mc-muted-soft))]/60">
                 <span className="grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white flex-shrink-0">
                   <Icon className="h-5 w-5" />
                 </span>
@@ -418,105 +457,93 @@ function ConcernStep({
                   <p className="font-display font-bold">{cat.name}</p>
                   <p className="text-xs text-[hsl(var(--mc-muted))] truncate">{cat.description}</p>
                 </div>
-                <ChevronDown className={`h-5 w-5 text-[hsl(var(--mc-muted))] transition-transform ${expanded ? "rotate-180" : ""}`} />
-              </button>
-              {expanded && (
-                <div className="px-4 pb-4 flex flex-wrap gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                  {items.map((c: Concern) => {
-                    const isSel = selected?.id === c.id;
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() => onSelect(c)}
-                        className={`text-xs font-semibold px-3 py-2 rounded-full border transition ${
-                          isSel
-                            ? "mc-grad-primary text-white border-transparent mc-shadow-glow"
-                            : "bg-[hsl(var(--mc-muted-soft))] border-transparent hover:border-[hsl(var(--mc-primary))]/40"
-                        }`}
-                      >
-                        {isSel && <Check className="inline h-3 w-3 mr-1" />}
-                        {c.name}
-                      </button>
-                    );
-                  })}
-                  {items.length === 0 && (
-                    <p className="text-xs text-[hsl(var(--mc-muted))]">No concerns yet.</p>
-                  )}
-                </div>
-              )}
-            </div>
+                <span className="hidden sm:inline-flex rounded-full bg-white px-3 py-1 text-xs font-bold text-[hsl(var(--mc-primary))]">
+                  From {formatPrice(priceCents, sym)}
+                </span>
+              </div>
+              <div className="divide-y divide-[hsl(var(--mc-border))]">
+                {items.map((c: Concern) => {
+                  const isSel = selected?.id === c.id;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => onSelect(c)}
+                      className={`w-full flex items-center gap-3 p-4 text-left transition ${
+                        isSel ? "bg-[hsl(var(--mc-primary))]/6" : "hover:bg-[hsl(var(--mc-muted-soft))]/70"
+                      }`}
+                    >
+                      <span className={`grid h-8 w-8 place-items-center rounded-full border ${
+                        isSel ? "border-[hsl(var(--mc-primary))] bg-[hsl(var(--mc-primary))] text-white" : "border-[hsl(var(--mc-border))] text-transparent"
+                      }`}>
+                        <Check className="h-4 w-4" />
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-sm font-bold">{c.name}</span>
+                        {c.description && (
+                          <span className="mt-0.5 block text-xs text-[hsl(var(--mc-muted))] line-clamp-1">{c.description}</span>
+                        )}
+                      </span>
+                      <span className="shrink-0 text-right">
+                        <span className="block font-display text-base font-bold">{formatPrice(priceCents, sym)}</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-[hsl(var(--mc-muted))]">from</span>
+                      </span>
+                    </button>
+                  );
+                })}
+                {items.length === 0 && (
+                  <p className="p-4 text-xs text-[hsl(var(--mc-muted))]">No concerns yet.</p>
+                )}
+              </div>
+            </section>
           );
         })}
+        {categories.every((cat: ConcernCategory) => concerns.filter((c: Concern) => c.category_id === cat.id).length === 0) && (
+          <p className="rounded-2xl bg-white border border-[hsl(var(--mc-border))] p-4 text-sm text-[hsl(var(--mc-muted))]">
+            No matching appointment types.
+          </p>
+        )}
       </div>
     </div>
   );
 }
 
-/* ----------------- STEP 2: Clinician ----------------- */
-function ClinicianStep({ items, selected, onSelect, sym }: any) {
-  return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      <div>
-        <h2 className="font-display text-2xl sm:text-3xl font-bold">Recommended clinicians</h2>
-        <p className="text-[hsl(var(--mc-muted))] mt-1">Based on your concern, here's who we recommend.</p>
-      </div>
-      <div className="grid md:grid-cols-3 gap-4">
-        {items.map(({ c, recommended }: any) => {
-          const isSel = selected?.id === c.id;
-          return (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => onSelect(c)}
-              className={`relative text-left rounded-3xl border-2 bg-white p-5 transition hover:-translate-y-0.5 hover:mc-shadow-card ${
-                isSel ? "border-[hsl(var(--mc-primary))] mc-shadow-glow" : "border-[hsl(var(--mc-border))]"
-              }`}
-            >
-              {recommended && (
-                <span className="absolute -top-2 left-5 inline-flex items-center gap-1 rounded-full mc-grad-primary text-white text-[10px] font-bold px-2.5 py-1 mc-shadow-glow">
-                  <Sparkles className="h-3 w-3" /> Recommended
-                </span>
-              )}
-              <div className="flex items-center gap-3">
-                <span className="grid place-items-center h-12 w-12 rounded-2xl bg-[hsl(var(--mc-muted-soft))] text-[hsl(var(--mc-primary))]">
-                  <Stethoscope className="h-5 w-5" />
-                </span>
-                <div className="flex-1">
-                  <p className="font-display font-bold">{c.title}</p>
-                  {c.badge && <p className="text-[10px] font-bold uppercase tracking-wider text-[hsl(var(--mc-accent))]">{c.badge}</p>}
-                </div>
-                {isSel && <Check className="h-5 w-5 text-[hsl(var(--mc-primary))]" />}
-              </div>
-              <p className="text-xs text-[hsl(var(--mc-muted))] mt-3 leading-relaxed">{c.description}</p>
-              {c.treats && (
-                <p className="text-[11px] mt-3 p-2.5 rounded-xl bg-[hsl(var(--mc-muted-soft))]">
-                  <span className="font-semibold">Treats:</span> {c.treats}
-                </p>
-              )}
-              <div className="mt-4 pt-4 border-t border-[hsl(var(--mc-border))] flex items-center justify-between">
-                <span className="font-display font-bold text-lg">{formatPrice(c.price_cents, sym)}</span>
-                <span className="inline-flex items-center gap-1 text-[11px] text-[hsl(var(--mc-muted))]">
-                  <Clock className="h-3 w-3" /> ~{c.wait_time_minutes}m wait
-                </span>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/* ----------------- STEP 3: Date & Time ----------------- */
-function DateTimeStep({ dates, slotsByDate, selectedDate, setSelectedDate, selectedSlot, setSelectedSlot, duration }: any) {
+/* ----------------- STEP 2: Date & Time ----------------- */
+function DateTimeStep({ dates, slotsByDate, selectedDate, setSelectedDate, selectedSlot, setSelectedSlot, durationMinutes, setDurationMinutes, sym }: any) {
   const activeDate = selectedDate || dates[0];
   const slotsForDay = slotsByDate[activeDate] || [];
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div>
         <h2 className="font-display text-2xl sm:text-3xl font-bold">Choose date & time</h2>
-        <p className="text-[hsl(var(--mc-muted))] mt-1">Each appointment is ~{duration} minutes.</p>
+        <p className="text-[hsl(var(--mc-muted))] mt-1">Choose how long you want the consultation to last.</p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {CONSULTATION_DURATIONS.map((option) => {
+          const isSel = durationMinutes === option.minutes;
+          return (
+            <button
+              key={option.minutes}
+              type="button"
+              onClick={() => setDurationMinutes(option.minutes)}
+              className={`flex items-center justify-between rounded-2xl border-2 p-4 text-left transition ${
+                isSel
+                  ? "border-[hsl(var(--mc-primary))] bg-[hsl(var(--mc-primary))]/5 mc-shadow-card"
+                  : "border-[hsl(var(--mc-border))] bg-white hover:border-[hsl(var(--mc-primary))]/40"
+              }`}
+            >
+              <span>
+                <span className="block font-display text-lg font-bold">{option.label}</span>
+                <span className="mt-1 block text-xs text-[hsl(var(--mc-muted))]">Video consultation</span>
+              </span>
+              <span className="flex items-center gap-3">
+                <span className="font-display text-lg font-bold">{formatPrice(option.priceCents, sym)}</span>
+                {isSel && <Check className="h-5 w-5 text-[hsl(var(--mc-primary))]" />}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="overflow-x-auto -mx-4 px-4 pb-2">
@@ -582,12 +609,24 @@ function DateTimeStep({ dates, slotsByDate, selectedDate, setSelectedDate, selec
 }
 
 /* ----------------- STEP 4: Intake ----------------- */
-function IntakeStep({ fields, values, setValues, emailsMatch }: any) {
+function IntakeStep({ fields, values, setValues, emailsMatch, user, authLoading }: any) {
+  if (authLoading) {
+    return (
+      <div className="grid place-items-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-[hsl(var(--mc-primary))]" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <PatientAuthGate />;
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div>
         <h2 className="font-display text-2xl sm:text-3xl font-bold">Patient information</h2>
-        <p className="text-[hsl(var(--mc-muted))] mt-1">Tell us about yourself so the clinician can prepare.</p>
+        <p className="text-[hsl(var(--mc-muted))] mt-1">Signed in as {user.email}. Complete the details so the clinician can prepare.</p>
       </div>
       <div className="grid sm:grid-cols-2 gap-4">
         {fields.map((f: IntakeField) => {
@@ -633,6 +672,74 @@ function IntakeStep({ fields, values, setValues, emailsMatch }: any) {
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function PatientAuthGate() {
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    setBusy(true);
+    try {
+      if (mode === "login") {
+        await signInPatientWithPassword({ email, password });
+        toast.success("Signed in. You can finish your booking now.");
+      } else {
+        await signUpPatient({ email, password, fullName });
+        toast.success("Account created. You can finish your booking now.");
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to continue. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mx-auto max-w-xl space-y-6 animate-in fade-in duration-300">
+      <div>
+        <h2 className="font-display text-2xl sm:text-3xl font-bold">Sign in to continue</h2>
+        <p className="text-[hsl(var(--mc-muted))] mt-1">Your appointment choice is saved here while you access your patient account.</p>
+      </div>
+
+      <div className="rounded-3xl bg-white border border-[hsl(var(--mc-border))] p-5 mc-shadow-card">
+        <div className="grid grid-cols-2 rounded-2xl bg-[hsl(var(--mc-muted-soft))] p-1 text-sm font-semibold">
+          {(["login", "register"] as const).map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => setMode(item)}
+              className={`rounded-xl px-3 py-2 transition ${
+                mode === item ? "bg-white text-[hsl(var(--mc-primary))] mc-shadow-card" : "text-[hsl(var(--mc-muted))]"
+              }`}
+            >
+              {item === "login" ? "Login" : "Register"}
+            </button>
+          ))}
+        </div>
+
+        <form onSubmit={submit} className="mt-5 space-y-4">
+          {mode === "register" && (
+            <Field label="Full name" placeholder="Jane Doe" value={fullName} onChange={setFullName} />
+          )}
+          <Field label="Email" placeholder="you@example.com" value={email} onChange={setEmail} type="email" />
+          <Field label="Password" placeholder="Your password" value={password} onChange={setPassword} type="password" />
+          <button
+            type="submit"
+            disabled={busy}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full mc-grad-primary text-white px-6 py-3 text-sm font-semibold mc-shadow-glow hover:opacity-95 disabled:opacity-40 disabled:cursor-not-allowed transition"
+          >
+            {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+            {mode === "login" ? "Login and continue" : "Create account and continue"}
+          </button>
+        </form>
       </div>
     </div>
   );
@@ -686,9 +793,14 @@ function VerificationStep({ legal, agreed, setAgreed, emergencyWarning, notice }
   );
 }
 
+function checkSubscriptionStatus(userId: string) {
+  return ACTIVE_SUBSCRIPTION_USER_IDS.has(userId.trim().toLowerCase()) ? "active" : "inactive";
+}
+
 /* ----------------- STEP 6: Payment ----------------- */
-function PaymentStep({ methods, hmos, plans, paymentKey, setPaymentKey, meta, setMeta, summary }: any) {
-  const { concern, clinician, slot, sym, taxPct, total } = summary;
+function PaymentStep({ methods, hmos, plans, paymentKey, setPaymentKey, meta, setMeta, currentUserId, summary }: any) {
+  const { concern, clinician, slot, sym, taxPct, total, consultation, duration } = summary;
+  const subscriptionStatus = meta.subscription_status as "active" | "inactive" | undefined;
   return (
     <div className="grid lg:grid-cols-[1fr,360px] gap-6 animate-in fade-in duration-300">
       <div className="space-y-6">
@@ -705,7 +817,10 @@ function PaymentStep({ methods, hmos, plans, paymentKey, setPaymentKey, meta, se
               <button
                 key={m.id}
                 type="button"
-                onClick={() => setPaymentKey(m.key)}
+                onClick={() => {
+                  setPaymentKey(m.key);
+                  setMeta({});
+                }}
                 className={`flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition ${
                   isSel ? "border-[hsl(var(--mc-primary))] bg-[hsl(var(--mc-primary))]/5" : "border-[hsl(var(--mc-border))] bg-white hover:border-[hsl(var(--mc-primary))]/40"
                 }`}
@@ -751,26 +866,63 @@ function PaymentStep({ methods, hmos, plans, paymentKey, setPaymentKey, meta, se
             </>
           )}
           {paymentKey === "subscription" && (
-            <div className="space-y-2">
-              {plans.map((p: SubscriptionPlan) => {
-                const isSel = meta.plan_id === p.id;
-                return (
+            <div className="space-y-4">
+              <div className="rounded-2xl bg-[hsl(var(--mc-muted-soft))] p-4">
+                <p className="text-sm font-semibold">Check subscription by user ID</p>
+                <p className="mt-1 text-xs text-[hsl(var(--mc-muted))]">Current user ID: {currentUserId || "not available"}</p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  type="text"
+                  value={meta.subscription_user_id || ""}
+                  onChange={(e) => setMeta({ ...meta, subscription_user_id: e.target.value, subscription_status: "" })}
+                  placeholder="Enter user ID"
+                  className="min-w-0 flex-1 rounded-xl bg-white border border-[hsl(var(--mc-border))] px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--mc-primary))]"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const status = checkSubscriptionStatus(meta.subscription_user_id || "");
+                    setMeta({ ...meta, subscription_status: status });
+                  }}
+                  className="rounded-xl mc-grad-primary px-4 py-2.5 text-sm font-semibold text-white"
+                >
+                  Check
+                </button>
+              </div>
+
+              {subscriptionStatus === "active" && (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+                  Active subscription found. You can continue with this booking.
+                </div>
+              )}
+
+              {subscriptionStatus === "inactive" && (
+                <div className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-sm font-semibold text-amber-950">No active subscription found for this user ID.</p>
                   <button
-                    key={p.id}
                     type="button"
-                    onClick={() => setMeta({ ...meta, plan_id: p.id, plan_name: p.name })}
-                    className={`w-full text-left p-3 rounded-xl border-2 transition ${
-                      isSel ? "border-[hsl(var(--mc-primary))] bg-[hsl(var(--mc-primary))]/5" : "border-[hsl(var(--mc-border))]"
-                    }`}
+                    onClick={() => setMeta({ ...meta, show_subscription_plans: "true" })}
+                    className="rounded-full bg-white px-4 py-2 text-xs font-bold text-amber-900 border border-amber-200"
                   >
-                    <div className="flex items-center justify-between">
-                      <p className="font-semibold text-sm">{p.name}</p>
-                      <p className="font-display font-bold">{formatPrice(p.price_cents, sym)}/{p.billing_period}</p>
-                    </div>
-                    <p className="text-xs text-[hsl(var(--mc-muted))] mt-1">{p.description}</p>
+                    View subscription packages
                   </button>
-                );
-              })}
+                </div>
+              )}
+
+              {meta.show_subscription_plans === "true" && (
+                <div className="space-y-2">
+                  {plans.map((p: SubscriptionPlan) => (
+                    <div key={p.id} className="rounded-xl border border-[hsl(var(--mc-border))] bg-white p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-semibold text-sm">{p.name}</p>
+                        <p className="font-display font-bold">{formatPrice(p.price_cents, sym)}/{p.billing_period}</p>
+                      </div>
+                      <p className="text-xs text-[hsl(var(--mc-muted))] mt-1">{p.description}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {paymentKey === "insurance" && (
@@ -798,13 +950,13 @@ function PaymentStep({ methods, hmos, plans, paymentKey, setPaymentKey, meta, se
         </div>
         <ul className="mt-4 space-y-2 text-sm">
           <Row icon={CalendarIcon} label={slot ? new Date(slot.slot_date + "T00:00").toLocaleDateString("en", { weekday: "short", day: "numeric", month: "short" }) : "—"} />
-          <Row icon={Clock} label={`${slot?.slot_time?.slice(0,5) || "—"} · ${clinician?.duration_minutes}m`} />
+          <Row icon={Clock} label={`${slot?.slot_time?.slice(0,5) || "Time"} / ${duration.label}`} />
           <Row icon={Video} label="Video consultation" />
         </ul>
         <div className="mt-4 pt-4 border-t border-[hsl(var(--mc-border))] space-y-1.5 text-sm">
-          <div className="flex justify-between text-[hsl(var(--mc-muted))]"><span>Consultation</span><span>{formatPrice(clinician?.price_cents || 0, sym)}</span></div>
+          <div className="flex justify-between text-[hsl(var(--mc-muted))]"><span>Consultation</span><span>{formatPrice(consultation, sym)}</span></div>
           {taxPct > 0 && (
-            <div className="flex justify-between text-[hsl(var(--mc-muted))]"><span>Tax ({taxPct}%)</span><span>{formatPrice(Math.round((clinician?.price_cents || 0) * taxPct / 100), sym)}</span></div>
+            <div className="flex justify-between text-[hsl(var(--mc-muted))]"><span>Tax ({taxPct}%)</span><span>{formatPrice(Math.round(consultation * taxPct / 100), sym)}</span></div>
           )}
           <div className="flex justify-between font-display font-bold text-lg pt-2"><span>Total</span><span>{formatPrice(total, sym)}</span></div>
         </div>
@@ -813,12 +965,12 @@ function PaymentStep({ methods, hmos, plans, paymentKey, setPaymentKey, meta, se
   );
 }
 
-function Field({ label, placeholder, value, onChange }: any) {
+function Field({ label, placeholder, value, onChange, type = "text" }: any) {
   return (
     <div>
       <label className="block text-xs font-semibold mb-1.5">{label}</label>
       <input
-        type="text"
+        type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
@@ -839,7 +991,7 @@ function Row({ icon: Icon, label }: any) {
 
 /* ----------------- STEP 7: Confirmation ----------------- */
 function ConfirmationStep({ reference, summary, message, onClose }: any) {
-  const { concern, clinician, slot, patient, sym, total } = summary;
+  const { concern, clinician, slot, patient, sym, total, duration } = summary;
   return (
     <div className="space-y-6 text-center max-w-xl mx-auto py-6 animate-in fade-in zoom-in-95 duration-500">
       <div className="grid place-items-center">
@@ -859,7 +1011,7 @@ function ConfirmationStep({ reference, summary, message, onClose }: any) {
         <ul className="mt-4 space-y-2.5 text-sm">
           <Row icon={Stethoscope} label={`${clinician?.title} · ${concern?.name}`} />
           <Row icon={CalendarIcon} label={slot ? new Date(slot.slot_date + "T00:00").toLocaleDateString("en", { weekday: "long", day: "numeric", month: "long" }) : "—"} />
-          <Row icon={Clock} label={`${slot?.slot_time?.slice(0,5) || "—"} · ${clinician?.duration_minutes}m`} />
+          <Row icon={Clock} label={`${slot?.slot_time?.slice(0,5) || "Time"} / ${duration.label}`} />
           <Row icon={UserIcon} label={`${patient.first_name || ""} ${patient.last_name || ""}`.trim()} />
           <Row icon={CreditCard} label={`Paid ${formatPrice(total, sym)}`} />
         </ul>

@@ -1,62 +1,68 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AdminGuard } from "@/components/dashboard/AdminGuard";
-import Index from "./pages/Index.tsx";
-import About from "./pages/About.tsx";
-import Contact from "./pages/Contact.tsx";
-import Doctors from "./pages/Doctors.tsx";
-import DoctorProfile from "./pages/DoctorProfile.tsx";
-import Adverts from "./pages/Adverts.tsx";
-import HealthNews from "./pages/HealthNews.tsx";
-import HealthNewsArticle from "./pages/HealthNewsArticle.tsx";
-import AdvertArticle from "./pages/AdvertArticle.tsx";
-import DoctorPortal from "./pages/MediCare.tsx";
-import MediCareAdmin from "./pages/MediCareAdmin.tsx";
-import BookingAdmin from "./pages/BookingAdmin.tsx";
-import DoctorMediCare from "./pages/DoctorMediCare.tsx";
-import RegisterPatient from "./pages/RegisterPatient.tsx";
-import Register from "./pages/Register.tsx";
-import { Navigate } from "react-router-dom";
-import Auth from "./pages/Auth.tsx";
-import DashOverview from "./pages/dashboard/Overview.tsx";
-import DashUsers from "./pages/dashboard/Users.tsx";
-import DashDoctors from "./pages/dashboard/Doctors.tsx";
-import DashContacts from "./pages/dashboard/Contacts.tsx";
-import DashBlog from "./pages/dashboard/Blog.tsx";
-import DashNotifications from "./pages/dashboard/Notifications.tsx";
-import DashNews from "./pages/dashboard/News.tsx";
-import DashNewsletter from "./pages/dashboard/Newsletter.tsx";
-import DashActivityLogs from "./pages/dashboard/ActivityLogs.tsx";
-import DashLookups from "./pages/dashboard/Lookups.tsx";
-
-import DashFaqs from "./pages/dashboard/Faqs.tsx";
-import PatientDashboard from "./pages/patient/Dashboard.tsx";
-import PatientAppointments from "./pages/patient/Appointments.tsx";
-import PatientRecords from "./pages/patient/MedicalRecords.tsx";
-import PatientPrescriptions from "./pages/patient/Prescriptions.tsx";
-import PatientPayments from "./pages/patient/Payments.tsx";
-import PatientSettings from "./pages/patient/Settings.tsx";
-import DoctorPortalDashboard from "./pages/doctor/Dashboard.tsx";
-import DoctorSchedule from "./pages/doctor/Schedule.tsx";
-import DoctorConsultations from "./pages/doctor/Consultations.tsx";
-import DoctorConsultationRoom from "./pages/doctor/ConsultationRoom.tsx";
-import DoctorPatients from "./pages/doctor/Patients.tsx";
-import { DoctorPrescriptions, DoctorInvestigations, DoctorReferrals, DoctorSettings } from "./pages/doctor/Misc.tsx";
-import OrgDashboard from "./pages/organization/Dashboard.tsx";
-import OrgStaff from "./pages/organization/Staff.tsx";
-import OrgUsage from "./pages/organization/Usage.tsx";
-import { Billing as OrgBilling, Invoices as OrgInvoices, OrgSettings } from "./pages/organization/Misc.tsx";
-import DashTestimonials from "./pages/dashboard/Testimonials.tsx";
-import NotFound from "./pages/NotFound.tsx";
-import PrivacyPolicy from "./pages/PrivacyPolicy.tsx";
-import TermsAndConditions from "./pages/TermsAndConditions.tsx";
-import CookiePolicy from "./pages/CookiePolicy.tsx";
 
 const queryClient = new QueryClient();
+const routeFallback = <div className="min-h-screen bg-background" />;
+
+const Index = lazy(() => import("./pages/Index.tsx"));
+const About = lazy(() => import("./pages/About.tsx"));
+const Contact = lazy(() => import("./pages/Contact.tsx"));
+const Doctors = lazy(() => import("./pages/Doctors.tsx"));
+const DoctorProfile = lazy(() => import("./pages/DoctorProfile.tsx"));
+const Adverts = lazy(() => import("./pages/Adverts.tsx"));
+const HealthNews = lazy(() => import("./pages/HealthNews.tsx"));
+const HealthNewsArticle = lazy(() => import("./pages/HealthNewsArticle.tsx"));
+const AdvertArticle = lazy(() => import("./pages/AdvertArticle.tsx"));
+const DoctorPortal = lazy(() => import("./pages/MediCare.tsx"));
+const MediCareAdmin = lazy(() => import("./pages/MediCareAdmin.tsx"));
+const BookingAdmin = lazy(() => import("./pages/BookingAdmin.tsx"));
+const DoctorMediCare = lazy(() => import("./pages/DoctorMediCare.tsx"));
+const RegisterPatient = lazy(() => import("./pages/RegisterPatient.tsx"));
+const Register = lazy(() => import("./pages/Register.tsx"));
+const Auth = lazy(() => import("./pages/Auth.tsx"));
+const DashOverview = lazy(() => import("./pages/dashboard/Overview.tsx"));
+const DashUsers = lazy(() => import("./pages/dashboard/Users.tsx"));
+const DashDoctors = lazy(() => import("./pages/dashboard/Doctors.tsx"));
+const DashContacts = lazy(() => import("./pages/dashboard/Contacts.tsx"));
+const DashBlog = lazy(() => import("./pages/dashboard/Blog.tsx"));
+const DashNotifications = lazy(() => import("./pages/dashboard/Notifications.tsx"));
+const DashNews = lazy(() => import("./pages/dashboard/News.tsx"));
+const DashNewsletter = lazy(() => import("./pages/dashboard/Newsletter.tsx"));
+const DashActivityLogs = lazy(() => import("./pages/dashboard/ActivityLogs.tsx"));
+const DashLookups = lazy(() => import("./pages/dashboard/Lookups.tsx"));
+const DashFaqs = lazy(() => import("./pages/dashboard/Faqs.tsx"));
+const DashTestimonials = lazy(() => import("./pages/dashboard/Testimonials.tsx"));
+const PatientDashboard = lazy(() => import("./pages/patient/Dashboard.tsx"));
+const PatientAppointments = lazy(() => import("./pages/patient/Appointments.tsx"));
+const PatientRecords = lazy(() => import("./pages/patient/MedicalRecords.tsx"));
+const PatientPrescriptions = lazy(() => import("./pages/patient/Prescriptions.tsx"));
+const PatientPayments = lazy(() => import("./pages/patient/Payments.tsx"));
+const PatientSettings = lazy(() => import("./pages/patient/Settings.tsx"));
+const DoctorPortalDashboard = lazy(() => import("./pages/doctor/Dashboard.tsx"));
+const DoctorSchedule = lazy(() => import("./pages/doctor/Schedule.tsx"));
+const DoctorConsultations = lazy(() => import("./pages/doctor/Consultations.tsx"));
+const DoctorConsultationRoom = lazy(() => import("./pages/doctor/ConsultationRoom.tsx"));
+const DoctorPatients = lazy(() => import("./pages/doctor/Patients.tsx"));
+const DoctorPrescriptions = lazy(() => import("./pages/doctor/Misc.tsx").then((module) => ({ default: module.DoctorPrescriptions })));
+const DoctorInvestigations = lazy(() => import("./pages/doctor/Misc.tsx").then((module) => ({ default: module.DoctorInvestigations })));
+const DoctorReferrals = lazy(() => import("./pages/doctor/Misc.tsx").then((module) => ({ default: module.DoctorReferrals })));
+const DoctorSettings = lazy(() => import("./pages/doctor/Misc.tsx").then((module) => ({ default: module.DoctorSettings })));
+const OrgDashboard = lazy(() => import("./pages/organization/Dashboard.tsx"));
+const OrgStaff = lazy(() => import("./pages/organization/Staff.tsx"));
+const OrgUsage = lazy(() => import("./pages/organization/Usage.tsx"));
+const OrgBilling = lazy(() => import("./pages/organization/Misc.tsx").then((module) => ({ default: module.Billing })));
+const OrgInvoices = lazy(() => import("./pages/organization/Misc.tsx").then((module) => ({ default: module.Invoices })));
+const OrgSettings = lazy(() => import("./pages/organization/Misc.tsx").then((module) => ({ default: module.OrgSettings })));
+const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy.tsx"));
+const TermsAndConditions = lazy(() => import("./pages/TermsAndConditions.tsx"));
+const CookiePolicy = lazy(() => import("./pages/CookiePolicy.tsx"));
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -65,76 +71,78 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<TermsAndConditions />} />
-            <Route path="/cookies" element={<CookiePolicy />} />
-            <Route path="/doctors" element={<Doctors />} />
-            <Route path="/doctors/:id" element={<DoctorProfile />} />
-            <Route path="/medicare/:doctorId" element={<DoctorMediCare />} />
-            <Route path="/adverts" element={<Adverts />} />
-            <Route path="/health-news" element={<HealthNews />} />
-            <Route path="/health-news/:slug" element={<HealthNewsArticle />} />
-            <Route path="/adverts/:id" element={<AdvertArticle />} />
-            <Route path="/doctor-portal" element={<DoctorPortal />} />
-            <Route path="/doctor-portal/admin" element={<MediCareAdmin />} />
-            <Route path="/doctor-portal/admin/booking" element={<BookingAdmin />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/register/doctor" element={<Navigate to="/register?type=doctor" replace />} />
-            <Route path="/register/organization" element={<Navigate to="/register?type=organization" replace />} />
-            <Route path="/register/pharmacy" element={<Navigate to="/register?type=pharmacy" replace />} />
-            <Route path="/register/diagnostics" element={<Navigate to="/register?type=lab-diagnostics" replace />} />
-            <Route path="/register/laboratory" element={<Navigate to="/register?type=lab-diagnostics" replace />} />
-            <Route path="/register/lab-diagnostics" element={<Navigate to="/register?type=lab-diagnostics" replace />} />
-            <Route path="/register/patient" element={<RegisterPatient />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={<AdminGuard><DashOverview /></AdminGuard>} />
-            <Route path="/dashboard/users" element={<AdminGuard><DashUsers /></AdminGuard>} />
-            <Route path="/dashboard/doctors" element={<AdminGuard><DashDoctors /></AdminGuard>} />
-            <Route path="/dashboard/contacts" element={<AdminGuard><DashContacts /></AdminGuard>} />
-            <Route path="/dashboard/blog" element={<AdminGuard><DashBlog /></AdminGuard>} />
-            <Route path="/dashboard/news" element={<AdminGuard><DashNews /></AdminGuard>} />
-            <Route path="/dashboard/newsletter" element={<AdminGuard><DashNewsletter /></AdminGuard>} />
-            <Route path="/dashboard/lookups" element={<AdminGuard><DashLookups /></AdminGuard>} />
-            <Route path="/dashboard/activity-logs" element={<AdminGuard><DashActivityLogs /></AdminGuard>} />
-            
-            <Route path="/dashboard/faqs" element={<AdminGuard><DashFaqs /></AdminGuard>} />
-            <Route path="/dashboard/testimonials" element={<AdminGuard><DashTestimonials /></AdminGuard>} />
-            <Route path="/dashboard/notifications" element={<AdminGuard><DashNotifications /></AdminGuard>} />
+          <Suspense fallback={routeFallback}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsAndConditions />} />
+              <Route path="/cookies" element={<CookiePolicy />} />
+              <Route path="/doctors" element={<Doctors />} />
+              <Route path="/doctors/:id" element={<DoctorProfile />} />
+              <Route path="/medicare/:doctorId" element={<DoctorMediCare />} />
+              <Route path="/adverts" element={<Adverts />} />
+              <Route path="/health-news" element={<HealthNews />} />
+              <Route path="/health-news/:slug" element={<HealthNewsArticle />} />
+              <Route path="/adverts/:id" element={<AdvertArticle />} />
+              <Route path="/doctor-portal" element={<DoctorPortal />} />
+              <Route path="/doctor-portal/admin" element={<MediCareAdmin />} />
+              <Route path="/doctor-portal/admin/booking" element={<BookingAdmin />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/register/doctor" element={<Navigate to="/register?type=doctor" replace />} />
+              <Route path="/register/organization" element={<Navigate to="/register?type=organization" replace />} />
+              <Route path="/register/pharmacy" element={<Navigate to="/register?type=pharmacy" replace />} />
+              <Route path="/register/diagnostics" element={<Navigate to="/register?type=lab-diagnostics" replace />} />
+              <Route path="/register/laboratory" element={<Navigate to="/register?type=lab-diagnostics" replace />} />
+              <Route path="/register/lab-diagnostics" element={<Navigate to="/register?type=lab-diagnostics" replace />} />
+              <Route path="/register/patient" element={<RegisterPatient />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/dashboard" element={<AdminGuard><DashOverview /></AdminGuard>} />
+              <Route path="/dashboard/users" element={<AdminGuard><DashUsers /></AdminGuard>} />
+              <Route path="/dashboard/doctors" element={<AdminGuard><DashDoctors /></AdminGuard>} />
+              <Route path="/dashboard/contacts" element={<AdminGuard><DashContacts /></AdminGuard>} />
+              <Route path="/dashboard/blog" element={<AdminGuard><DashBlog /></AdminGuard>} />
+              <Route path="/dashboard/news" element={<AdminGuard><DashNews /></AdminGuard>} />
+              <Route path="/dashboard/newsletter" element={<AdminGuard><DashNewsletter /></AdminGuard>} />
+              <Route path="/dashboard/lookups" element={<AdminGuard><DashLookups /></AdminGuard>} />
+              <Route path="/dashboard/activity-logs" element={<AdminGuard><DashActivityLogs /></AdminGuard>} />
+              
+              <Route path="/dashboard/faqs" element={<AdminGuard><DashFaqs /></AdminGuard>} />
+              <Route path="/dashboard/testimonials" element={<AdminGuard><DashTestimonials /></AdminGuard>} />
+              <Route path="/dashboard/notifications" element={<AdminGuard><DashNotifications /></AdminGuard>} />
 
-            {/* Patient Portal */}
-            <Route path="/patient" element={<PatientDashboard />} />
-            <Route path="/patient/appointments" element={<PatientAppointments />} />
-            <Route path="/patient/records" element={<PatientRecords />} />
-            <Route path="/patient/prescriptions" element={<PatientPrescriptions />} />
-            <Route path="/patient/payments" element={<PatientPayments />} />
-            <Route path="/patient/settings" element={<PatientSettings />} />
+              {/* Patient Portal */}
+              <Route path="/patient" element={<PatientDashboard />} />
+              <Route path="/patient/appointments" element={<PatientAppointments />} />
+              <Route path="/patient/records" element={<PatientRecords />} />
+              <Route path="/patient/prescriptions" element={<PatientPrescriptions />} />
+              <Route path="/patient/payments" element={<PatientPayments />} />
+              <Route path="/patient/settings" element={<PatientSettings />} />
 
-            {/* Doctor EMR Portal */}
-            <Route path="/doctor" element={<DoctorPortalDashboard />} />
-            <Route path="/doctor/schedule" element={<DoctorSchedule />} />
-            <Route path="/doctor/consultations" element={<DoctorConsultations />} />
-            <Route path="/doctor/consultations/:id" element={<DoctorConsultationRoom />} />
-            <Route path="/doctor/patients" element={<DoctorPatients />} />
-            <Route path="/doctor/prescriptions" element={<DoctorPrescriptions />} />
-            <Route path="/doctor/investigations" element={<DoctorInvestigations />} />
-            <Route path="/doctor/referrals" element={<DoctorReferrals />} />
-            <Route path="/doctor/settings" element={<DoctorSettings />} />
+              {/* Doctor EMR Portal */}
+              <Route path="/doctor" element={<DoctorPortalDashboard />} />
+              <Route path="/doctor/schedule" element={<DoctorSchedule />} />
+              <Route path="/doctor/consultations" element={<DoctorConsultations />} />
+              <Route path="/doctor/consultations/:id" element={<DoctorConsultationRoom />} />
+              <Route path="/doctor/patients" element={<DoctorPatients />} />
+              <Route path="/doctor/prescriptions" element={<DoctorPrescriptions />} />
+              <Route path="/doctor/investigations" element={<DoctorInvestigations />} />
+              <Route path="/doctor/referrals" element={<DoctorReferrals />} />
+              <Route path="/doctor/settings" element={<DoctorSettings />} />
 
-            {/* Organization / HMO Portal */}
-            <Route path="/organization" element={<OrgDashboard />} />
-            <Route path="/organization/staff" element={<OrgStaff />} />
-            <Route path="/organization/usage" element={<OrgUsage />} />
-            <Route path="/organization/billing" element={<OrgBilling />} />
-            <Route path="/organization/invoices" element={<OrgInvoices />} />
-            <Route path="/organization/settings" element={<OrgSettings />} />
+              {/* Organization / HMO Portal */}
+              <Route path="/organization" element={<OrgDashboard />} />
+              <Route path="/organization/staff" element={<OrgStaff />} />
+              <Route path="/organization/usage" element={<OrgUsage />} />
+              <Route path="/organization/billing" element={<OrgBilling />} />
+              <Route path="/organization/invoices" element={<OrgInvoices />} />
+              <Route path="/organization/settings" element={<OrgSettings />} />
 
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

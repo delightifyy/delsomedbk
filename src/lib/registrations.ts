@@ -83,6 +83,11 @@ const getSubSpecialtyId = async (specialtyId: number | undefined, value: unknown
   return getLookupId(() => api.lookups.subSpecialties({ specialty_id: specialtyId }), value, ["id", "name", "slug"]);
 };
 
+const asText = (value: unknown) => {
+  const text = String(value ?? "").trim();
+  return text || undefined;
+};
+
 const submitPatientToApi = async (payload: RegistrationPayload) => {
   const details = payload.details as any;
   const nextOfKin = {
@@ -111,17 +116,28 @@ const submitPatientToApi = async (payload: RegistrationPayload) => {
 };
 
 const appendCommonApplicationFields = async (form: FormData, payload: RegistrationPayload) => {
-  const zoneId = await getLookupId(api.lookups.zones, payload.zone ?? payload.details.zone_id, ["id", "name", "slug", "code"]);
-  const stateId = await getLookupId(() => api.lookups.states(zoneId ? { zone_id: zoneId } : undefined), payload.state ?? payload.details.state_id);
+  const zoneId = await getLookupId(api.lookups.zones, payload.details.zone_id ?? payload.zone, ["id", "name", "slug", "code"]);
+  const zoneLabel = asText(payload.details.zone_name ?? payload.zone);
+  const stateId = await getLookupId(
+    () => api.lookups.states(zoneId ? { zone_id: zoneId } : undefined),
+    payload.details.state_id ?? payload.state,
+  );
+  const stateLabel = asText(payload.details.state_name ?? payload.state);
 
-  if (!stateId && !payload.details.state_id) {
+  if (!zoneId) {
+    throw new Error("Zone is required. Please select a valid zone.");
+  }
+
+  if (!stateId) {
     throw new Error("State is required. Please select a valid state.");
   }
 
   appendFormValue(form, "email", payload.email);
   appendFormValue(form, "phone", payload.phone);
-  appendFormValue(form, "zone_id", zoneId ?? payload.details.zone_id);
-  appendFormValue(form, "state_id", stateId ?? payload.details.state_id);
+  appendFormValue(form, "zone", zoneLabel);
+  appendFormValue(form, "zone_id", zoneId);
+  appendFormValue(form, "state", stateLabel);
+  appendFormValue(form, "state_id", stateId);
   appendFormValue(form, "city", payload.city);
   appendFormValue(form, "website", payload.details.website);
   appendFormValue(form, "bio", payload.details.bio ?? payload.details.notes);
@@ -138,13 +154,17 @@ const submitApplicationToApi = async (payload: RegistrationPayload) => {
   await appendCommonApplicationFields(form, payload);
 
   if (payload.applicant_type === "doctor") {
-    const specialtyId = await getLookupId(api.lookups.specialties, payload.specialty, ["id", "name", "slug"]);
-    const subSpecialtyId = await getSubSpecialtyId(specialtyId, payload.details.sub_specialty);
+    const specialtyId = await getLookupId(api.lookups.specialties, payload.details.specialty_id ?? payload.specialty, ["id", "name", "slug"]);
+    const specialtyLabel = asText(payload.specialty ?? payload.details.specialty);
+    const subSpecialtyId = await getSubSpecialtyId(specialtyId, payload.details.sub_specialty_id ?? payload.details.sub_specialty);
+    const subSpecialtyLabel = asText(payload.details.sub_specialty ?? payload.details.sub_specialty_name);
 
     appendFormValue(form, "full_name", payload.full_name);
-    appendFormValue(form, "specialty_id", specialtyId ?? payload.details.specialty_id);
-    appendFormValue(form, "sub_specialty_id", subSpecialtyId ?? payload.details.sub_specialty_id);
-    appendFormValue(form, "is_specialist", Boolean(payload.details.sub_specialty));
+    appendFormValue(form, "specialty", specialtyLabel);
+    appendFormValue(form, "specialty_id", specialtyId);
+    appendFormValue(form, "sub_specialty", subSpecialtyLabel);
+    appendFormValue(form, "sub_specialty_id", subSpecialtyId);
+    appendFormValue(form, "is_specialist", Boolean(subSpecialtyId));
     appendFormValue(form, "years_experience", payload.details.years_experience);
     appendFormValue(form, "organization_name", payload.details.organization_name ?? payload.organization_name);
     appendFormValue(form, "applicant_role", payload.details.role);
@@ -168,12 +188,14 @@ const submitApplicationToApi = async (payload: RegistrationPayload) => {
   if (payload.applicant_type === "organization") {
     const organizationTypeId = await getLookupId(
       api.lookups.organizationTypes,
-      payload.details.org_type ?? payload.details.organization_type_id,
+      payload.details.organization_type_id ?? payload.details.org_type,
       ["id", "name", "slug"],
     );
+    const organizationTypeLabel = asText(payload.details.org_type ?? payload.details.organization_type);
 
     appendFormValue(form, "organization_name", payload.organization_name);
-    appendFormValue(form, "organization_type_id", organizationTypeId ?? payload.details.organization_type_id);
+    appendFormValue(form, "organization_type", organizationTypeLabel);
+    appendFormValue(form, "organization_type_id", organizationTypeId);
     appendFormValue(form, "applicant_full_name", payload.full_name);
     appendFormValue(form, "applicant_role", payload.details.role);
     appendFormValue(form, "estimated_members", payload.details.members);

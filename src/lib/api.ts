@@ -1,6 +1,31 @@
-export const API_BASE_URL =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/+$/, "") ||
-  "http://localhost/api/v1";
+const DEFAULT_API_BASE_URL = "https://delsomed.itl.ng/api/v1";
+
+const isLocalhostHost = (host: string) =>
+  ["localhost", "127.0.0.1", "::1"].includes(host.toLowerCase());
+
+const normalizeApiBaseUrl = (value?: string) => {
+  const trimmed = String(value ?? "").trim().replace(/^['"]|['"]$/g, "").replace(/\/+$/, "");
+  if (!trimmed) return DEFAULT_API_BASE_URL;
+
+  if (/^localhost(?:\/|$)/i.test(trimmed)) {
+    return DEFAULT_API_BASE_URL;
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+    const allowLocalApi = (import.meta.env.VITE_ALLOW_LOCAL_API as string | undefined) === "true";
+
+    if (isLocalhostHost(parsed.hostname) && !parsed.port && !allowLocalApi) {
+      return DEFAULT_API_BASE_URL;
+    }
+
+    return trimmed;
+  } catch {
+    return trimmed.startsWith("/api/") ? trimmed : DEFAULT_API_BASE_URL;
+  }
+};
+
+export const API_BASE_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL as string | undefined);
 
 export const API_FALLBACK_TO_LOCAL =
   (import.meta.env.VITE_API_FALLBACK_TO_LOCAL as string | undefined) === "true";

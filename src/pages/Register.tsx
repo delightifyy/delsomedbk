@@ -19,6 +19,8 @@ import { NIGERIA_STATES } from "@/data/nigeriaStates";
 import { submitRegistration, ApplicantType, DocumentSlot } from "@/lib/registrations";
 import { ConsentCheckbox } from "@/components/site/ConsentCheckbox";
 import { RegistrationSuccessDialog } from "@/components/site/RegistrationSuccessDialog";
+import { api } from "@/lib/api";
+import { collection } from "@/lib/backendAdapters";
 
 type TabKey = "doctor" | "organization" | "pharmacy" | "lab-diagnostics";
 
@@ -28,6 +30,131 @@ const TABS: { value: TabKey; label: string; icon: typeof Stethoscope; blurb: str
   { value: "pharmacy", label: "Pharmacy", icon: Pill, blurb: "Community and chain pharmacies." },
   { value: "lab-diagnostics", label: "Laboratory / Diagnostics", icon: FlaskConical, blurb: "Medical labs and diagnostic centres." },
 ];
+
+type LookupItem = {
+  id: string;
+  label: string;
+  code?: string;
+  slug?: string;
+  zoneId?: string;
+  specialtyId?: string;
+  subSpecialties?: LookupItem[];
+};
+
+type RegistrationLookups = {
+  zones: LookupItem[];
+  states: LookupItem[];
+  specialties: LookupItem[];
+  subSpecialties: LookupItem[];
+  organizationTypes: LookupItem[];
+  loading: boolean;
+};
+
+const asLookupText = (value: unknown) => String(value ?? "").trim();
+
+const lookupItemFromApi = (entry: any, fallbackId: string): LookupItem => {
+  const id = asLookupText(entry?.id ?? entry?.uuid ?? entry?.slug ?? entry?.code ?? fallbackId);
+  const label = asLookupText(entry?.name ?? entry?.title ?? entry?.label ?? entry?.code ?? entry?.slug ?? id);
+  const subSpecialties = collection(entry?.sub_specialties ?? entry?.subSpecialties).map((item, index) =>
+    lookupItemFromApi(item, `${id}-sub-${index}`),
+  );
+
+  return {
+    id,
+    label,
+    code: asLookupText(entry?.code) || undefined,
+    slug: asLookupText(entry?.slug) || undefined,
+    zoneId: asLookupText(entry?.zone_id ?? entry?.zone?.id) || undefined,
+    specialtyId: asLookupText(entry?.specialty_id ?? entry?.specialty?.id) || undefined,
+    subSpecialties,
+  };
+};
+
+const fallbackZones: LookupItem[] = ZONES.map((label) => ({ id: label, label }));
+const fallbackStates: LookupItem[] = NIGERIA_STATES.map((label) => ({ id: label, label }));
+const fallbackSpecialties: LookupItem[] = SPECIALTIES.map((label) => ({
+  id: label,
+  label,
+  subSpecialties: (SPECIALTY_MAP[label] ?? []).map((sub) => ({ id: sub, label: sub })),
+}));
+const fallbackOrganizationTypes: LookupItem[] = [
+  { id: "hmo", label: "HMO" },
+  { id: "corporate", label: "Corporate" },
+  { id: "other", label: "Other" },
+];
+
+const fallbackLookups: RegistrationLookups = {
+  zones: fallbackZones,
+  states: fallbackStates,
+  specialties: fallbackSpecialties,
+  subSpecialties: [],
+  organizationTypes: fallbackOrganizationTypes,
+  loading: true,
+};
+
+const fulfilledData = <T,>(result: PromiseSettledResult<any>, fallback: T[]) =>
+  result.status === "fulfilled" ? collection<T>(result.value.data) : fallback;
+
+const useRegistrationLookups = () => {
+  const [lookups, setLookups] = useState<RegistrationLookups>(fallbackLookups);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadLookups = async () => {
+      const [zonesResult, statesResult, specialtiesResult, subSpecialtiesResult, organizationTypesResult] =
+        await Promise.allSettled([
+          api.lookups.zones(),
+          api.lookups.states(),
+          api.lookups.specialties({ include: "sub_specialties" }),
+          api.lookups.subSpecialties(),
+          api.lookups.organizationTypes(),
+        ]);
+
+      if (cancelled) return;
+
+      const zones = fulfilledData(zonesResult, []).map((entry, index) => lookupItemFromApi(entry, `zone-${index}`));
+      const states = fulfilledData(statesResult, []).map((entry, index) => lookupItemFromApi(entry, `state-${index}`));
+      const subSpecialties = fulfilledData(subSpecialtiesResult, []).map((entry, index) =>
+        lookupItemFromApi(entry, `sub-specialty-${index}`),
+      );
+      const specialties = fulfilledData(specialtiesResult, [])
+        .map((entry, index) => lookupItemFromApi(entry, `specialty-${index}`))
+        .map((specialty) => ({
+          ...specialty,
+          subSpecialties:
+            specialty.subSpecialties?.length
+              ? specialty.subSpecialties
+              : subSpecialties.filter((subSpecialty) => subSpecialty.specialtyId === specialty.id),
+        }));
+      const organizationTypes = fulfilledData(organizationTypesResult, []).map((entry, index) =>
+        lookupItemFromApi(entry, `organization-type-${index}`),
+      );
+
+      setLookups({
+        zones: zones.length ? zones : fallbackZones,
+        states: states.length ? states : fallbackStates,
+        specialties: specialties.length ? specialties : fallbackSpecialties,
+        subSpecialties,
+        organizationTypes: organizationTypes.length ? organizationTypes : fallbackOrganizationTypes,
+        loading: false,
+      });
+    };
+
+    loadLookups();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return lookups;
+};
+
+const statesForZone = (states: LookupItem[], zoneId: string) => {
+  const filtered = zoneId ? states.filter((state) => !state.zoneId || state.zoneId === zoneId) : states;
+  return filtered.length ? filtered : states;
+};
 
 const isTab = (v: string | null): v is TabKey =>
   !!v && TABS.some((t) => t.value === v);
@@ -52,6 +179,7 @@ const Register = () => {
 
   const active = TABS.find((t) => t.value === tab)!;
   const ActiveIcon = active.icon;
+  const lookups = useRegistrationLookups();
 
   return (
     <SiteLayout>
@@ -85,10 +213,10 @@ const Register = () => {
           </div>
 
           <Tabs value={tab} onValueChange={onTabChange} className="space-y-6">
-            <TabsContent value="doctor"><DoctorForm /></TabsContent>
-            <TabsContent value="organization"><OrganizationForm /></TabsContent>
-            <TabsContent value="pharmacy"><PartnerForm kind="Pharmacy" type="pharmacy" placeholderName="e.g. HealthPlus Pharmacy" /></TabsContent>
-            <TabsContent value="lab-diagnostics"><PartnerForm kind="Laboratory / Diagnostics" type="lab-diagnostics" placeholderName="e.g. SafeCare Medical Lab" /></TabsContent>
+            <TabsContent value="doctor"><DoctorForm lookups={lookups} /></TabsContent>
+            <TabsContent value="organization"><OrganizationForm lookups={lookups} /></TabsContent>
+            <TabsContent value="pharmacy"><PartnerForm lookups={lookups} kind="Pharmacy" type="pharmacy" placeholderName="e.g. HealthPlus Pharmacy" /></TabsContent>
+            <TabsContent value="lab-diagnostics"><PartnerForm lookups={lookups} kind="Laboratory / Diagnostics" type="lab-diagnostics" placeholderName="e.g. SafeCare Medical Lab" /></TabsContent>
           </Tabs>
         </div>
 
@@ -130,6 +258,19 @@ const Register = () => {
 /* ---------- Shared verification documents uploader ---------- */
 const ACCEPTED = ".pdf,.jpg,.jpeg,.png,.webp";
 const MAX_MB = 10;
+const ACCEPTED_EXTENSIONS = new Set(ACCEPTED.split(","));
+const ACCEPTED_MIME_TYPES = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+
+const isAcceptedDocumentFile = (file: File) => {
+  const lowerName = file.name.toLowerCase();
+  const extension = lowerName.includes(".") ? `.${lowerName.split(".").pop()}` : "";
+  return ACCEPTED_EXTENSIONS.has(extension) && (!file.type || ACCEPTED_MIME_TYPES.has(file.type));
+};
 
 type FileFieldProps = {
   id: string;
@@ -160,13 +301,22 @@ const FileField = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const list = Array.from(e.target.files ?? []);
     const maxBytes = maxSizeMb * 1024 * 1024;
-    const accepted = list.filter((file) => file.size <= maxBytes);
-    const rejected = list.filter((file) => file.size > maxBytes);
+    const wrongType = list.filter((file) => !isAcceptedDocumentFile(file));
+    const tooLarge = list.filter((file) => isAcceptedDocumentFile(file) && file.size > maxBytes);
+    const accepted = list.filter((file) => isAcceptedDocumentFile(file) && file.size <= maxBytes);
 
-    if (rejected.length > 0) {
+    if (wrongType.length > 0) {
+      toast({
+        title: "Unsupported file type",
+        description: "Please upload only PDF, JPG, PNG or WEBP documents.",
+        variant: "destructive",
+      });
+    }
+
+    if (tooLarge.length > 0) {
       toast({
         title: "File too large",
-        description: `${rejected.map((file) => file.name).join(", ")} ${rejected.length > 1 ? "are" : "is"} over the ${maxSizeMb}MB limit.`,
+        description: `${tooLarge.map((file) => file.name).join(", ")} ${tooLarge.length > 1 ? "are" : "is"} over the ${maxSizeMb}MB limit.`,
         variant: "destructive",
       });
     }
@@ -192,7 +342,7 @@ const FileField = ({
     `up to ${maxSizeMb}MB each`,
   ]
     .filter(Boolean)
-    .join(" • ");
+    .join(" - ");
 
   return (
     <div className="space-y-2 sm:col-span-2">
@@ -400,9 +550,11 @@ const buildDocSlots = (docs: DocsState, licenceLabel: string): DocumentSlot[] =>
 ];
 
 /* ---------- Doctor form ---------- */
-const DoctorForm = () => {
+const DoctorForm = ({ lookups }: { lookups: RegistrationLookups }) => {
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
+  const [zoneId, setZoneId] = useState<string>("");
+  const [stateId, setStateId] = useState<string>("");
   const [specialty, setSpecialty] = useState<string>("");
   const [subSpecialty, setSubSpecialty] = useState<string>("");
   const [otherSpecialty, setOtherSpecialty] = useState<string>("");
@@ -410,6 +562,23 @@ const DoctorForm = () => {
   const [submitting, setSubmitting] = useState(false);
   const [consent, setConsent] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
+  const selectedZone = lookups.zones.find((item) => item.id === zoneId);
+  const stateOptions = statesForZone(lookups.states, zoneId);
+  const selectedState = stateOptions.find((item) => item.id === stateId) ?? lookups.states.find((item) => item.id === stateId);
+  const selectedSpecialty = lookups.specialties.find((item) => item.id === specialty);
+  const isOtherSpecialty = selectedSpecialty?.label === "Others";
+  const subSpecialtyOptions =
+    selectedSpecialty?.subSpecialties?.length
+      ? selectedSpecialty.subSpecialties
+      : selectedSpecialty
+        ? (SPECIALTY_MAP[selectedSpecialty.label as keyof typeof SPECIALTY_MAP] ?? []).map((sub) => ({ id: sub, label: sub }))
+        : [];
+  const selectedSubSpecialty = subSpecialtyOptions.find((item) => item.id === subSpecialty);
+
+  const handleZoneChange = (value: string) => {
+    setZoneId(value);
+    setStateId("");
+  };
 
   const handleSpecialtyChange = (value: string) => {
     setSpecialty(value);
@@ -449,11 +618,18 @@ const DoctorForm = () => {
         email: get("email"),
         phone: get("phone"),
         city: get("city"),
-        state: get("state"),
-        zone: get("zone"),
-        specialty: specialty,
+        state: selectedState?.label ?? stateId,
+        zone: selectedZone?.label ?? zoneId,
+        specialty: selectedSpecialty?.label ?? specialty,
         details: {
-          sub_specialty: specialty === "Others" ? otherSpecialty : subSpecialty,
+          zone_id: zoneId,
+          zone_name: selectedZone?.label,
+          state_id: stateId,
+          state_name: selectedState?.label,
+          specialty_id: specialty,
+          specialty: selectedSpecialty?.label,
+          sub_specialty: isOtherSpecialty ? otherSpecialty : selectedSubSpecialty?.label ?? subSpecialty,
+          sub_specialty_id: isOtherSpecialty ? undefined : subSpecialty,
           years_experience: get("years_experience"),
           website: get("website"),
           organization_name: get("organization_name"),
@@ -473,6 +649,8 @@ const DoctorForm = () => {
       formRef.current?.reset();
       setDocs(emptyDocs());
       setConsent(false);
+      setZoneId("");
+      setStateId("");
       setSpecialty("");
       setSubSpecialty("");
       setOtherSpecialty("");
@@ -505,13 +683,13 @@ const DoctorForm = () => {
           <Select value={specialty} onValueChange={handleSpecialtyChange} required>
             <SelectTrigger><SelectValue placeholder="Select Specialty" /></SelectTrigger>
             <SelectContent>
-              {SPECIALTIES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {lookups.specialties.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
         {specialty && (
           <div className="space-y-2">
-            {specialty === "Others" ? (
+            {isOtherSpecialty ? (
               <>
                 <Label>Specify Specialty or Profession</Label>
                 <Input
@@ -526,11 +704,11 @@ const DoctorForm = () => {
             ) : (
               <>
                 <Label>Sub-Specialty</Label>
-                <Select value={subSpecialty} onValueChange={setSubSpecialty} required={Boolean(specialty)}>
-                  <SelectTrigger><SelectValue placeholder="Select Sub-Specialty" /></SelectTrigger>
+                <Select value={subSpecialty} onValueChange={setSubSpecialty} disabled={subSpecialtyOptions.length === 0}>
+                  <SelectTrigger><SelectValue placeholder={subSpecialtyOptions.length ? "Select Sub-Specialty" : "No sub-specialties available"} /></SelectTrigger>
                   <SelectContent>
-                    {SPECIALTY_MAP[specialty as keyof typeof SPECIALTY_MAP]?.map((sub) => (
-                      <SelectItem key={sub} value={sub}>{sub}</SelectItem>
+                    {subSpecialtyOptions.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -540,7 +718,7 @@ const DoctorForm = () => {
         )}
         <div className="space-y-2">
           <Label>Years of Experience</Label>
-          <Input name="years_experience" type="number" min={0} max={60} placeholder="e.g. 8" />
+          <Input name="years_experience" type="number" min={0} max={80} required placeholder="e.g. 8" />
         </div>
         <div className="space-y-2">
           <Label>Phone</Label>
@@ -556,19 +734,19 @@ const DoctorForm = () => {
         </div>
         <div className="space-y-2">
           <Label>Zone</Label>
-          <Select name="zone" required>
+          <Select name="zone_id" value={zoneId} onValueChange={handleZoneChange} required>
             <SelectTrigger><SelectValue placeholder="Zone" /></SelectTrigger>
             <SelectContent>
-              {ZONES.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+              {lookups.zones.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-2">
           <Label>State</Label>
-          <Select name="state" required>
+          <Select name="state_id" value={stateId} onValueChange={setStateId} required>
             <SelectTrigger><SelectValue placeholder="Select State" /></SelectTrigger>
             <SelectContent className="max-h-72">
-              {NIGERIA_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {stateOptions.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -581,7 +759,7 @@ const DoctorForm = () => {
           <Input name="website" type="url" maxLength={255} placeholder="https://your-website.com" />
         </div>
         <div className="space-y-2 sm:col-span-2">
-          <Label>Services Rendered</Label>
+          <Label>Services Offered</Label>
           <Textarea name="services" maxLength={1000} rows={4} placeholder="Briefly describe the services rendered by your organization..." />
         </div>
         <div className="space-y-2 sm:col-span-2">
@@ -614,13 +792,25 @@ const DoctorForm = () => {
 };
 
 /* ---------- Organization form ---------- */
-const OrganizationForm = () => {
+const OrganizationForm = ({ lookups }: { lookups: RegistrationLookups }) => {
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
+  const [zoneId, setZoneId] = useState<string>("");
+  const [stateId, setStateId] = useState<string>("");
+  const [organizationTypeId, setOrganizationTypeId] = useState<string>("");
   const [docs, setDocs] = useState<DocsState>(emptyDocs());
   const [submitting, setSubmitting] = useState(false);
   const [consent, setConsent] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
+  const selectedZone = lookups.zones.find((item) => item.id === zoneId);
+  const stateOptions = statesForZone(lookups.states, zoneId);
+  const selectedState = stateOptions.find((item) => item.id === stateId) ?? lookups.states.find((item) => item.id === stateId);
+  const selectedOrganizationType = lookups.organizationTypes.find((item) => item.id === organizationTypeId);
+
+  const handleZoneChange = (value: string) => {
+    setZoneId(value);
+    setStateId("");
+  };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -643,11 +833,18 @@ const OrganizationForm = () => {
         email: get("email"),
         phone: get("phone"),
         city: get("city"),
-        state: get("state"),
+        state: selectedState?.label ?? stateId,
+        zone: selectedZone?.label ?? zoneId,
         details: {
-          org_type: get("org_type"),
+          zone_id: zoneId,
+          zone_name: selectedZone?.label,
+          state_id: stateId,
+          state_name: selectedState?.label,
+          org_type: selectedOrganizationType?.label ?? organizationTypeId,
+          organization_type_id: organizationTypeId,
           members: get("members"),
           role: get("role"),
+          address: get("address"),
           notes: get("notes"),
           consent_agreed: true,
           consent_agreed_at: new Date().toISOString(),
@@ -658,6 +855,9 @@ const OrganizationForm = () => {
       formRef.current?.reset();
       setDocs(emptyDocs());
       setConsent(false);
+      setZoneId("");
+      setStateId("");
+      setOrganizationTypeId("");
     } catch (err: any) {
       toast({ title: "Submission failed", description: err.message ?? "Please try again.", variant: "destructive" });
     } finally {
@@ -672,17 +872,15 @@ const OrganizationForm = () => {
       
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2">
-          <Label>Organization Name</Label>
+          <Label>Name of Organization</Label>
           <Input name="organization_name" required maxLength={150} placeholder="e.g. Leadway Insurance " />
         </div>
         <div className="space-y-2">
           <Label>Type</Label>
-          <Select name="org_type" required>
+          <Select name="organization_type_id" value={organizationTypeId} onValueChange={setOrganizationTypeId} required>
             <SelectTrigger><SelectValue placeholder="Select Type" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="hmo">HMO</SelectItem>
-              <SelectItem value="corporate">Corporate</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
+              {lookups.organizationTypes.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -707,17 +905,30 @@ const OrganizationForm = () => {
           <Input name="phone" type="tel" required maxLength={20} />
         </div>
         <div className="space-y-2">
+          <Label>Zone</Label>
+          <Select name="zone_id" value={zoneId} onValueChange={handleZoneChange} required>
+            <SelectTrigger><SelectValue placeholder="Zone" /></SelectTrigger>
+            <SelectContent>
+              {lookups.zones.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
           <Label>State</Label>
-          <Select name="state" required>
+          <Select name="state_id" value={stateId} onValueChange={setStateId} required>
             <SelectTrigger><SelectValue placeholder="Select State" /></SelectTrigger>
             <SelectContent className="max-h-72">
-              {NIGERIA_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {stateOptions.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-2">
           <Label>City</Label>
           <Input name="city" required maxLength={60} />
+        </div>
+        <div className="space-y-2 sm:col-span-2">
+          <Label>Address</Label>
+          <Input name="address" required maxLength={200} placeholder="Street address" />
         </div>
         <div className="space-y-2 sm:col-span-2">
           <Label>What are you hoping DesolMed can help with?</Label>
@@ -746,20 +957,32 @@ const OrganizationForm = () => {
 
 /* ---------- Generic partner form for Pharmacy / Diagnostics / Laboratory ---------- */
 const PartnerForm = ({
+  lookups,
   kind,
   type,
   placeholderName,
 }: {
+  lookups: RegistrationLookups;
   kind: string;
   type: ApplicantType;
   placeholderName: string;
 }) => {
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
+  const [zoneId, setZoneId] = useState<string>("");
+  const [stateId, setStateId] = useState<string>("");
   const [docs, setDocs] = useState<DocsState>(emptyDocs());
   const [submitting, setSubmitting] = useState(false);
   const [consent, setConsent] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
+  const selectedZone = lookups.zones.find((item) => item.id === zoneId);
+  const stateOptions = statesForZone(lookups.states, zoneId);
+  const selectedState = stateOptions.find((item) => item.id === stateId) ?? lookups.states.find((item) => item.id === stateId);
+
+  const handleZoneChange = (value: string) => {
+    setZoneId(value);
+    setStateId("");
+  };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -782,10 +1005,14 @@ const PartnerForm = ({
         email: get("email"),
         phone: get("phone"),
         city: get("city"),
-        state: get("state"),
-        zone: get("zone"),
+        state: selectedState?.label ?? stateId,
+        zone: selectedZone?.label ?? zoneId,
         details: {
           kind,
+          zone_id: zoneId,
+          zone_name: selectedZone?.label,
+          state_id: stateId,
+          state_name: selectedState?.label,
           license_number: get("license_number"),
           year_established: get("year_established"),
           role: get("role"),
@@ -800,6 +1027,8 @@ const PartnerForm = ({
       formRef.current?.reset();
       setDocs(emptyDocs());
       setConsent(false);
+      setZoneId("");
+      setStateId("");
     } catch (err: any) {
       toast({ title: "Submission failed", description: err.message ?? "Please try again.", variant: "destructive" });
     } finally {
@@ -813,7 +1042,7 @@ const PartnerForm = ({
         <h2 className="font-display text-2xl font-bold">{kind} Registration</h2>
         <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2">
-          <Label>{kind} Name</Label>
+          <Label>Name of {kind}</Label>
           <Input name="organization_name" required maxLength={150} placeholder={placeholderName} />
         </div>
         <div className="space-y-2">
@@ -842,19 +1071,19 @@ const PartnerForm = ({
         </div>
         <div className="space-y-2">
           <Label>Zone</Label>
-          <Select name="zone" required>
+          <Select name="zone_id" value={zoneId} onValueChange={handleZoneChange} required>
             <SelectTrigger><SelectValue placeholder="Zone" /></SelectTrigger>
             <SelectContent>
-              {ZONES.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+              {lookups.zones.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-2">
           <Label>State</Label>
-          <Select name="state" required>
+          <Select name="state_id" value={stateId} onValueChange={setStateId} required>
             <SelectTrigger><SelectValue placeholder="Select State" /></SelectTrigger>
             <SelectContent className="max-h-72">
-              {NIGERIA_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              {stateOptions.map((item) => <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>

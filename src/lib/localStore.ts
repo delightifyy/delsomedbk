@@ -482,6 +482,40 @@ export const signUp = async ({ email, password, fullName }: { email: string; pas
   return { data: { user: publicUser(user) } };
 };
 
+export const signUpPatient = async ({ email, password, fullName }: { email: string; password: string; fullName?: string }) => {
+  await signUp({ email, password, fullName });
+  const store = readStore();
+  const user = store.users.find((candidate) => candidate.email.toLowerCase() === email.trim().toLowerCase());
+  if (!user) throw new Error("Unable to create patient account. Please try again.");
+
+  save((state) => {
+    const profile = state.profiles.find((entry) => entry.id === user.id);
+    if (profile) {
+      profile.user_type = "patient";
+      profile.full_name = fullName?.trim() || profile.full_name;
+    }
+  });
+
+  const session: LocalSession = { user: publicUser(user), roles: ["user"] };
+  writeSession(session);
+  return { data: { session } };
+};
+
+export const signInPatientWithPassword = async ({ email, password }: { email: string; password: string }) => {
+  const store = readStore();
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = store.users.find((candidate) => candidate.email.toLowerCase() === normalizedEmail);
+
+  if (!user || user.password !== password) {
+    throw new Error("No patient account was found with those details.");
+  }
+
+  const role = store.roles.find((entry) => entry.user_id === user.id)?.role ?? "user";
+  const session: LocalSession = { user: publicUser(user), roles: [role] };
+  writeSession(session);
+  return { data: { session } };
+};
+
 export const signInWithPassword = async ({ email, password }: { email: string; password: string }) => {
   try {
     const response = await api.auth.adminLogin({ email, password });
