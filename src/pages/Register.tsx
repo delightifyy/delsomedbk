@@ -873,7 +873,7 @@ const OrganizationForm = ({ lookups }: { lookups: RegistrationLookups }) => {
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2">
           <Label>Name of Organization</Label>
-          <Input name="organization_name" required maxLength={150} placeholder="e.g. Leadway Insurance " />
+          <Input name="organization_name" required maxLength={150} placeholder="e.g. Leadway Organization " />
         </div>
         <div className="space-y-2">
           <Label>Type</Label>
