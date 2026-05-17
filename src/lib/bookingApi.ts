@@ -51,6 +51,7 @@ export type TimeSlot = {
   capacity: number;
   booked_count: number;
   status: string;
+  slot_end_time?: string;
 };
 
 export type IntakeField = {
