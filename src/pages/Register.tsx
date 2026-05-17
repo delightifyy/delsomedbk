@@ -935,7 +935,7 @@ const OrganizationForm = ({ lookups }: { lookups: RegistrationLookups }) => {
           <Textarea name="notes" rows={5} maxLength={1000} placeholder="A few sentences are enough…" />
         </div>
       </div>
-      <DocumentsSection licenceLabel="Organization Registration / Operating Licence" onChange={setDocs} />
+      <DocumentsSection licenceLabel="HMO Registration / Operating Licence" onChange={setDocs} />
       <ConsentCheckbox checked={consent} onCheckedChange={setConsent} id="consent-org" />
       <div className="flex justify-end pt-4 border-t border-border">
         <Button type="submit" variant="hero" size="lg" disabled={submitting}>
