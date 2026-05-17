@@ -868,12 +868,12 @@ const OrganizationForm = ({ lookups }: { lookups: RegistrationLookups }) => {
   return (
     <>
       <form ref={formRef} onSubmit={onSubmit} className="rounded-2xl border border-border bg-card p-8 space-y-6">
-        <h2 className="font-display text-2xl font-bold">Organization Registration</h2>
+        <h2 className="font-display text-2xl font-bold">HMO Registration</h2>
       
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2">
-          <Label>Name of Organization</Label>
-          <Input name="organization_name" required maxLength={150} placeholder="e.g. Leadway Organization " />
+          <Label>Name of HMO</Label>
+          <Input name="organization_name" required maxLength={150} placeholder="e.g. Leadway HMO" />
         </div>
         <div className="space-y-2">
           <Label>Type</Label>
@@ -935,7 +935,7 @@ const OrganizationForm = ({ lookups }: { lookups: RegistrationLookups }) => {
           <Textarea name="notes" rows={5} maxLength={1000} placeholder="A few sentences are enough…" />
         </div>
       </div>
-      <DocumentsSection licenceLabel="Organization Registration / Operating Licence" onChange={setDocs} />
+      <DocumentsSection licenceLabel="HMO Registration / Operating Licence" onChange={setDocs} />
       <ConsentCheckbox checked={consent} onCheckedChange={setConsent} id="consent-org" />
       <div className="flex justify-end pt-4 border-t border-border">
         <Button type="submit" variant="hero" size="lg" disabled={submitting}>
@@ -947,7 +947,7 @@ const OrganizationForm = ({ lookups }: { lookups: RegistrationLookups }) => {
         open={successOpen}
         onOpenChange={setSuccessOpen}
         title="Application submitted successfully"
-        description="Thank you for registering your organization. Our verification team will review the details, and you will receive an email once the application has been verified."
+        description="Thank you for registering your HMO. Our verification team will review the details, and you will receive an email once the application has been verified."
         primaryLabel="Back to home"
         primaryHref="/"
       />
