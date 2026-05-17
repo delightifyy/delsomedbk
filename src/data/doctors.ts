@@ -213,7 +213,7 @@ export type Advert = {
 export const ADVERTS: Advert[] = [
   { id: "a1", title: "Free BP Screening Week", sponsor: "HealthPlus Pharmacy", category: "Pharmacy", zone: "South", state: "Lagos", city: "Lekki", description: "Walk in for a complimentary blood pressure check, every weekday this month." },
   { id: "a2", title: "20% off Lab Tests", sponsor: "ClearPath Diagnostics", category: "Diagnostics", zone: "North", state: "Abuja FCT", city: "Abuja", description: "Comprehensive panels at a discount when you book through DesolMed referrals." },
-  { id: "a3", title: "Family HMO Plans", sponsor: "Reliance HMO", category: "Insurance", zone: "South", state: "Lagos", city: "Victoria Island", description: "Affordable coverage for households of 3 or more, starting from ₦25,000/year." },
+  { id: "a3", title: "Family HMO Plans", sponsor: "Reliance HMO", category: "Organization", zone: "South", state: "Lagos", city: "Victoria Island", description: "Affordable coverage for households of 3 or more, starting from ₦25,000/year." },
   { id: "a4", title: "Wellness Retreat", sponsor: "Calm Clinic", category: "Wellness", zone: "West", state: "Oyo", city: "Ibadan", description: "Two-day mindfulness and stress management retreat for working professionals." },
   { id: "a5", title: "Maternity Package", sponsor: "Hope Hospital", category: "Hospital", zone: "East", state: "Enugu", city: "Enugu", description: "All-inclusive antenatal and delivery package with 24/7 specialist support." },
   { id: "a6", title: "Diabetes Care Bundle", sponsor: "MedPlus", category: "Pharmacy", zone: "Central", state: "Plateau", city: "Jos", description: "Glucose monitor, strips and a free nutrition consult in one bundle." },
