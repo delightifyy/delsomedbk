@@ -947,7 +947,7 @@ const OrganizationForm = ({ lookups }: { lookups: RegistrationLookups }) => {
         open={successOpen}
         onOpenChange={setSuccessOpen}
         title="Application submitted successfully"
-        description="Thank you for registering your organization. Our verification team will review the details, and you will receive an email once the application has been verified."
+        description="Thank you for registering your HMO. Our verification team will review the details, and you will receive an email once the application has been verified."
         primaryLabel="Back to home"
         primaryHref="/"
       />
