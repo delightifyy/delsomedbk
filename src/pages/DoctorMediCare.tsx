@@ -378,7 +378,7 @@ const DoctorMediCare = () => {
                     <div className="space-y-3">
                       {[
                         { value: "pay-now", title: "Pay Now", desc: "Card, transfer, or mobile wallet" },
-                        { value: "hmo", title: "HMO Insurance", desc: "Use your health insurance plan" },
+                        { value: "hmo", title: "HMO Organization", desc: "Use your health organization plan" },
                         { value: "subscription", title: "Subscription", desc: "Use an active subscription plan" },
                       ].map((method) => (
                         <button
