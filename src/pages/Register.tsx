@@ -846,6 +846,7 @@ const OrganizationForm = ({ lookups }: { lookups: RegistrationLookups }) => {
           role: get("role"),
           address: get("address"),
           notes: get("notes"),
+          organization_provider: get("organization_provider"),
           consent_agreed: true,
           consent_agreed_at: new Date().toISOString(),
         },
