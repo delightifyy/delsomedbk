@@ -203,7 +203,7 @@ export type Advert = {
   id: string;
   title: string;
   sponsor: string;
-  category: "Pharmacy" | "Diagnostics" | "Insurance" | "Wellness" | "Hospital";
+  category: "Pharmacy" | "Diagnostics" | "Organization" | "Wellness" | "Hospital";
   zone: string;
   state: string;
   city: string;
