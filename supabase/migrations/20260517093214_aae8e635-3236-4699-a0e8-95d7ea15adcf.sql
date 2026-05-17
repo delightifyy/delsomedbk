@@ -1,0 +1,1 @@
+UPDATE public.booking_payment_methods SET key='organization' WHERE key='insurance';
