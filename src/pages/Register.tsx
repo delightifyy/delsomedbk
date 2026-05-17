@@ -868,12 +868,12 @@ const OrganizationForm = ({ lookups }: { lookups: RegistrationLookups }) => {
   return (
     <>
       <form ref={formRef} onSubmit={onSubmit} className="rounded-2xl border border-border bg-card p-8 space-y-6">
-        <h2 className="font-display text-2xl font-bold">Organization Registration</h2>
+        <h2 className="font-display text-2xl font-bold">HMO Registration</h2>
       
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2">
-          <Label>Name of Organization</Label>
-          <Input name="organization_name" required maxLength={150} placeholder="e.g. Leadway Organization " />
+          <Label>Name of HMO</Label>
+          <Input name="organization_name" required maxLength={150} placeholder="e.g. Leadway HMO" />
         </div>
         <div className="space-y-2">
           <Label>Type</Label>
