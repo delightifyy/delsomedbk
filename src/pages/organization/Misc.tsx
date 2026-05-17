@@ -64,8 +64,8 @@ export const Invoices = () => (
 
 export const OrgSettings = () => (
   <PortalLayout portalName="HMO Portal" nav={orgNav}>
-    <PageHeader title="Settings" description="Organization preferences and account." />
-    <SectionCard title="Organization profile">
+    <PageHeader title="Settings" description="HMO preferences and account." />
+    <SectionCard title="HMO profile">
       <p className="text-sm text-muted-foreground">Settings editor coming soon.</p>
     </SectionCard>
   </PortalLayout>
