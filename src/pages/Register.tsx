@@ -931,6 +931,10 @@ const OrganizationForm = ({ lookups }: { lookups: RegistrationLookups }) => {
           <Input name="address" required maxLength={200} placeholder="Street address" />
         </div>
         <div className="space-y-2 sm:col-span-2">
+          <Label>Organization Provider</Label>
+          <Textarea name="organization_provider" rows={4} maxLength={1000} placeholder="Provide details about the organization provider..." />
+        </div>
+        <div className="space-y-2 sm:col-span-2">
           <Label>What are you hoping DesolMed can help with?</Label>
           <Textarea name="notes" rows={5} maxLength={1000} placeholder="A few sentences are enough…" />
         </div>
