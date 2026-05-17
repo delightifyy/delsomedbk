@@ -1107,59 +1107,20 @@ function PaymentStep({
           
           {paymentKey === "organization" && (
             <>
-              <div>
-                <label className="block text-xs font-semibold mb-2">Select Your Organization</label>
-                <div className="space-y-2">
-                  {organizations.length === 0 ? (
-                    <p className="text-sm text-[hsl(var(--mc-muted))] py-4 text-center">No organizations available</p>
-                  ) : (
-                    organizations.map((org: any) => (
-                      <button
-                        key={org.id}
-                        type="button"
-                        onClick={() => {
-                          setMeta({ ...meta, organization: org.name, organization_code: org.code, organization_verified: "false", employee_id: "" });
-                        }}
-                        className={`w-full text-left rounded-2xl border-2 p-4 transition ${
-                          meta.organization === org.name
-                            ? "border-[hsl(var(--mc-primary))] bg-[hsl(var(--mc-primary))]/5"
-                            : "border-[hsl(var(--mc-border))] bg-white hover:border-[hsl(var(--mc-primary))]/40"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="font-semibold text-sm">{org.name}</p>
-                            <p className="text-xs text-[hsl(var(--mc-muted))] mt-1">Organization Code: <span className="font-mono">{org.code}</span></p>
-                          </div>
-                          {meta.organization === org.name && (
-                            <Check className="h-5 w-5 text-[hsl(var(--mc-primary))] flex-shrink-0" />
-                          )}
-                        </div>
-                      </button>
-                    ))
-                  )}
-                </div>
-              </div>
-              
-              {meta.organization && (
-                <div className="rounded-2xl bg-[hsl(var(--mc-muted-soft))] p-4 space-y-2 border border-[hsl(var(--mc-border))]">
-                  <p className="text-xs text-[hsl(var(--mc-muted))] font-bold uppercase tracking-wider">Organization Selected</p>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="font-semibold text-[hsl(var(--mc-fg))]">{meta.organization}</span></p>
-                    <p className="text-xs text-[hsl(var(--mc-muted))]">Code: <span className="font-mono font-semibold">{meta.organization_code}</span></p>
-                  </div>
-                </div>
-              )}
-              
-              {meta.organization && (
-                <Field 
-                  label="Employee ID" 
-                  placeholder="EMP-1234567" 
-                  value={meta.employee_id || ""} 
-                  onChange={(v) => setMeta({ ...meta, employee_id: v, organization_verified: "false" })} 
-                />
-              )}
-              
+              <Field
+                label="Name of Organisation"
+                placeholder="e.g. Acme Corporation"
+                value={meta.organization || ""}
+                onChange={(v) => setMeta({ ...meta, organization: v, organization_verified: "false" })}
+              />
+
+              <Field
+                label="Organisation ID/Enrollee Number"
+                placeholder="e.g. ORG-1234567"
+                value={meta.employee_id || ""}
+                onChange={(v) => setMeta({ ...meta, employee_id: v, organization_verified: "false" })}
+              />
+
               {meta.organization && meta.employee_id && meta.organization_verified !== "true" && (
                 <button
                   type="button"
