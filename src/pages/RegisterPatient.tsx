@@ -270,7 +270,7 @@ const RegisterPatient = () => {
         title="Patient registration successful"
         description="Your DesolMed patient account has been created. Please check your email for the verification message before signing in."
         primaryLabel="Go to login"
-        primaryHref="/auth"
+        primaryHref="/patient/login"
       />
     </SiteLayout>
   );

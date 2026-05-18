@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AdminGuard } from "@/components/dashboard/AdminGuard";
+import { PatientGuard } from "@/components/portal/PatientGuard";
 
 const queryClient = new QueryClient();
 const routeFallback = <div className="min-h-screen bg-background" />;
@@ -26,6 +27,7 @@ const DoctorMediCare = lazy(() => import("./pages/DoctorMediCare.tsx"));
 const RegisterPatient = lazy(() => import("./pages/RegisterPatient.tsx"));
 const Register = lazy(() => import("./pages/Register.tsx"));
 const Auth = lazy(() => import("./pages/Auth.tsx"));
+const PatientLogin = lazy(() => import("./pages/PatientLogin.tsx"));
 const DashOverview = lazy(() => import("./pages/dashboard/Overview.tsx"));
 const DashUsers = lazy(() => import("./pages/dashboard/Users.tsx"));
 const DashDoctors = lazy(() => import("./pages/dashboard/Doctors.tsx"));
@@ -98,6 +100,7 @@ const App = () => (
               <Route path="/register/lab-diagnostics" element={<Navigate to="/register?type=lab-diagnostics" replace />} />
               <Route path="/register/patient" element={<RegisterPatient />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/patient/login" element={<PatientLogin />} />
               <Route path="/dashboard" element={<AdminGuard><DashOverview /></AdminGuard>} />
               <Route path="/dashboard/users" element={<AdminGuard><DashUsers /></AdminGuard>} />
               <Route path="/dashboard/doctors" element={<AdminGuard><DashDoctors /></AdminGuard>} />
@@ -113,12 +116,12 @@ const App = () => (
               <Route path="/dashboard/notifications" element={<AdminGuard><DashNotifications /></AdminGuard>} />
 
               {/* Patient Portal */}
-              <Route path="/patient" element={<PatientDashboard />} />
-              <Route path="/patient/appointments" element={<PatientAppointments />} />
-              <Route path="/patient/records" element={<PatientRecords />} />
-              <Route path="/patient/prescriptions" element={<PatientPrescriptions />} />
-              <Route path="/patient/payments" element={<PatientPayments />} />
-              <Route path="/patient/settings" element={<PatientSettings />} />
+              <Route path="/patient" element={<PatientGuard><PatientDashboard /></PatientGuard>} />
+              <Route path="/patient/appointments" element={<PatientGuard><PatientAppointments /></PatientGuard>} />
+              <Route path="/patient/records" element={<PatientGuard><PatientRecords /></PatientGuard>} />
+              <Route path="/patient/prescriptions" element={<PatientGuard><PatientPrescriptions /></PatientGuard>} />
+              <Route path="/patient/payments" element={<PatientGuard><PatientPayments /></PatientGuard>} />
+              <Route path="/patient/settings" element={<PatientGuard><PatientSettings /></PatientGuard>} />
 
               {/* Doctor EMR Portal */}
               <Route path="/doctor" element={<DoctorPortalDashboard />} />

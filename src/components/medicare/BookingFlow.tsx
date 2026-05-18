@@ -64,10 +64,8 @@ export default function BookingFlow({ open, onClose }: Props) {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [showVerificationPopup, setShowVerificationPopup] = useState(false);
-  const [verificationType, setVerificationType] = useState<"hmo" | "organization" | null>(null);
-  const [verificationComplete, setVerificationComplete] = useState(false);
-  const [bookingFlowUser, setBookingFlowUser] = useState<any | null>(null); // Track user for THIS flow
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [bookingFlowUser, setBookingFlowUser] = useState<any | null>(null);
 
   // Data
   const [categories, setCategories] = useState<ConcernCategory[]>([]);
@@ -109,13 +107,24 @@ export default function BookingFlow({ open, onClose }: Props) {
     setLoading(true);
     fetchBookingData().then((d) => {
       setCategories(d.categories);
-      // Use sample topics instead of fetched concerns
       setConcerns(SAMPLE_TOPICS as any);
       setClinicians(d.clinicians);
       setMap(d.map);
-      // Filter out portal_code and postal_code fields from intake fields
       const filteredFields = d.intakeFields.filter(f => f.field_key !== "portal_code" && f.field_key !== "postal_code");
-      setIntakeFields(filteredFields);
+      const updatedFields = filteredFields.map(f => {
+        if (f.field_key === "phone") {
+          return { ...f, label: "Phone Number" };
+        }
+        if (f.field_key === "confirm_email") {
+          return { ...f, label: "Confirm Email" };
+        }
+        // Add gender field with Male/Female options only
+        if (f.field_key === "gender") {
+          return { ...f, options: ["Male", "Female"] };
+        }
+        return f;
+      });
+      setIntakeFields(updatedFields);
       setLegal(d.legal);
       setMethods(d.methods);
       setHmos(d.hmos);
@@ -132,32 +141,29 @@ export default function BookingFlow({ open, onClose }: Props) {
       setTimeout(() => {
         setStep(0); setSelectedConcern(null); setSelectedClinician(null);
         setSelectedDurationMinutes(30); setSelectedDate(null); setSelectedSlot(null); setPatient({}); setAgreed({});
-        setBookingRef(null); setSearch(""); setPaymentMeta({}); setShowVerificationPopup(false); setVerificationType(null); setVerificationComplete(false);
-        setBookingFlowUser(null); // Clear booking flow user when closing
+        setBookingRef(null); setSearch(""); setPaymentMeta({}); setShowConfirmModal(false);
+        setBookingFlowUser(null);
       }, 300);
     }
   }, [open]);
 
-  // Load slots when clinician picked - with duration-aware slot generation
+  // Load slots when clinician picked
   useEffect(() => {
     if (!selectedClinician) return;
     const today = new Date().toISOString().slice(0, 10);
     const to = new Date(Date.now() + 13 * 86400000).toISOString().slice(0, 10);
     fetchSlotsFor(selectedClinician.id, today, to).then((rawSlots) => {
-      // Transform slots to respect duration
       const transformedSlots = rawSlots.flatMap((slot) => {
         const baseTime = slot.slot_time;
         const [hours, minutes] = baseTime.split(":").map(Number);
         
         if (selectedDurationMinutes === 30) {
-          // For 30 min: keep as 9:00-9:30, 9:30-10:00, etc.
           return [{
             ...slot,
             slot_time: baseTime,
             slot_end_time: `${String(hours).padStart(2, '0')}:${String(minutes + 30).padStart(2, '0')}`,
           }];
         } else {
-          // For 1 hour: only keep slots where minutes = 00 (9:00, 10:00, etc.)
           if (minutes === 0) {
             return [{
               ...slot,
@@ -193,7 +199,6 @@ export default function BookingFlow({ open, onClose }: Props) {
   }, [concerns, search]);
 
   const getClinicianForConcern = (concern: any) => {
-    // Return first available clinician or a default
     return clinicians[0] ?? null;
   };
 
@@ -213,6 +218,7 @@ export default function BookingFlow({ open, onClose }: Props) {
     .every((f) => (patient[f.field_key] || "").trim().length > 0);
   const emailsMatch = !patient.email || !patient.confirm_email || patient.email === patient.confirm_email;
 
+  // Updated canNext - HMO and Organization no longer require verification
   const canNext = (() => {
     switch (step) {
       case 0: return !!selectedConcern && !!selectedClinician;
@@ -222,70 +228,30 @@ export default function BookingFlow({ open, onClose }: Props) {
       case 4:
         if (!paymentKey) return false;
         if (paymentKey === "subscription") return paymentMeta.subscription_status === "active";
-        if (paymentKey === "hmo") return paymentMeta.hmo_verified === "true";
-        if (paymentKey === "organization") return paymentMeta.organization_verified === "true";
+        // For HMO and Organization, we just need the basic details filled
+        if (paymentKey === "hmo") {
+          return !!(paymentMeta.hmo && paymentMeta.hmo_id);
+        }
+        if (paymentKey === "organization") {
+          return !!(paymentMeta.organization && paymentMeta.employee_id);
+        }
         return true;
       default: return true;
     }
   })();
 
-  async function verifyHmoSubscription() {
-    const hmoProvider = paymentMeta.hmo;
-    const enrolleeId = paymentMeta.hmo_id;
-    
-    if (!hmoProvider || !enrolleeId) {
-      toast.error("Please select HMO provider and enter enrollee number");
-      return;
-    }
-    
-    setVerificationType("hmo");
-    setShowVerificationPopup(true);
-    
-    // Simulate API call to verify HMO
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    
-    setVerificationComplete(true);
-    setPaymentMeta({ ...paymentMeta, hmo_verified: "true" });
-    
-    // Close popup after 3 seconds
-    setTimeout(() => {
-      setShowVerificationPopup(false);
-      setVerificationType(null);
-      setVerificationComplete(false);
-      toast.success("HMO subscription verified! You can now proceed.");
-    }, 3000);
-  }
-  
-  async function verifyOrganizationSubscription() {
-    const organization = paymentMeta.organization;
-    const employeeId = paymentMeta.employee_id;
-    
-    if (!organization || !employeeId) {
-      toast.error("Please select organization and enter employee ID");
-      return;
-    }
-    
-    setVerificationType("organization");
-    setShowVerificationPopup(true);
-    
-    // Simulate API call to verify organization
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    
-    setVerificationComplete(true);
-    setPaymentMeta({ ...paymentMeta, organization_verified: "true" });
-    
-    // Close popup after 3 seconds
-    setTimeout(() => {
-      setShowVerificationPopup(false);
-      setVerificationType(null);
-      setVerificationComplete(false);
-      toast.success("Organization coverage verified! You can now proceed.");
-    }, 3000);
+  function handleConfirmBooking() {
+    setShowConfirmModal(true);
   }
 
   async function submitBooking() {
     if (!selectedConcern || !selectedClinician || !selectedSlot) return;
+    
+    setShowConfirmModal(false);
     setSubmitting(true);
+    
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
     const cat = categories.find((c) => c.id === selectedConcern.category_id);
     const { data, error } = await supabase
       .from("bookings")
@@ -321,7 +287,6 @@ export default function BookingFlow({ open, onClose }: Props) {
       toast.error("Could not create booking. Please try again.");
       return;
     }
-    // best-effort capacity bump
     supabase.from("booking_time_slots").update({
       booked_count: selectedSlot.booked_count + 1,
     }).eq("id", selectedSlot.id).then(() => {});
@@ -441,8 +406,6 @@ export default function BookingFlow({ open, onClose }: Props) {
                     meta={paymentMeta}
                     setMeta={setPaymentMeta}
                     currentUserId={bookingFlowUser?.id || ""}
-                    onVerifyHmo={verifyHmoSubscription}
-                    onVerifyOrganization={verifyOrganizationSubscription}
                     summary={{
                       concern: selectedConcern,
                       clinician: selectedClinician,
@@ -509,7 +472,7 @@ export default function BookingFlow({ open, onClose }: Props) {
               ) : (
                 <button
                   type="button"
-                  onClick={submitBooking}
+                  onClick={handleConfirmBooking}
                   disabled={!canNext || submitting}
                   className="inline-flex items-center gap-2 rounded-full mc-grad-primary text-white px-6 py-2.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 disabled:opacity-40 disabled:cursor-not-allowed transition"
                 >
@@ -522,11 +485,51 @@ export default function BookingFlow({ open, onClose }: Props) {
         </div>
       </div>
 
-      {/* Verification Popup */}
-      {showVerificationPopup && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl max-w-md w-full mx-4 p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            {!verificationComplete ? (
+      {/* Confirm Booking Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowConfirmModal(false)}>
+          <div
+            className="bg-white rounded-2xl max-w-md w-full mx-4 p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {!submitting ? (
+              <>
+                <div className="flex flex-col items-center text-center">
+                  <div className="mb-4">
+                    <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+                      <ShieldCheck className="h-8 w-8 text-blue-600" />
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-display font-bold text-gray-900 mb-2">
+                    Confirm Your Booking
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    We will verify your HMO and get back to you via email.
+                  </p>
+                  {/* <div className="bg-gray-50 rounded-xl p-4 w-full mb-6">
+                    <p className="text-sm text-gray-500">
+                      A confirmation email will be sent to <span className="font-medium">{patient.email || bookingFlowUser?.email}</span>
+                    </p>
+                  </div> */}
+                  <div className="flex gap-3 w-full">
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmModal(false)}
+                      className="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={submitBooking}
+                      className="flex-1 rounded-xl mc-grad-primary text-white px-4 py-2.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition"
+                    >
+                      Confirm
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
               <>
                 <div className="flex flex-col items-center text-center">
                   <div className="mb-4">
@@ -535,42 +538,14 @@ export default function BookingFlow({ open, onClose }: Props) {
                     </div>
                   </div>
                   <h3 className="text-xl font-display font-bold text-gray-900 mb-2">
-                    Verifying Your {verificationType === "hmo" ? "HMO" : "Organization"} Plan
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    Please wait while we confirm your {verificationType === "hmo" ? "HMO subscription" : "organization coverage"} with your provider.
-                  </p>
-                  <div className="bg-gray-50 rounded-xl p-4 w-full">
-                    <p className="text-sm text-gray-500">
-                      {verificationType === "hmo" ? (
-                        <>Checking with <span className="font-medium">{paymentMeta.hmo}</span>...</>
-                      ) : (
-                        <>Checking with <span className="font-medium">{paymentMeta.organization}</span>...</>
-                      )}
-                    </p>
-                    <div className="mt-3 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-600 rounded-full animate-pulse" style={{ width: "60%" }} />
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-4">
-                    This usually takes a few seconds
-                  </p>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex flex-col items-center text-center">
-                  <div className="mb-4">
-                    <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-                      <Check className="h-8 w-8 text-green-600" />
-                    </div>
-                  </div>
-                  <h3 className="text-xl font-display font-bold text-gray-900 mb-2">
-                    Verification Complete!
+                    Processing Your Booking
                   </h3>
                   <p className="text-gray-600">
-                    Your {verificationType === "hmo" ? "HMO subscription" : "organization coverage"} has been verified successfully.
+                    Please wait while we confirm your appointment...
                   </p>
+                  <div className="mt-4 h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-600 rounded-full animate-pulse" style={{ width: "60%" }} />
+                  </div>
                 </div>
               </>
             )}
@@ -598,7 +573,7 @@ function ConcernStep({
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search topics, e.g. anxiety, skin care, child health..."
+          placeholder="Search topics, e.g., anxiety, skin care, child health..."
           className="w-full rounded-2xl bg-white border border-[hsl(var(--mc-border))] pl-11 pr-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--mc-primary))]"
         />
       </div>
@@ -675,7 +650,7 @@ function DateTimeStep({ dates, slotsByDate, selectedDate, setSelectedDate, selec
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div>
-        <h2 className="font-display text-2xl sm:text-3xl font-bold">Choose date & time</h2>
+        <h2 className="font-display text-2xl sm:text-3xl font-bold">Choose Date & Time</h2>
         <p className="text-[hsl(var(--mc-muted))] mt-1">Select your preferred consultation duration and schedule.</p>
       </div>
 
@@ -782,7 +757,7 @@ function DateTimeStep({ dates, slotsByDate, selectedDate, setSelectedDate, selec
   );
 }
 
-/* ----------------- STEP 3: Intake ----------------- */
+/* ----------------- STEP 3: Intake (Patient Info) ----------------- */
 function IntakeStep({ fields, values, setValues, emailsMatch, user, setUser, authLoading }: any) {
   if (authLoading) {
     return (
@@ -799,7 +774,7 @@ function IntakeStep({ fields, values, setValues, emailsMatch, user, setUser, aut
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div>
-        <h2 className="font-display text-2xl sm:text-3xl font-bold">Patient information</h2>
+        <h2 className="font-display text-2xl sm:text-3xl font-bold">Patient Information</h2>
         <p className="text-[hsl(var(--mc-muted))] mt-1">Signed in as {user.email}. Complete the details so the clinician can prepare.</p>
       </div>
       <div className="grid sm:grid-cols-2 gap-4">
@@ -841,7 +816,7 @@ function IntakeStep({ fields, values, setValues, emailsMatch, user, setUser, aut
                 />
               )}
               {f.field_key === "confirm_email" && !emailsMatch && (
-                <p className="text-xs text-red-500 mt-1">Emails do not match</p>
+                <p className="text-xs text-red-500 mt-1">Emails do not match.</p>
               )}
             </div>
           );
@@ -863,39 +838,30 @@ function PatientAuthGate({ onLoginSuccess }: { onLoginSuccess?: (user: any) => v
     setBusy(true);
     try {
       if (mode === "login") {
-        // Allow any email/password to log in - just simulate success
         if (email && password) {
-          // Create a user object from the entered email
           const userData = {
             id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             email: email,
             full_name: fullName || email.split('@')[0],
           };
-          
-          // Store in localStorage for persistence
           localStorage.setItem('booking_user', JSON.stringify(userData));
-          
           toast.success(`Welcome back, ${userData.full_name}! You can now complete your booking.`);
           onLoginSuccess?.(userData);
         } else {
-          toast.error("Please enter both email and password");
+          toast.error("Please enter both your email and password.");
         }
       } else {
-        // Allow any email/password to register - just create user
         if (email && password && fullName) {
           const userData = {
             id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             email: email,
             full_name: fullName,
           };
-          
-          // Store in localStorage
           localStorage.setItem('booking_user', JSON.stringify(userData));
-          
           toast.success(`Account created! Welcome, ${fullName}. You can now complete your booking.`);
           onLoginSuccess?.(userData);
         } else {
-          toast.error("Please fill in all fields");
+          toast.error("Please fill in all fields.");
         }
       }
     } catch (error) {
@@ -930,7 +896,7 @@ function PatientAuthGate({ onLoginSuccess }: { onLoginSuccess?: (user: any) => v
 
         <form onSubmit={submit} className="mt-5 space-y-4">
           {mode === "register" && (
-            <Field label="Full name" placeholder="Jane Doe" value={fullName} onChange={setFullName} required />
+            <Field label="Full Name" placeholder="Jane Doe" value={fullName} onChange={setFullName} required />
           )}
           <Field label="Email" placeholder="you@example.com" value={email} onChange={setEmail} type="email" required />
           <Field label="Password" placeholder="Your password" value={password} onChange={setPassword} type="password" required />
@@ -953,7 +919,7 @@ function VerificationStep({ legal, agreed, setAgreed, emergencyWarning, notice }
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div>
-        <h2 className="font-display text-2xl sm:text-3xl font-bold">Verification & consent</h2>
+        <h2 className="font-display text-2xl sm:text-3xl font-bold">Verification & Consent</h2>
         <p className="text-[hsl(var(--mc-muted))] mt-1">Please review and agree before continuing.</p>
       </div>
 
@@ -997,14 +963,13 @@ function VerificationStep({ legal, agreed, setAgreed, emergencyWarning, notice }
 }
 
 function checkSubscriptionStatus(userId: string) {
-  // Accept any non-empty subscription ID as active
   return userId && userId.trim().length > 0 ? "active" : "inactive";
 }
 
 /* ----------------- STEP 5: Payment ----------------- */
 function PaymentStep({ 
   methods, hmos, organizations, plans, paymentKey, setPaymentKey, 
-  meta, setMeta, currentUserId, onVerifyHmo, onVerifyOrganization,
+  meta, setMeta, currentUserId,
   summary 
 }: any) {
   const { concern, clinician, slot, sym, taxPct, total, consultation, duration } = summary;
@@ -1066,11 +1031,11 @@ function PaymentStep({
                 <select
                   value={meta.hmo || ""}
                   onChange={(e) => {
-                    setMeta({ ...meta, hmo: e.target.value, hmo_verified: "false" });
+                    setMeta({ ...meta, hmo: e.target.value });
                   }}
                   className="w-full rounded-xl bg-white border border-[hsl(var(--mc-border))] px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--mc-primary))]"
                 >
-                  <option value="">Select provider…</option>
+                  <option value="">Select a provider...</option>
                   {hmos.map((h: HmoProvider) => <option key={h.id} value={h.name}>{h.name}</option>)}
                 </select>
               </div>
@@ -1078,30 +1043,20 @@ function PaymentStep({
                 label="Enrollee Number" 
                 placeholder="HMO-1234567" 
                 value={meta.hmo_id || ""} 
-                onChange={(v) => setMeta({ ...meta, hmo_id: v, hmo_verified: "false" })} 
+                onChange={(v) => setMeta({ ...meta, hmo_id: v })} 
               />
               
-              {meta.hmo && meta.hmo_id && meta.hmo_verified !== "true" && (
-                <button
-                  type="button"
-                  onClick={onVerifyHmo}
-                  className="w-full rounded-xl mc-grad-primary px-4 py-2.5 text-sm font-semibold text-white"
-                >
-                  Verify HMO Subscription
-                </button>
-              )}
-              
-              {meta.hmo_verified === "true" && (
+              {/* {meta.hmo && meta.hmo_id && (
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
                   <div className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-emerald-600" />
-                    <p className="font-semibold text-emerald-900">HMO Subscription Verified!</p>
+                    <p className="font-semibold text-emerald-900">Ready to proceed!</p>
                   </div>
                   <p className="text-sm text-emerald-700 mt-2">
-                    Your HMO plan has been verified. You can proceed with your booking.
+                    Your HMO details have been entered. Click Confirm Booking below to continue.
                   </p>
                 </div>
-              )}
+              )} */}
             </>
           )}
           
@@ -1109,40 +1064,29 @@ function PaymentStep({
             <>
               <Field
                 label="Name of Organisation"
-                placeholder="e.g. Acme Corporation"
+                placeholder="e.g., Acme Corporation"
                 value={meta.organization || ""}
-                onChange={(v) => setMeta({ ...meta, organization: v, organization_verified: "false" })}
+                onChange={(v) => setMeta({ ...meta, organization: v })}
               />
 
               <Field
                 label="Organisation ID/Enrollee Number"
-                placeholder="e.g. ORG-1234567"
+                placeholder="e.g., ORG-1234567"
                 value={meta.employee_id || ""}
-                onChange={(v) => setMeta({ ...meta, employee_id: v, organization_verified: "false" })}
+                onChange={(v) => setMeta({ ...meta, employee_id: v })}
               />
 
-              {meta.organization && meta.employee_id && meta.organization_verified !== "true" && (
-                <button
-                  type="button"
-                  onClick={onVerifyOrganization}
-                  className="w-full rounded-xl mc-grad-primary px-4 py-2.5 text-sm font-semibold text-white hover:opacity-95 transition"
-                >
-                  Verify Organization Coverage
-                </button>
-              )}
-              
-              {meta.organization_verified === "true" && (
+              {/* {meta.organization && meta.employee_id && (
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-emerald-600" />
-                    <p className="font-semibold text-emerald-900">Organization Coverage Verified!</p>
+                    <p className="font-semibold text-emerald-900">Organization details entered!</p>
                   </div>
-                  <p className="text-sm text-emerald-700">
-                    <span className="font-semibold">{meta.organization}</span> coverage has been verified for employee <span className="font-mono font-bold">{meta.employee_id}</span>.
+                  <p className="text-sm text-emerald-700 mt-2">
+                    Your organization details have been entered. Click Confirm Booking below to continue.
                   </p>
-                  <p className="text-xs text-emerald-700 mt-2">You can proceed with your booking.</p>
                 </div>
-              )}
+              )} */}
             </>
           )}
           
@@ -1246,7 +1190,7 @@ function PaymentStep({
 
         <div className="flex items-center gap-2 text-xs text-[hsl(var(--mc-muted))]">
           <ShieldCheck className="h-4 w-4 text-[hsl(var(--mc-accent))]" />
-          256-bit encrypted · PCI-DSS standards · HIPAA-aligned handling
+          256-bit encrypted · PCI-DSS standards · NDPR-aligned handling
         </div>
       </div>
 
@@ -1349,4 +1293,5 @@ function ConfirmationStep({ reference, summary, message, onClose }: any) {
       </button>
     </div>
   );
+  
 }

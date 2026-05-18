@@ -1,10 +1,14 @@
 import { Link } from "react-router-dom";
-import { Mail, Phone, MapPin, MessageCircle, Stethoscope, ArrowRight, Heart, Building2 } from "lucide-react";
+import { Mail, Phone, MapPin, MessageCircle, ArrowRight } from "lucide-react";
 import desolmedLogo from "@/assets/desolmed-logo.png";
 import { useState, type FormEvent } from "react";
 import { api } from "@/lib/api";
 
 const DOCTOR_PORTAL_PATH = "/doctor-portal";
+
+const patientPortalLinks = [
+  { to: "/patient", label: "Patient Login" },
+];
 
 export const SiteFooter = () => {
   const [email, setEmail] = useState("");
@@ -28,44 +32,6 @@ export const SiteFooter = () => {
 
   return (
     <footer className="border-t border-border bg-card mt-16 sm:mt-24">
-      {/* Portals access strip */}
-      {/* <div className="border-b border-border bg-gradient-to-br from-primary/[0.04] via-transparent to-secondary/30">
-        <div className="container py-10 sm:py-14">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Portals</p>
-              <h3 className="font-display text-2xl sm:text-3xl font-bold mt-1">Sign in to your workspace</h3>
-            </div>
-            <p className="text-sm text-muted-foreground max-w-md">Secure, role-based access for patients, doctors and organizations.</p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {[
-              { to: "/patient", label: "Patient Portal", desc: "Appointments, records & prescriptions", icon: Heart },
-              { to: "/doctor", label: "Doctor Portal", desc: "EMR, consultations & patients", icon: Stethoscope },
-              { to: "/organization", label: "Organization / HMO", desc: "Staff, usage & billing", icon: Building2 },
-            ].map((p) => (
-              <Link
-                key={p.to}
-                to={p.to}
-                className="group relative overflow-hidden rounded-xl border border-border bg-background p-5 hover:border-primary/40 hover:shadow-lg hover:-translate-y-0.5 transition-all"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/0 to-primary/0 group-hover:from-primary/[0.04] group-hover:to-secondary/40 transition-colors" />
-                <div className="relative flex items-start gap-4">
-                  <div className="h-11 w-11 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                    <p.icon className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-display font-semibold text-base">{p.label}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{p.desc}</p>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </div> */}
-
       <div className="container py-12 sm:py-16 grid gap-10 grid-cols-2 md:grid-cols-12">
         <div className="col-span-2 md:col-span-4 space-y-4">
           <Link to="/" className="flex items-center gap-3">
@@ -81,7 +47,7 @@ export const SiteFooter = () => {
           <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
             A medical network solution to telemedicine, EMR, and referral system built on trust, transparency, and standard care, connecting Nigerians to verified healthcare professionals across and outside Nigeria.
           </p>
-          {/* <form onSubmit={subscribe} className="max-w-sm rounded-xl border border-border bg-background/70 p-3">
+          <form onSubmit={subscribe} className="max-w-sm rounded-xl border border-border bg-background/70 p-3">
             <p className="text-xs font-semibold text-foreground">Newsletter</p>
             <div className="mt-2 flex gap-2">
               <input
@@ -100,7 +66,7 @@ export const SiteFooter = () => {
               </button>
             </div>
             {message && <p className="mt-2 text-xs text-muted-foreground">{message}</p>}
-          </form> */}
+          </form>
           <ul className="space-y-2 text-sm text-muted-foreground pt-2">
             <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-secondary" /> <a href="mailto:enquiry@desolmed.com" className="hover:text-foreground transition-colors">enquiry@desolmed.com</a></li>
             <li className="flex items-center gap-2"><Phone className="h-4 w-4 text-secondary" /> <a href="tel:+2348186899594" className="hover:text-foreground transition-colors">+234 818 689 9594</a></li>
@@ -127,7 +93,24 @@ export const SiteFooter = () => {
             <li><Link to="/adverts" className="hover:text-foreground transition-colors">Health Adverts</Link></li>
             <li><Link to="/about" className="hover:text-foreground transition-colors">About DesolMed</Link></li>
             <li><Link to="/contact" className="hover:text-foreground transition-colors">Talk to our team</Link></li>
-            <li><Link to={DOCTOR_PORTAL_PATH} className="inline-flex items-center gap-1 text-primary font-semibold hover:text-secondary transition-colors">Doctor Portal <ArrowRight className="h-3 w-3" /></Link></li>
+            <li>
+              <Link
+                to={DOCTOR_PORTAL_PATH}
+                className="inline-flex items-center gap-1 text-primary font-semibold hover:text-secondary transition-colors"
+              >
+                Doctor Website <ArrowRight className="h-3 w-3" />
+              </Link>
+            </li>
+            {patientPortalLinks.map((portal) => (
+              <li key={portal.to}>
+                <Link
+                  to={portal.to}
+                  className="inline-flex items-center gap-1 text-primary font-semibold hover:text-secondary transition-colors"
+                >
+                  {portal.label} <ArrowRight className="h-3 w-3" />
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
 

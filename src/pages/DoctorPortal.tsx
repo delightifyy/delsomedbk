@@ -5,7 +5,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 const features = [
   { icon: CalendarCheck, title: "Appointments & Scheduling", desc: "Book, reschedule and manage consultations in one place." },
   { icon: Activity, title: "Electronic Medical Records", desc: "Secure EMR access for doctors and patients across visits." },
-  { icon: ShieldCheck, title: "Verified & Secure", desc: "HIPAA-aligned data handling with role-based access controls." },
+  { icon: ShieldCheck, title: "Verified & Secure", desc: "NDPR-aligned data handling with role-based access controls." },
 ];
 
 const DoctorPortal = () => {
