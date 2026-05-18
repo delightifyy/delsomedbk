@@ -1100,14 +1100,14 @@ const MediCare = () => {
             </div>
 
             {[
-              { title: "Specialties", items: specialties.filter(s => s.name.toLowerCase() !== "dermatology").slice(0, 5).map(s => ({ label: s.name, href: "#specialties" })) },
               { title: "Quick Links", items: [
-                { label: "Telemedicine", href: "#telemedicine" },
                 { label: "Services", href: "#services" },
                 { label: "About", href: "#about" },
+                { label: "Blogs", href: "#blogs" },
+                { label: "Contact Us", href: "#contact" },
+                { label: "FAQ", href: "#faq" },
               ]},
               { title: "Support", items: [
-                { label: "\n", href: "#contact" },
                 { label: "Privacy Policy", href: "#" },
                 { label: "Terms", href: "#" },
               ]},
