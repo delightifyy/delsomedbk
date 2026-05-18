@@ -308,8 +308,8 @@ export const defaultSettings: MediCareSettings = {
     label: "Patient Stories",
     title: "Real people. Real outcomes.",
     items: [
-      { id: uid("t"), quote: "I consulted a cardiologist from my living room within 12 minutes. Prescription delivered the same evening. Truly futuristic care.", name: "Emma Thompson",      location: "Patient · Seattle, WA", imageDataUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80", rating: 5, order: 0 },
-      { id: uid("t"), quote: "As a busy parent, having a pediatrician available at 11 PM for my daughter changed how I think about healthcare.",              name: "Michael Rodriguez",   location: "Patient · Austin, TX",  imageDataUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80", rating: 5, order: 1 },
+      { id: uid("t"), quote: "I consulted a cardiologist from my living room within 12 minutes. Prescription delivered the same evening. Truly futuristic care.", name: "Emma Thompson",      location: "Patient · Seattle, WA", imageDataUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&auto=format&fit=crop&q=80", rating: 5, order: 0 },
+      { id: uid("t"), quote: "As a busy parent, having a pediatrician available at 11 PM for my daughter changed how I think about healthcare.",              name: "Michael Rodriguez",   location: "Patient · Austin, TX",  imageDataUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80", rating: 5, order: 1 },
       { id: uid("t"), quote: "The doctors actually listen. The follow-up is seamless and my full record is in one place. I won't go back.",                  name: "Adaeze Nwosu",        location: "Patient · Lagos, NG",   imageDataUrl: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=200&auto=format&fit=crop&q=80", rating: 5, order: 2 },
     ],
   },
