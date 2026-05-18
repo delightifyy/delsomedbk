@@ -721,7 +721,7 @@ const MediCare = () => {
                 </span>
               </div>
               <div className="mt-4 h-24 rounded-2xl overflow-hidden bg-[hsl(var(--mc-muted-soft))]">
-                <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&auto=format&fit=crop&q=80" alt="Live telemedicine consultation" className="h-full w-full object-cover" />
+                <img src="https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=600&auto=format&fit=crop&q=80" alt="Live telemedicine consultation" className="h-full w-full object-cover" />
               </div>
               <div className="mt-3 flex gap-2">
                 <button className="flex-1 rounded-xl bg-[hsl(var(--mc-muted-soft))] py-2 text-xs font-semibold">Mute</button>
