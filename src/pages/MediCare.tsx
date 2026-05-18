@@ -1045,10 +1045,10 @@ const MediCare = () => {
 
       {/* ============ FINAL CTA ============ */}
       <section id="cta" className="relative py-24 sm:py-32 overflow-hidden">
-        <video
+        <img
           className="absolute inset-0 h-full w-full object-cover"
-          src={CTA_VIDEO}
-          autoPlay muted loop playsInline poster="https://images.unsplash.com/photo-1631815589968-fdb09a223b1e?w=1920&auto=format&fit=crop&q=80"
+          src="/healthcare-human.jpg"
+          alt="Caring nurse with elderly patient"
         />
         <div className="absolute inset-0" style={{ background: "var(--mc-grad-cta-overlay)" }} />
         <div className="absolute inset-0 mc-grid-pattern opacity-20" />
