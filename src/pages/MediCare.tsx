@@ -543,7 +543,6 @@ const MediCare = () => {
   const [searchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [megaOpen, setMegaOpen] = useState(false);
   const [bookingOpen, setBookingOpen] = useState(false);
   const settings = useMediCareSettings();
   const selectedDoctorId = searchParams.get("doctor");
