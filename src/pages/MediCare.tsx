@@ -140,7 +140,7 @@ const specialties = [
   { icon: Baby,       name: "Pediatrics",        img: "https://images.unsplash.com/photo-1581056771107-24ca5f033842?w=800&auto=format&fit=crop&q=80" },
   { icon: Sparkles,   name: "Dermatology",       img: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=800&auto=format&fit=crop&q=80" },
   { icon: Microscope, name: "Oncology",          img: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?w=800&auto=format&fit=crop&q=80" },
-  { icon: Syringe,    name: "Gynecology",        img: "https://images.unsplash.com/photo-1631815589968-fdb09a223b1e?w=800&auto=format&fit=crop&q=80" },
+  { icon: Syringe,    name: "Gynecology",        img: "/care-anywhere.jpg" },
   { icon: Stethoscope,name: "General Medicine",  img: "https://images.unsplash.com/photo-1666214280391-8ff5bd3c0bf0?w=800&auto=format&fit=crop&q=80" },
 ];
 
