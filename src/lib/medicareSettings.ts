@@ -213,7 +213,7 @@ export const defaultSettings: MediCareSettings = {
     doctorCard: {
       name: "Dr. Amara Okafor",
       role: "In session",
-      imageUrl: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&auto=format&fit=crop&q=80",
+      imageUrl: "https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=600&auto=format&fit=crop&q=80",
     },
     checklistCard: {
       title: "Today's Schedule",
@@ -270,12 +270,12 @@ export const defaultSettings: MediCareSettings = {
     label: "Services",
     title: "Everything you need, one platform",
     items: [
-      { id: uid("s"), icon: "Stethoscope",  title: "General Consultation",   description: "Everyday illnesses, checkups, and concerns from licensed GPs.", image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=800&auto=format&fit=crop&q=80", order: 0, active: true, ctaLabel: "", ctaHref: "" },
-      { id: uid("s"), icon: "Brain",        title: "Mental Health Support",  description: "Therapy and counseling from accredited professionals.",        image: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=800&auto=format&fit=crop&q=80", order: 1, active: true, ctaLabel: "", ctaHref: "" },
+      { id: uid("s"), icon: "Stethoscope",  title: "General Consultation",   description: "Everyday illnesses, checkups, and concerns from licensed GPs.", image: "https://images.unsplash.com/photo-1666214280557-f1b5022eb634?w=800&auto=format&fit=crop&q=80", order: 0, active: true, ctaLabel: "", ctaHref: "" },
+      { id: uid("s"), icon: "Brain",        title: "Mental Health Support",  description: "Therapy and counseling from accredited professionals.",        image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800&auto=format&fit=crop&q=80", order: 1, active: true, ctaLabel: "", ctaHref: "" },
       { id: uid("s"), icon: "Pill",         title: "Prescription & Refills", description: "Digital prescriptions sent to your local pharmacy.",          image: "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=800&auto=format&fit=crop&q=80", order: 2, active: true, ctaLabel: "", ctaHref: "" },
       { id: uid("s"), icon: "FlaskConical", title: "Lab Tests & Referrals",  description: "Order labs and access specialist referrals fast.",            image: "https://images.unsplash.com/photo-1581093588401-fbb62a02f120?w=800&auto=format&fit=crop&q=80", order: 3, active: true, ctaLabel: "", ctaHref: "" },
       { id: uid("s"), icon: "Eye",          title: "Vision & Optical",       description: "Eye exams and optical care from board-certified doctors.",    image: "https://images.unsplash.com/photo-1577401239170-897942555fb3?w=800&auto=format&fit=crop&q=80", order: 4, active: true, ctaLabel: "", ctaHref: "" },
-      { id: uid("s"), icon: "Activity",     title: "Chronic Care",           description: "Continuous monitoring for diabetes, BP and more.",            image: "https://images.unsplash.com/photo-1559757175-5700dde675bc?w=800&auto=format&fit=crop&q=80", order: 5, active: true, ctaLabel: "", ctaHref: "" },
+      { id: uid("s"), icon: "Activity",     title: "Chronic Care",           description: "Continuous monitoring for diabetes, BP and more.",            image: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=800&auto=format&fit=crop&q=80", order: 5, active: true, ctaLabel: "", ctaHref: "" },
     ],
   },
 
@@ -308,8 +308,8 @@ export const defaultSettings: MediCareSettings = {
     label: "Patient Stories",
     title: "Real people. Real outcomes.",
     items: [
-      { id: uid("t"), quote: "I consulted a cardiologist from my living room within 12 minutes. Prescription delivered the same evening. Truly futuristic care.", name: "Emma Thompson",      location: "Patient · Seattle, WA", imageDataUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80", rating: 5, order: 0 },
-      { id: uid("t"), quote: "As a busy parent, having a pediatrician available at 11 PM for my daughter changed how I think about healthcare.",              name: "Michael Rodriguez",   location: "Patient · Austin, TX",  imageDataUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80", rating: 5, order: 1 },
+      { id: uid("t"), quote: "I consulted a cardiologist from my living room within 12 minutes. Prescription delivered the same evening. Truly futuristic care.", name: "Emma Thompson",      location: "Patient · Seattle, WA", imageDataUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&auto=format&fit=crop&q=80", rating: 5, order: 0 },
+      { id: uid("t"), quote: "As a busy parent, having a pediatrician available at 11 PM for my daughter changed how I think about healthcare.",              name: "Michael Rodriguez",   location: "Patient · Austin, TX",  imageDataUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80", rating: 5, order: 1 },
       { id: uid("t"), quote: "The doctors actually listen. The follow-up is seamless and my full record is in one place. I won't go back.",                  name: "Adaeze Nwosu",        location: "Patient · Lagos, NG",   imageDataUrl: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=200&auto=format&fit=crop&q=80", rating: 5, order: 2 },
     ],
   },
