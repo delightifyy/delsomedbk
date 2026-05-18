@@ -271,7 +271,7 @@ export const defaultSettings: MediCareSettings = {
     title: "Everything you need, one platform",
     items: [
       { id: uid("s"), icon: "Stethoscope",  title: "General Consultation",   description: "Everyday illnesses, checkups, and concerns from licensed GPs.", image: "https://images.unsplash.com/photo-1666214280557-f1b5022eb634?w=800&auto=format&fit=crop&q=80", order: 0, active: true, ctaLabel: "", ctaHref: "" },
-      { id: uid("s"), icon: "Brain",        title: "Mental Health Support",  description: "Therapy and counseling from accredited professionals.",        image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800&auto=format&fit=crop&q=80", order: 1, active: true, ctaLabel: "", ctaHref: "" },
+      { id: uid("s"), icon: "Brain",        title: "Mental Health Support",  description: "Therapy and counseling from accredited professionals.",        image: "/mental-health-support.jpg", order: 1, active: true, ctaLabel: "", ctaHref: "" },
       { id: uid("s"), icon: "Pill",         title: "Prescription & Refills", description: "Digital prescriptions sent to your local pharmacy.",          image: "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=800&auto=format&fit=crop&q=80", order: 2, active: true, ctaLabel: "", ctaHref: "" },
       { id: uid("s"), icon: "FlaskConical", title: "Lab Tests & Referrals",  description: "Order labs and access specialist referrals fast.",            image: "https://images.unsplash.com/photo-1581093588401-fbb62a02f120?w=800&auto=format&fit=crop&q=80", order: 3, active: true, ctaLabel: "", ctaHref: "" },
       { id: uid("s"), icon: "Eye",          title: "Vision & Optical",       description: "Eye exams and optical care from board-certified doctors.",    image: "https://images.unsplash.com/photo-1577401239170-897942555fb3?w=800&auto=format&fit=crop&q=80", order: 4, active: true, ctaLabel: "", ctaHref: "" },
@@ -308,7 +308,7 @@ export const defaultSettings: MediCareSettings = {
     label: "Patient Stories",
     title: "Real people. Real outcomes.",
     items: [
-      { id: uid("t"), quote: "I consulted a cardiologist from my living room within 12 minutes. Prescription delivered the same evening. Truly futuristic care.", name: "Emma Thompson",      location: "Patient · Seattle, WA", imageDataUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&auto=format&fit=crop&q=80", rating: 5, order: 0 },
+      { id: uid("t"), quote: "I consulted a cardiologist from my living room within 12 minutes. Prescription delivered the same evening. Truly futuristic care.", name: "Emma Thompson",      location: "Patient · Seattle, WA", imageDataUrl: "/mental-health-support.jpg", rating: 5, order: 0 },
       { id: uid("t"), quote: "As a busy parent, having a pediatrician available at 11 PM for my daughter changed how I think about healthcare.",              name: "Michael Rodriguez",   location: "Patient · Austin, TX",  imageDataUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80", rating: 5, order: 1 },
       { id: uid("t"), quote: "The doctors actually listen. The follow-up is seamless and my full record is in one place. I won't go back.",                  name: "Adaeze Nwosu",        location: "Patient · Lagos, NG",   imageDataUrl: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=200&auto=format&fit=crop&q=80", rating: 5, order: 2 },
     ],

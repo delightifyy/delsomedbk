@@ -206,7 +206,7 @@ const testimonials = [
     quote: "I consulted a cardiologist from my living room within 12 minutes. Prescription delivered the same evening. Truly futuristic care.",
     name: "Emma Thompson",
     loc: "Patient · Seattle, WA",
-    img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80",
+    img: "/mental-health-support.jpg",
   },
   {
     quote: "As a busy parent, having a pediatrician available at 11 PM for my daughter changed how I think about healthcare.",
