@@ -47,7 +47,7 @@ export const SiteFooter = () => {
           <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
             A medical network solution to telemedicine, EMR, and referral system built on trust, transparency, and standard care, connecting Nigerians to verified healthcare professionals across and outside Nigeria.
           </p>
-          <form onSubmit={subscribe} className="max-w-sm rounded-xl border border-border bg-background/70 p-3">
+          {/* <form onSubmit={subscribe} className="max-w-sm rounded-xl border border-border bg-background/70 p-3">
             <p className="text-xs font-semibold text-foreground">Newsletter</p>
             <div className="mt-2 flex gap-2">
               <input
@@ -66,7 +66,7 @@ export const SiteFooter = () => {
               </button>
             </div>
             {message && <p className="mt-2 text-xs text-muted-foreground">{message}</p>}
-          </form>
+          </form> */}
           <ul className="space-y-2 text-sm text-muted-foreground pt-2">
             <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-secondary" /> <a href="mailto:enquiry@desolmed.com" className="hover:text-foreground transition-colors">enquiry@desolmed.com</a></li>
             <li className="flex items-center gap-2"><Phone className="h-4 w-4 text-secondary" /> <a href="tel:+2348186899594" className="hover:text-foreground transition-colors">+234 818 689 9594</a></li>
