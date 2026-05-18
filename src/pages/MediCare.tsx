@@ -997,7 +997,7 @@ const MediCare = () => {
             <div className="absolute bottom-0 left-0 w-56 sm:w-60 rounded-[2.5rem] bg-[hsl(222_47%_6%)] p-2 mc-shadow-elegant border border-white/10 mc-anim-float">
               <div className="rounded-[2rem] overflow-hidden bg-white aspect-[9/19]">
                 <div className="relative h-full w-full">
-                  <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=600&auto=format&fit=crop&q=80" alt="Telemedicine app" className="absolute inset-0 h-full w-full object-cover" />
+                  <img src="/virtual-care-doctor.jpg" alt="Telemedicine app" className="absolute inset-0 h-full w-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-b from-[hsl(212_88%_20%/.7)] via-transparent to-[hsl(212_88%_15%/.85)]" />
                   <div className="absolute inset-x-3 top-3 mc-glass-dark rounded-xl px-3 py-2 text-white text-[10px] font-semibold flex items-center justify-between">
                     <span>Dr. Carter</span><span className="text-rose-300">● LIVE</span>
