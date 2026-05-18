@@ -843,7 +843,7 @@ const MediCare = () => {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 grid lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-6 relative">
             <div className="relative rounded-[2.5rem] overflow-hidden mc-shadow-elegant aspect-[4/5] sm:aspect-[5/6]">
-              <img src="https://images.unsplash.com/photo-1666214280557-f1b5022eb634?w=1200&auto=format&fit=crop&q=80" alt="Doctor attending to a patient" className="h-full w-full object-cover" />
+              <img src="/healthcare-hero.webp" alt="Doctor attending to a patient" className="h-full w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--mc-dark)/.7)] via-transparent to-transparent" />
             </div>
           </div>
