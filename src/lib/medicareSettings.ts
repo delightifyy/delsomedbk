@@ -213,7 +213,7 @@ export const defaultSettings: MediCareSettings = {
     doctorCard: {
       name: "Dr. Amara Okafor",
       role: "In session",
-      imageUrl: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&auto=format&fit=crop&q=80",
+      imageUrl: "https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=600&auto=format&fit=crop&q=80",
     },
     checklistCard: {
       title: "Today's Schedule",
