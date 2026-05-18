@@ -4,7 +4,7 @@ import {
   Stethoscope, Menu, X, Star, Video, ShieldCheck, Clock, CalendarCheck,
   Brain, Baby, Sparkles, HeartPulse, Pill, FileText, Headphones, FlaskConical,
   Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin, ArrowRight,
-  Search, ChevronDown, Settings, Bone, Eye, Activity, Microscope, Syringe,
+  Search, Settings, Bone, Eye, Activity, Microscope, Syringe,
   Ambulance, MessageSquare, BellRing, Bot, Smartphone, Apple, Play, Quote,
   CheckCircle2, Award, Globe2, Languages, Building2, MonitorSmartphone, Users,
 } from "lucide-react";
@@ -118,7 +118,6 @@ const CTA_VIDEO  = "https://videos.pexels.com/video-files/7088526/7088526-uhd_25
 
 const navLinks = [
   { href: "#top", label: "Home" },
-  { href: "#specialties", label: "Specialties", hasMenu: true },
   { href: "#services", label: "Services" },
   { href: "#about", label: "About" },
 ];
@@ -544,7 +543,6 @@ const MediCare = () => {
   const [searchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [megaOpen, setMegaOpen] = useState(false);
   const [bookingOpen, setBookingOpen] = useState(false);
   const settings = useMediCareSettings();
   const selectedDoctorId = searchParams.get("doctor");
@@ -626,30 +624,10 @@ const MediCare = () => {
 
           <ul className="hidden lg:flex items-center gap-1 text-sm font-semibold text-white">
             {navLinks.map((l) => (
-              <li
-                key={l.href}
-                className="relative"
-                onMouseEnter={() => l.hasMenu && setMegaOpen(true)}
-                onMouseLeave={() => l.hasMenu && setMegaOpen(false)}
-              >
+              <li key={l.href}>
                 <a href={l.href} className="px-3 py-2 rounded-full inline-flex items-center gap-1 hover:text-[hsl(var(--mc-primary))] transition-colors">
                   {l.label}
-                  {l.hasMenu && <ChevronDown className="h-3.5 w-3.5" />}
                 </a>
-                {l.hasMenu && megaOpen && (
-                  <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 w-[640px] z-50">
-                    <div className="mc-glass mc-shadow-elegant rounded-3xl p-6 grid grid-cols-2 gap-2">
-                      {specialties.map((s) => (
-                        <a key={s.name} href="#specialties" className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-[hsl(215_50%_85%)] hover:text-[hsl(215_60%_25%)] transition">
-                          <span className="grid place-items-center h-9 w-9 rounded-xl mc-grad-primary text-white">
-                            <s.icon className="h-4 w-4" />
-                          </span>
-                          <span className="text-sm font-semibold">{s.name}</span>
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </li>
             ))}
           </ul>
