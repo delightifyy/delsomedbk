@@ -292,7 +292,7 @@ export const defaultSettings: MediCareSettings = {
     ],
     ctaLabel: "Start consultation",
     ctaHref: "#cta",
-    mockupImage: "https://images.unsplash.com/photo-1612531386530-97286d97c2d2?w=600&auto=format&fit=crop&q=80",
+    mockupImage: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=600&auto=format&fit=crop&q=80",
     dashboard: {
       title: "Care Dashboard",
       subtitle: "Live overview · today",
