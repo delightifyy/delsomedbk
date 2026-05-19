@@ -95,9 +95,8 @@ const Subscription = () => {
 
       {/* Plans */}
       <section id="plans" className="container py-16 sm:py-24">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="font-display text-3xl sm:text-4xl font-bold">Simple, transparent pricing</h2>
-          <p className="mt-3 text-muted-foreground">Pick a plan that suits your healthcare needs. Cancel anytime.</p>
+        <div className="mb-12">
+          {/* Section header removed as requested */}
         </div>
 
         <div className="grid gap-6 md:gap-8 md:grid-cols-3 items-stretch">
