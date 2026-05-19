@@ -67,6 +67,7 @@ const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy.tsx"));
 const TermsAndConditions = lazy(() => import("./pages/TermsAndConditions.tsx"));
 const CookiePolicy = lazy(() => import("./pages/CookiePolicy.tsx"));
+const Subscription = lazy(() => import("./pages/Subscription.tsx"));
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
