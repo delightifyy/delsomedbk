@@ -85,15 +85,15 @@ export async function fetchAll() {
   ]);
 
   return {
-    categories: (cats.data || []) as ServiceCategory[],
-    services: ((svcs.data || []) as any[]).map((s) => ({
+    categories: ((cats.data || []) as unknown) as ServiceCategory[],
+    services: (((svcs.data || []) as unknown) as any[]).map((s) => ({
       ...s,
       gallery_images: arr(s.gallery_images),
       tags: arr(s.tags),
       recommended_clinicians: arr(s.recommended_clinicians),
       whats_included: arr(s.whats_included),
     })) as Service[],
-    faqs: (faqs.data || []) as ServiceFaq[],
+    faqs: ((faqs.data || []) as unknown) as ServiceFaq[],
     page: page.data
       ? ({ ...(page.data as any), intro_stats: arr((page.data as any).intro_stats) } as ServicesPage)
       : null,
