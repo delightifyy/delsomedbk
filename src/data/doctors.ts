@@ -70,6 +70,8 @@ export const SPECIALTY_MAP = {
   "Primary & Preventive Care": [
     "General Practice / Family Physician",
   ],
+  "Dentistry": [],
+  "Physiotherapy": [],
   "Others": [],
 } as const;
 
