@@ -45,21 +45,6 @@ const PLANS: Plan[] = [
       "Priority healthcare support",
     ],
   },
-  {
-    id: "premium",
-    name: "Premium Package",
-    price: "₦200,000",
-    period: "Yearly",
-    description: "Concierge-level care with unlimited access.",
-    icon: Sparkles,
-    features: [
-      "Unlimited Consultations",
-      "24/7 priority healthcare support",
-      "Dedicated care coordinator",
-      "Specialist referrals included",
-      "Annual health check-up",
-    ],
-  },
 ];
 
 const Subscription = () => {
@@ -82,14 +67,6 @@ const Subscription = () => {
           <p className="mt-5 text-base sm:text-lg text-muted-foreground leading-relaxed">
             Affordable, reliable, and continuous access to verified healthcare professionals — for you and your loved ones, all year round.
           </p>
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button asChild size="lg" variant="hero">
-              <a href="#plans">Subscribe Now</a>
-            </Button>
-            <Button asChild size="lg" variant="outline">
-              <a href="#plans">View Plans</a>
-            </Button>
-          </div>
         </div>
       </section>
 
@@ -99,7 +76,7 @@ const Subscription = () => {
           {/* Section header removed as requested */}
         </div>
 
-        <div className="grid gap-6 md:gap-8 md:grid-cols-3 items-stretch">
+        <div className="grid gap-6 md:gap-8 md:grid-cols-2 max-w-4xl mx-auto items-stretch">
           {PLANS.map((plan) => {
             const Icon = plan.icon;
             return (
