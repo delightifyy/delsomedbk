@@ -19,14 +19,15 @@ import {
 const tokenStyles = `
 .medicare-services {
   --mc-bg: 0 0% 100%;
-  --mc-cream: 240 9% 96%;
-  --mc-fg: 165 11% 20%;
-  --mc-muted: 165 8% 42%;
-  --mc-border: 165 10% 88%;
-  --mc-sage: 158 11% 48%;
-  --mc-sage-deep: 158 14% 32%;
-  --mc-sage-soft: 158 18% 82%;
-  --mc-ink: 165 14% 18%;
+  --mc-cream: 210 20% 96%;
+  --mc-fg: 205 30% 20%;
+  --mc-muted: 205 12% 42%;
+  --mc-border: 205 18% 88%;
+  --mc-sage: 205 30% 33%;        /* #3b596d */
+  --mc-sage-deep: 205 24% 37%;   /* #486475 */
+  --mc-sage-soft: 205 25% 82%;
+  --mc-blue: 204 92% 51%;        /* #0f9cf5 */
+  --mc-ink: 205 30% 20%;
   background: hsl(var(--mc-bg));
   color: hsl(var(--mc-fg));
   font-family: 'Inter', system-ui, sans-serif;
@@ -40,11 +41,11 @@ const tokenStyles = `
 .ms-card-sage { background: hsl(var(--mc-sage)); color: white; }
 .ms-card-sage-soft { background: hsl(var(--mc-sage-soft)); color: hsl(var(--mc-ink)); }
 .ms-card-terracotta { background: hsl(var(--mc-sage-deep)); color: white; }
-.ms-card-terracotta-soft { background: hsl(var(--mc-sage-soft)); color: hsl(var(--mc-ink)); }
-.ms-card-clay { background: hsl(var(--mc-sage)); color: white; }
+.ms-card-terracotta-soft { background: hsl(var(--mc-blue) / .15); color: hsl(var(--mc-ink)); }
+.ms-card-clay { background: hsl(var(--mc-blue)); color: white; }
 .ms-card-cream { background: hsl(var(--mc-cream)); color: hsl(var(--mc-ink)); }
-.ms-accent-sage { color: hsl(var(--mc-sage)); }
-.ms-accent-terracotta { color: hsl(var(--mc-sage-deep)); }
+.ms-accent-sage { color: hsl(var(--mc-blue)); }
+.ms-accent-terracotta { color: hsl(var(--mc-sage)); }
 `;
 
 /* Rotating palette for category blocks */
