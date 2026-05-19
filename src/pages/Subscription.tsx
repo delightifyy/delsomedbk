@@ -1,7 +1,13 @@
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Button } from "@/components/ui/button";
-import { Check, Heart, Users, Star, Calendar, ShieldCheck, Stethoscope, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Check, Heart, Users, Star, Calendar, ShieldCheck, Stethoscope, Sparkles, Loader2, LockKeyhole } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useState, type FormEvent } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { signInPatientWithPassword } from "@/lib/localStore";
 
 type Plan = {
   id: string;
@@ -125,12 +131,13 @@ const Subscription = () => {
                 </ul>
 
                 <Button
-                  asChild
+                  type="button"
                   size="lg"
                   variant={plan.popular ? "hero" : "outline"}
                   className="mt-8 w-full"
+                  onClick={() => setLoginOpen(true)}
                 >
-                  <Link to="/register/patient">Subscribe</Link>
+                  Subscribe
                 </Button>
               </div>
             );
