@@ -335,7 +335,7 @@ const MediCareServices = () => {
       {pageFaqs.length > 0 && (
         <section className="bg-white border-y border-[hsl(var(--mc-border))]">
           <div className="mx-auto max-w-3xl px-4 sm:px-6 py-16">
-            <h2 className="text-center text-3xl ms-accent-terracotta mb-8">Frequently asked questions</h2>
+            <h2 className="text-center text-3xl ms-accent-terracotta mb-8">Diagnostics and Screening</h2>
             <Accordion type="single" collapsible className="divide-y divide-[hsl(var(--mc-border))]">
               {pageFaqs.map((f, i) => (
                 <AccordionItem key={f.id} value={`f-${i}`} className="border-none">
