@@ -365,7 +365,7 @@ const MediCareServices = () => {
           </div>
         </div>
         <div className="bg-[hsl(var(--mc-ink))] text-white/70 text-xs py-4 text-center">
-          © {new Date().getFullYear()} MediCare. All rights reserved, In Partnership With Desolmedical Solution Limited.
+          © {new Date().getFullYear()} MediCare. All rights reserved In Partnership With Desolmedical Solution Limited.
         </div>
       </footer>
     </div>
