@@ -45,7 +45,7 @@ export const SiteFooter = () => {
             </span>
           </Link>
           <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
-            A medical network solution to telemedicine, EMR, and referral system built on trust, transparency, and standard care, connecting Nigerians to verified healthcare professionals across and outside Nigeria.
+            A trusted medical network solution integrating telemedicine, electronic medical records (EMR), and referral systems to deliver transparent, standardized healthcare. Built to connect Nigerians with verified healthcare professionals both within Nigeria and internationally, ensuring accessible, reliable, and continuous care across borders.
           </p>
           {/* <form onSubmit={subscribe} className="max-w-sm rounded-xl border border-border bg-background/70 p-3">
             <p className="text-xs font-semibold text-foreground">Newsletter</p>
