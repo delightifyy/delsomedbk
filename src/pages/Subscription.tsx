@@ -1,7 +1,13 @@
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Button } from "@/components/ui/button";
-import { Check, Heart, Users, Star, Calendar, ShieldCheck, Stethoscope, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Check, Heart, Users, Star, Calendar, ShieldCheck, Stethoscope, Sparkles, Loader2, LockKeyhole } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useState, type FormEvent } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { signInPatientWithPassword } from "@/lib/localStore";
 
 type Plan = {
   id: string;
@@ -48,6 +54,32 @@ const PLANS: Plan[] = [
 ];
 
 const Subscription = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      await signInPatientWithPassword({ email, password });
+      toast({ title: "Welcome back", description: "Redirecting to your patient portal." });
+      setLoginOpen(false);
+      navigate("/patient");
+    } catch (error) {
+      toast({
+        title: "Login failed",
+        description: error instanceof Error ? error.message : "Unable to sign in. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <SiteLayout>
       {/* Hero */}
@@ -125,12 +157,13 @@ const Subscription = () => {
                 </ul>
 
                 <Button
-                  asChild
+                  type="button"
                   size="lg"
                   variant={plan.popular ? "hero" : "outline"}
                   className="mt-8 w-full"
+                  onClick={() => setLoginOpen(true)}
                 >
-                  <Link to="/register/patient">Subscribe</Link>
+                  Subscribe
                 </Button>
               </div>
             );
@@ -156,8 +189,62 @@ const Subscription = () => {
           ))}
         </div>
       </section>
+
+
+
+      <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl">Login to Subscribe</DialogTitle>
+            <DialogDescription>
+              Sign in to your patient account to continue with your subscription.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="sub-email">Email</Label>
+              <Input
+                id="sub-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                placeholder="you@example.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="sub-password">Password</Label>
+              <Input
+                id="sub-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                placeholder="••••••••"
+              />
+            </div>
+            <Button type="submit" variant="hero" className="w-full" disabled={busy}>
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <LockKeyhole className="h-4 w-4" />}
+              Login
+            </Button>
+            <p className="text-center text-sm text-muted-foreground">
+              Don't have an account?{" "}
+              <Link
+                to="/register"
+                onClick={() => setLoginOpen(false)}
+                className="font-semibold text-primary hover:underline"
+              >
+                Register here
+              </Link>
+            </p>
+          </form>
+        </DialogContent>
+      </Dialog>
     </SiteLayout>
   );
 };
+
 
 export default Subscription;
