@@ -138,6 +138,9 @@ export const SiteHeader = () => {
             <Button asChild size="sm" variant="hero">
               <Link to="/register">Join the network</Link>
             </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link to="/subscription">Subscribe</Link>
+            </Button>
           </div>
 
           <button
