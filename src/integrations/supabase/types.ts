@@ -652,6 +652,250 @@ export type Database = {
         }
         Relationships: []
       }
+      medicare_service_categories: {
+        Row: {
+          banner_image: string | null
+          color: string | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          search_keywords: string | null
+          slug: string
+          sort_order: number
+          updated_at: string
+          visible: boolean
+        }
+        Insert: {
+          banner_image?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          search_keywords?: string | null
+          slug: string
+          sort_order?: number
+          updated_at?: string
+          visible?: boolean
+        }
+        Update: {
+          banner_image?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          search_keywords?: string | null
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+          visible?: boolean
+        }
+        Relationships: []
+      }
+      medicare_service_faqs: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          question: string
+          service_id: string | null
+          sort_order: number
+          updated_at: string
+          visible: boolean
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          question: string
+          service_id?: string | null
+          sort_order?: number
+          updated_at?: string
+          visible?: boolean
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          question?: string
+          service_id?: string | null
+          sort_order?: number
+          updated_at?: string
+          visible?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicare_service_faqs_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "medicare_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medicare_services: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          cta_href: string | null
+          cta_label: string | null
+          description: string | null
+          duration_minutes: number | null
+          featured: boolean
+          gallery_images: Json
+          hero_image: string | null
+          icon: string | null
+          id: string
+          preparation: string | null
+          price_amount: number | null
+          price_currency: string | null
+          price_label: string | null
+          recommended_clinicians: Json
+          search_keywords: string | null
+          slug: string
+          sort_order: number
+          summary: string | null
+          tags: Json
+          title: string
+          updated_at: string
+          visible: boolean
+          whats_included: Json
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          cta_href?: string | null
+          cta_label?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          featured?: boolean
+          gallery_images?: Json
+          hero_image?: string | null
+          icon?: string | null
+          id?: string
+          preparation?: string | null
+          price_amount?: number | null
+          price_currency?: string | null
+          price_label?: string | null
+          recommended_clinicians?: Json
+          search_keywords?: string | null
+          slug: string
+          sort_order?: number
+          summary?: string | null
+          tags?: Json
+          title: string
+          updated_at?: string
+          visible?: boolean
+          whats_included?: Json
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          cta_href?: string | null
+          cta_label?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          featured?: boolean
+          gallery_images?: Json
+          hero_image?: string | null
+          icon?: string | null
+          id?: string
+          preparation?: string | null
+          price_amount?: number | null
+          price_currency?: string | null
+          price_label?: string | null
+          recommended_clinicians?: Json
+          search_keywords?: string | null
+          slug?: string
+          sort_order?: number
+          summary?: string | null
+          tags?: Json
+          title?: string
+          updated_at?: string
+          visible?: boolean
+          whats_included?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medicare_services_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "medicare_service_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medicare_services_page: {
+        Row: {
+          created_at: string
+          cta_badge: string | null
+          cta_description: string | null
+          cta_image: string | null
+          cta_primary_href: string | null
+          cta_primary_label: string | null
+          cta_secondary_href: string | null
+          cta_secondary_label: string | null
+          cta_title: string | null
+          hero_description: string | null
+          hero_eyebrow: string | null
+          hero_image: string | null
+          hero_title: string | null
+          id: string
+          intro_stats: Json
+          seo_description: string | null
+          seo_title: string | null
+          singleton: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cta_badge?: string | null
+          cta_description?: string | null
+          cta_image?: string | null
+          cta_primary_href?: string | null
+          cta_primary_label?: string | null
+          cta_secondary_href?: string | null
+          cta_secondary_label?: string | null
+          cta_title?: string | null
+          hero_description?: string | null
+          hero_eyebrow?: string | null
+          hero_image?: string | null
+          hero_title?: string | null
+          id?: string
+          intro_stats?: Json
+          seo_description?: string | null
+          seo_title?: string | null
+          singleton?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cta_badge?: string | null
+          cta_description?: string | null
+          cta_image?: string | null
+          cta_primary_href?: string | null
+          cta_primary_label?: string | null
+          cta_secondary_href?: string | null
+          cta_secondary_label?: string | null
+          cta_title?: string | null
+          hero_description?: string | null
+          hero_eyebrow?: string | null
+          hero_image?: string | null
+          hero_title?: string | null
+          id?: string
+          intro_stats?: Json
+          seo_description?: string | null
+          seo_title?: string | null
+          singleton?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       news_posts: {
         Row: {
           author: string | null
