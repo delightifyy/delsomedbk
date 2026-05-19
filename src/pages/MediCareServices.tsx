@@ -184,8 +184,8 @@ const MediCareServices = () => {
           <ArrowLeft className="h-3.5 w-3.5" /> Back to home
         </Link>
         <h1 className="text-4xl sm:text-5xl lg:text-6xl">
-          <span className="ms-accent-sage">{page?.hero_title?.split(" ").slice(0, 2).join(" ") || "Our Services"}</span>{" "}
-          <span className="text-[hsl(var(--mc-ink))]">{page?.hero_title?.split(" ").slice(2).join(" ") || "and Fees"}</span>
+          <span className="ms-accent-sage">Our Services and</span>{" "}
+          <span className="text-[hsl(var(--mc-ink))]">&nbsp;Fees</span>
         </h1>
         <p className="mt-4 max-w-2xl text-[hsl(var(--mc-muted))] leading-relaxed">
           {page?.hero_description ||
