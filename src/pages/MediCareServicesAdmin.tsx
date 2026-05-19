@@ -11,7 +11,7 @@ import {
   upsertFaq, deleteFaq, updatePage, slugify,
   type Service, type ServiceCategory, type ServiceFaq, type ServicesPage,
 } from "@/lib/medicareServicesApi";
-import { MediaPicker } from "@/components/medicare-admin/MediaPicker";
+import { ImageUploader } from "@/components/medicare-admin/ImageUploader";
 import { Icon, ICON_NAMES } from "@/components/medicare-admin/icons";
 import type { LucideIconName } from "@/lib/medicareSettings";
 
@@ -168,7 +168,7 @@ const PageEditor = ({ page, reload }: { page: ServicesPage | null; reload: () =>
             <textarea className={textareaCls} value={draft.hero_description || ""} onChange={(e) => set({ hero_description: e.target.value })} />
           </Field>
           <Field label="Hero image">
-            <MediaPicker value={draft.hero_image || ""} onChange={(url) => set({ hero_image: url })} accept="image" />
+            <ImageUploader value={draft.hero_image || ""} onChange={(url) => set({ hero_image: url })} />
           </Field>
         </div>
       </Card>
@@ -197,7 +197,7 @@ const PageEditor = ({ page, reload }: { page: ServicesPage | null; reload: () =>
           <Field label="Title"><input className={inputCls} value={draft.cta_title || ""} onChange={(e) => set({ cta_title: e.target.value })} /></Field>
           <Field label="Description"><textarea className={textareaCls} value={draft.cta_description || ""} onChange={(e) => set({ cta_description: e.target.value })} /></Field>
           <Field label="Background image">
-            <MediaPicker value={draft.cta_image || ""} onChange={(url) => set({ cta_image: url })} accept="image" />
+            <ImageUploader value={draft.cta_image || ""} onChange={(url) => set({ cta_image: url })} />
           </Field>
           <Field label="Primary button label"><input className={inputCls} value={draft.cta_primary_label || ""} onChange={(e) => set({ cta_primary_label: e.target.value })} /></Field>
           <Field label="Primary button link"><input className={inputCls} value={draft.cta_primary_href || ""} onChange={(e) => set({ cta_primary_href: e.target.value })} /></Field>
@@ -309,7 +309,7 @@ const CategoryRow = ({
           <Field label="Color tag"><input className={inputCls} value={draft.color || ""} onChange={(e) => set({ color: e.target.value })} placeholder="#1F8FFF" /></Field>
           <Field label="Description"><textarea className={textareaCls} value={draft.description || ""} onChange={(e) => set({ description: e.target.value })} /></Field>
           <Field label="Banner image">
-            <MediaPicker value={draft.banner_image || ""} onChange={(url) => set({ banner_image: url })} accept="image" />
+            <ImageUploader value={draft.banner_image || ""} onChange={(url) => set({ banner_image: url })} />
           </Field>
           <Field label="Search keywords" hint="Helps users find this category">
             <input className={inputCls} value={draft.search_keywords || ""} onChange={(e) => set({ search_keywords: e.target.value })} />
@@ -450,7 +450,7 @@ const ServiceRow = ({
             <input className={inputCls} value={draft.summary || ""} onChange={(e) => set({ summary: e.target.value })} />
           </Field>
           <Field label="Hero image">
-            <MediaPicker value={draft.hero_image || ""} onChange={(url) => set({ hero_image: url })} accept="image" />
+            <ImageUploader value={draft.hero_image || ""} onChange={(url) => set({ hero_image: url })} />
           </Field>
           <Field label="Long description">
             <textarea className={textareaCls} value={draft.description || ""} onChange={(e) => set({ description: e.target.value })} />
