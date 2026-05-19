@@ -23,6 +23,8 @@ const AdvertArticle = lazy(() => import("./pages/AdvertArticle.tsx"));
 const DoctorPortal = lazy(() => import("./pages/MediCare.tsx"));
 const MediCareAdmin = lazy(() => import("./pages/MediCareAdmin.tsx"));
 const BookingAdmin = lazy(() => import("./pages/BookingAdmin.tsx"));
+const MediCareServices = lazy(() => import("./pages/MediCareServices.tsx"));
+const MediCareServicesAdmin = lazy(() => import("./pages/MediCareServicesAdmin.tsx"));
 const DoctorMediCare = lazy(() => import("./pages/DoctorMediCare.tsx"));
 const RegisterPatient = lazy(() => import("./pages/RegisterPatient.tsx"));
 const Register = lazy(() => import("./pages/Register.tsx"));
