@@ -275,7 +275,7 @@ export const defaultSettings: MediCareSettings = {
       { id: uid("s"), icon: "Pill",         title: "Prescription & Refills", description: "Digital prescriptions sent to your local pharmacy.",          image: "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=800&auto=format&fit=crop&q=80", order: 2, active: true, ctaLabel: "", ctaHref: "" },
       { id: uid("s"), icon: "FlaskConical", title: "Lab Tests & Referrals",  description: "Order labs and access specialist referrals fast.",            image: "/lab-tests-referrals.jpg", order: 3, active: true, ctaLabel: "", ctaHref: "" },
       { id: uid("s"), icon: "Eye",          title: "Vision & Optical",       description: "Eye exams and optical care from board-certified doctors.",    image: "https://images.unsplash.com/photo-1577401239170-897942555fb3?w=800&auto=format&fit=crop&q=80", order: 4, active: true, ctaLabel: "", ctaHref: "" },
-      { id: uid("s"), icon: "Activity",     title: "Chronic Care",           description: "Continuous monitoring for diabetes, BP and more.",            image: "https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=800&auto=format&fit=crop&q=80", order: 5, active: true, ctaLabel: "", ctaHref: "" },
+      { id: uid("s"), icon: "Activity",     title: "Chronic Care",           description: "Continuous monitoring for diabetes, BP and more.",            image: "/pregnancy-test.webp", order: 5, active: true, ctaLabel: "", ctaHref: "" },
     ],
   },
 
