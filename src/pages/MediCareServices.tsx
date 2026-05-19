@@ -18,35 +18,33 @@ import {
 /* Scoped tokens — sage + terracotta palette inspired by reference, MediCare semantics */
 const tokenStyles = `
 .medicare-services {
-  --mc-bg: 36 33% 97%;
-  --mc-fg: 200 25% 18%;
-  --mc-muted: 200 10% 42%;
-  --mc-border: 30 20% 88%;
-  --mc-sage: 162 17% 47%;
-  --mc-sage-soft: 162 22% 80%;
-  --mc-terracotta: 14 55% 60%;
-  --mc-terracotta-soft: 18 60% 75%;
-  --mc-clay: 22 50% 52%;
-  --mc-cream: 32 45% 92%;
-  --mc-ink: 200 30% 22%;
+  --mc-bg: 0 0% 100%;
+  --mc-cream: 240 9% 96%;
+  --mc-fg: 165 11% 20%;
+  --mc-muted: 165 8% 42%;
+  --mc-border: 165 10% 88%;
+  --mc-sage: 158 11% 48%;
+  --mc-sage-deep: 158 14% 32%;
+  --mc-sage-soft: 158 18% 82%;
+  --mc-ink: 165 14% 18%;
   background: hsl(var(--mc-bg));
   color: hsl(var(--mc-fg));
   font-family: 'Inter', system-ui, sans-serif;
 }
 .medicare-services h1, .medicare-services h2, .medicare-services h3, .medicare-services h4 {
-  font-family: 'Poppins', 'Space Grotesk', system-ui, sans-serif;
+  font-family: 'Poppins', system-ui, sans-serif;
   letter-spacing: -0.01em;
   font-weight: 600;
 }
 .ms-card { border-radius: 14px; overflow: hidden; }
 .ms-card-sage { background: hsl(var(--mc-sage)); color: white; }
 .ms-card-sage-soft { background: hsl(var(--mc-sage-soft)); color: hsl(var(--mc-ink)); }
-.ms-card-terracotta { background: hsl(var(--mc-terracotta)); color: white; }
-.ms-card-terracotta-soft { background: hsl(var(--mc-terracotta-soft)); color: hsl(var(--mc-ink)); }
-.ms-card-clay { background: hsl(var(--mc-clay)); color: white; }
+.ms-card-terracotta { background: hsl(var(--mc-sage-deep)); color: white; }
+.ms-card-terracotta-soft { background: hsl(var(--mc-sage-soft)); color: hsl(var(--mc-ink)); }
+.ms-card-clay { background: hsl(var(--mc-sage)); color: white; }
 .ms-card-cream { background: hsl(var(--mc-cream)); color: hsl(var(--mc-ink)); }
 .ms-accent-sage { color: hsl(var(--mc-sage)); }
-.ms-accent-terracotta { color: hsl(var(--mc-terracotta)); }
+.ms-accent-terracotta { color: hsl(var(--mc-sage-deep)); }
 `;
 
 /* Rotating palette for category blocks */
