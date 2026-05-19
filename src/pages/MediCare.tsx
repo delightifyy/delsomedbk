@@ -1123,7 +1123,7 @@ const MediCare = () => {
 
           <div className="border-t border-white/10">
             <div className="py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/60">
-              <p>© {new Date().getFullYear()} In Partnership With Desolmedical Solution Limited.</p>
+              <p>© {new Date().getFullYear()} MediCare. All rights reserved In Partnership With Desolmedical Solution Limited.</p>
               <div className="flex items-center gap-3">
                 
                 <Link to="/doctor-portal/admin" className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 hover:text-white hover:border-white/40 transition">
