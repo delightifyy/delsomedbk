@@ -289,10 +289,10 @@ const MediCareServices = () => {
         <div className="flex items-end justify-between mb-6 flex-wrap gap-3">
           <div>
             <div className="text-xs font-semibold uppercase tracking-wider text-[hsl(var(--mc-accent))]">
-              {activeCat === ALL ? "All services" : categories.find((c) => c.id === activeCat)?.name}
+              {activeCat === ALL ? "\n" : categories.find((c) => c.id === activeCat)?.name}
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold mt-1">
-              {filtered.length} {filtered.length === 1 ? "service" : "services"}{query ? ` matching "${query}"` : ""}
+              {filtered.length} {filtered.length === 1 ? "service" : "Prices"}{query ? ` matching "${query}"` : ""}
             </h2>
           </div>
         </div>
