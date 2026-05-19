@@ -189,7 +189,8 @@ const Subscription = () => {
           ))}
         </div>
       </section>
-      </section>
+
+
 
       <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
         <DialogContent className="sm:max-w-md">
