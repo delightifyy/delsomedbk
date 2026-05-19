@@ -273,7 +273,7 @@ const MediCareServices = () => {
           <div className="flex items-end justify-between mb-6">
             <div>
               <div className="text-xs font-semibold uppercase tracking-wider text-[hsl(var(--mc-accent))]">Featured</div>
-              <h2 className="text-2xl sm:text-3xl font-bold mt-1">Most booked this month</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold mt-1">Our Services and Fees</h2>
             </div>
           </div>
           <div className="grid md:grid-cols-3 gap-5">
