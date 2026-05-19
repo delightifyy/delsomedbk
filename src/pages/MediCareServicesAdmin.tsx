@@ -291,7 +291,7 @@ const CategoryRow = ({
           <div className="font-semibold truncate">{cat.name}</div>
           <div className="text-xs text-slate-500">{serviceCount} services · /{cat.slug}</div>
         </div>
-        <button onClick={() => set({ visible: !draft.visible }).valueOf() as any || (upsertCategory({ id: cat.id, visible: !cat.visible } as any).then(reload))}
+        <button onClick={() => upsertCategory({ id: cat.id, visible: !cat.visible } as any).then(reload)}
           className="p-2 rounded-lg hover:bg-slate-50" title={cat.visible ? "Visible" : "Hidden"}>
           {cat.visible ? <Eye className="h-4 w-4 text-emerald-600" /> : <EyeOff className="h-4 w-4 text-slate-400" />}
         </button>
