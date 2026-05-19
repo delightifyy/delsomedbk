@@ -119,7 +119,7 @@ const CTA_VIDEO  = "https://videos.pexels.com/video-files/7088526/7088526-uhd_25
 const navLinks = [
   { href: "#top", label: "Home" },
   { href: "#about", label: "About Us" },
-  { href: "#services", label: "Services" },
+  { href: "/doctor-portal/services", label: "Services" },
   { href: "/health-news", label: "Blogs" },
   { href: "/contact", label: "Contact Us" },
 ];
