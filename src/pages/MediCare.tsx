@@ -546,7 +546,9 @@ const MediCare = () => {
   const [searchParams] = useSearchParams();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [accessOpen, setAccessOpen] = useState(false);
   const [bookingOpen, setBookingOpen] = useState(false);
+  const [accessMethod, setAccessMethod] = useState<AccessMethod | null>(null);
   const settings = useMediCareSettings();
   const selectedDoctorId = searchParams.get("doctor");
   const selectedDoctor = useMemo(
