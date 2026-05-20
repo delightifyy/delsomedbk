@@ -1146,13 +1146,13 @@ const MediCare = () => {
           setBookingOpen(true);
         }}
       />
-      <BookingFlow
+      <AdvancedBookingFlow
         open={bookingOpen}
         onClose={() => {
           setBookingOpen(false);
           setAccessMethod(null);
         }}
-        initialPaymentMethod={accessMethod ?? undefined}
+        method={accessMethod}
       />
     </div>
   );
