@@ -130,7 +130,8 @@ export default function BookingFlow({ open, onClose, initialPaymentMethod }: Pro
       setHmos(d.hmos);
       setPlans(d.plans);
       setSettings(d.settings);
-      if (d.methods[0]) setPaymentKey(d.methods[0].key);
+      if (initialPaymentMethod) setPaymentKey(initialPaymentMethod);
+      else if (d.methods[0]) setPaymentKey(d.methods[0].key);
       setLoading(false);
     });
   }, [open]);
