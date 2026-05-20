@@ -1137,9 +1137,22 @@ const MediCare = () => {
           </div>
         </div>
       </footer>
+      <AccessMethodModal
+        open={accessOpen}
+        onClose={() => setAccessOpen(false)}
+        onSelect={(m) => {
+          setAccessMethod(m);
+          setAccessOpen(false);
+          setBookingOpen(true);
+        }}
+      />
       <BookingFlow
         open={bookingOpen}
-        onClose={() => setBookingOpen(false)}
+        onClose={() => {
+          setBookingOpen(false);
+          setAccessMethod(null);
+        }}
+        initialPaymentMethod={accessMethod ?? undefined}
       />
     </div>
   );
