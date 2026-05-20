@@ -57,9 +57,9 @@ function normalizeCurrencySymbol(symbol?: string | null) {
   return symbol && symbol.length <= 2 ? symbol : "N";
 }
 
-type Props = { open: boolean; onClose: () => void };
+type Props = { open: boolean; onClose: () => void; initialPaymentMethod?: "card" | "subscription" | "hmo" | "organization" };
 
-export default function BookingFlow({ open, onClose }: Props) {
+export default function BookingFlow({ open, onClose, initialPaymentMethod }: Props) {
   const { user, loading: authLoading } = useAuth();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -130,7 +130,8 @@ export default function BookingFlow({ open, onClose }: Props) {
       setHmos(d.hmos);
       setPlans(d.plans);
       setSettings(d.settings);
-      if (d.methods[0]) setPaymentKey(d.methods[0].key);
+      if (initialPaymentMethod) setPaymentKey(initialPaymentMethod);
+      else if (d.methods[0]) setPaymentKey(d.methods[0].key);
       setLoading(false);
     });
   }, [open]);
