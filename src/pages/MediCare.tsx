@@ -13,7 +13,7 @@ import {
   useMediCareSettings,
 } from "@/lib/medicareSettings";
 import { Icon as McIcon } from "@/components/medicare-admin/icons";
-import BookingFlow from "@/components/medicare/BookingFlow";
+import AdvancedBookingFlow from "@/components/medicare/AdvancedBookingFlow";
 import AccessMethodModal, { type AccessMethod } from "@/components/medicare/AccessMethodModal";
 import { DOCTORS, type Doctor } from "@/data/doctors";
 import aboutHospitalImg from "@/assets/about-hospital.jpg";
