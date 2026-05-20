@@ -639,7 +639,7 @@ const MediCare = () => {
 
           <button
             type="button"
-            onClick={() => setBookingOpen(true)}
+            onClick={() => setAccessOpen(true)}
             className="hidden lg:inline-flex items-center gap-2 rounded-full mc-grad-primary text-white px-5 py-2.5 text-sm font-bold hover:opacity-90 transition mc-shadow-card"
           >
             Book Appointment <ArrowRight className="h-4 w-4" />
@@ -699,7 +699,7 @@ const MediCare = () => {
             <div className="mt-8 flex flex-col sm:flex-row gap-3 mc-anim-fade-up">
               <button
                 type="button"
-                onClick={() => setBookingOpen(true)}
+                onClick={() => setAccessOpen(true)}
                 className="inline-flex justify-center items-center gap-2 rounded-full mc-grad-primary text-white px-7 py-3.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition"
               >
                 Book Appointment <ArrowRight className="h-4 w-4" />
