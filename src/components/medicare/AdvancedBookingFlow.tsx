@@ -496,7 +496,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
           <div className="space-y-3 max-w-md">
             <h3 className="font-display text-xl font-semibold">Organization details</h3>
             <div className="space-y-2">
-              <Label>Organization Enrollee ID</Label>
+              <Label>Organization Subscription ID</Label>
               <Input value={orgId} onChange={(e) => setOrgId(e.target.value)} placeholder="e.g. ORG-12345" />
             </div>
             <div className="space-y-2">
