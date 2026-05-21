@@ -168,7 +168,7 @@ const MediCareServices = () => {
             <Link to="/doctor-portal" className="hover:text-[hsl(var(--mc-sage))]">Home</Link>
             <Link to="/doctor-portal#about" className="hover:text-[hsl(var(--mc-sage))]">About Us</Link>
             <Link to="/doctor-portal/services" className="ms-accent-sage">Services</Link>
-            <Link to="/health-news" className="hover:text-[hsl(var(--mc-sage))]">Blogs</Link>
+            <Link to="/doctor-portal/blogs" className="hover:text-[hsl(var(--mc-sage))]">Blogs</Link>
             <Link to="/doctor-portal#contact" className="hover:text-[hsl(var(--mc-sage))]">Contact Us</Link>
           </nav>
           <a href="/doctor-portal#cta" className="inline-flex items-center gap-2 rounded-full bg-[hsl(var(--mc-sage))] text-white px-4 py-2 text-sm font-semibold hover:opacity-90">
