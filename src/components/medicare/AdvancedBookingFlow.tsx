@@ -365,26 +365,32 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
         )}
 
         {currentLabel === "Provider" && (
-          <div className="space-y-3">
+          <div className="space-y-3 max-w-md">
             <h3 className="font-display text-xl font-semibold">Select your HMO provider</h3>
-            <div className="grid sm:grid-cols-2 gap-2">
-              {HMO_PROVIDERS.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => setHmoProvider(p.id)}
-                  className={`text-left rounded-lg border-2 p-4 transition ${hmoProvider === p.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
-                >
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-primary" />
-                    <div className="font-semibold">{p.name}</div>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">{p.covered.length} services covered</div>
-                </button>
-              ))}
+            <div className="space-y-2">
+              <Label>HMO Provider</Label>
+              <Select value={hmoProvider} onValueChange={setHmoProvider}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose your HMO provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  {HMO_PROVIDERS.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name} — {p.covered.length} services covered
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {hmoProvider && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <ShieldCheck className="h-3 w-3 text-primary" />
+                  {HMO_PROVIDERS.find((p) => p.id === hmoProvider)?.name} selected
+                </p>
+              )}
             </div>
           </div>
         )}
+
 
         {currentLabel === "Service" && (
           <div className="space-y-3">
