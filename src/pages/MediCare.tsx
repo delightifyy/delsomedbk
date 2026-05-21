@@ -121,7 +121,7 @@ const navLinks = [
   { href: "#top", label: "Home" },
   { href: "#about", label: "About Us" },
   { href: "/doctor-portal/services", label: "Services" },
-  { href: "/health-news", label: "Blogs" },
+  { href: "/doctor-portal/blogs", label: "Blogs" },
   { href: "/contact", label: "Contact Us" },
 ];
 
