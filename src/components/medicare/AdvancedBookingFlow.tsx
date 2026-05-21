@@ -157,7 +157,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
   const steps = useMemo(() => {
     const base = ["Mode", "Service", "Schedule", "Login", "Consent", "Payment"];
     if (method === "card") return ["Mode", "Service", "Schedule", "Login", "Consent", "Payment"];
-    if (method === "subscription") return ["Service", "Enrollee", "Schedule", "Login", "Consent"];
+    if (method === "subscription") return ["Service", "Subscription", "Schedule", "Login", "Consent"];
     if (method === "hmo") return ["Provider", "Service", "Verify", "Schedule", "Login", "Consent"];
     if (method === "organization") return ["Service", "Details", "Schedule", "Login", "Consent"];
     return base;
