@@ -59,7 +59,7 @@ const CARD_PALETTE = [
 ] as const;
 
 const formatPrice = (s: Service) => {
-  if (s.price_label) return s.price_label;
+  if (s.price_label) return s.price_label.replace(/£/g, "₦");
   if (s.price_amount == null) return "";
   return `₦${Number(s.price_amount).toLocaleString("en-NG")}`;
 };
