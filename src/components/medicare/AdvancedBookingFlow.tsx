@@ -157,7 +157,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
   const steps = useMemo(() => {
     const base = ["Mode", "Service", "Schedule", "Login", "Consent", "Payment"];
     if (method === "card") return ["Mode", "Service", "Schedule", "Login", "Consent", "Payment"];
-    if (method === "subscription") return ["Service", "Enrollee", "Schedule", "Login", "Consent"];
+    if (method === "subscription") return ["Service", "Subscription", "Schedule", "Login", "Consent"];
     if (method === "hmo") return ["Provider", "Service", "Verify", "Schedule", "Login", "Consent"];
     if (method === "organization") return ["Service", "Details", "Schedule", "Login", "Consent"];
     return base;
@@ -174,7 +174,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
       case "Mode": return !!subMode && (subMode === "online" || !!location);
       case "Provider": return !!hmoProvider;
       case "Service": return !!service && service.available !== false;
-      case "Enrollee": return subVerified?.ok === true;
+      case "Subscription": return subVerified?.ok === true;
       case "Verify": return hmoStatus === "approved";
       case "Details": return !!orgId && !!employeeId && !!authFile && orgStatus === "approved";
       case "Schedule": return !!date && !!time;
@@ -217,7 +217,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
     } else if (/INACT/i.test(enrolleeId)) {
       setSubVerified({ ok: false, reason: "Subscription inactive" });
     } else {
-      setSubVerified({ ok: false, reason: "Invalid enrollee ID" });
+      setSubVerified({ ok: false, reason: "Invalid Subscription ID" });
     }
     setSubChecking(false);
   }
@@ -431,11 +431,11 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
           </div>
         )}
 
-        {currentLabel === "Enrollee" && (
+        {currentLabel === "Subscription" && (
           <div className="space-y-3 max-w-md">
-            <h3 className="font-display text-xl font-semibold">Enter your Enrollee ID</h3>
+            <h3 className="font-display text-xl font-semibold">Enter your Subscription ID</h3>
             <div className="space-y-2">
-              <Label>Enrollee ID</Label>
+              <Label>Subscription ID</Label>
               <Input value={enrolleeId} onChange={(e) => setEnrolleeId(e.target.value)} placeholder="e.g. DSM-123456" />
               <p className="text-xs text-muted-foreground">
                 Don't have a subscription?{" "}
@@ -496,7 +496,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
           <div className="space-y-3 max-w-md">
             <h3 className="font-display text-xl font-semibold">Organization details</h3>
             <div className="space-y-2">
-              <Label>Organization Enrollee ID</Label>
+              <Label>Organization Subscription ID</Label>
               <Input value={orgId} onChange={(e) => setOrgId(e.target.value)} placeholder="e.g. ORG-12345" />
             </div>
             <div className="space-y-2">
