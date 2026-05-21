@@ -28,8 +28,8 @@ const TABS: { value: TabKey; label: string; icon: typeof Stethoscope; blurb: str
   { value: "doctor", label: "Doctor", icon: Stethoscope, blurb: "Verified clinicians joining the network." },
   { value: "organization", label: "HMO / Organization", icon: Building2, blurb: "HMOs, hospitals, NGOs and corporates." },
   { value: "pharmacy", label: "Pharmacy", icon: Pill, blurb: "Community and chain pharmacies." },
-  { value: "lab-diagnostics", label: "Laboratory / Diagnostics", icon: FlaskConical, blurb: "Medical labs and diagnostic centres." },
-];
+  { value: "lab-diagnostics", label: "Laboratory / Diagnostics", icon: FlaskConical, blurb: "Medical labs and diagnostic centres." }, 
+]; 
 
 type LookupItem = {
   id: string;
