@@ -94,6 +94,13 @@ const PatientLogin = () => {
               Login
             </Button>
 
+            <p className="text-center text-sm text-muted-foreground">
+              Don't have an account?{" "}
+              <Link to="/register/patient" className="font-semibold text-primary hover:underline">
+                Register here
+              </Link>
+            </p>
+
             <Link
               to="/"
               className="mx-auto inline-flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
@@ -101,6 +108,7 @@ const PatientLogin = () => {
               <ArrowLeft className="h-3.5 w-3.5" />
               Back to site
             </Link>
+
           </form>
         </div>
       </section>
