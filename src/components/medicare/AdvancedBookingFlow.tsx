@@ -174,7 +174,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
       case "Mode": return !!subMode && (subMode === "online" || !!location);
       case "Provider": return !!hmoProvider;
       case "Service": return !!service && service.available !== false;
-      case "Enrollee": return subVerified?.ok === true;
+      case "Subscription": return subVerified?.ok === true;
       case "Verify": return hmoStatus === "approved";
       case "Details": return !!orgId && !!employeeId && !!authFile && orgStatus === "approved";
       case "Schedule": return !!date && !!time;
