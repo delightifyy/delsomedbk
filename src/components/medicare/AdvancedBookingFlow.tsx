@@ -367,19 +367,20 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
           <div className="space-y-3 max-w-md">
             <h3 className="font-display text-xl font-semibold">Select your HMO provider</h3>
             <div className="space-y-2">
-              <Label>HMO Provider</Label>
-              <Select value={hmoProvider} onValueChange={setHmoProvider}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose your HMO provider" />
-                </SelectTrigger>
-                <SelectContent>
-                  {HMO_PROVIDERS.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name} — {p.covered.length} services covered
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="hmo-provider">HMO Provider</Label>
+              <select
+                id="hmo-provider"
+                value={hmoProvider}
+                onChange={(e) => setHmoProvider(e.target.value)}
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              >
+                <option value="">Choose your HMO provider</option>
+                {HMO_PROVIDERS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} — {p.covered.length} services covered
+                  </option>
+                ))}
+              </select>
               {hmoProvider && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <ShieldCheck className="h-3 w-3 text-primary" />
