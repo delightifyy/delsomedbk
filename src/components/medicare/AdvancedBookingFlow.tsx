@@ -254,7 +254,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
       slot_date: date,
       slot_time: time,
       amount_cents: Math.round(service.price * 100),
-      currency: "GBP",
+      currency: "NGN",
       payment_method: method,
       patient_data: {
         user_id: user?.id,
