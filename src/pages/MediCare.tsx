@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Stethoscope, Menu, X, Star, Video, ShieldCheck, Clock, CalendarCheck,
   Brain, Baby, Sparkles, HeartPulse, Pill, FileText, Headphones, FlaskConical,
