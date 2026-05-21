@@ -211,29 +211,8 @@ const MediCareBlogs = () => {
         )}
       </section>
 
-      {/* Newsletter CTA */}
-      <section className="mx-auto max-w-5xl px-4 sm:px-6 pb-20">
-        <div className="rounded-3xl bg-[hsl(var(--mc-sage))] text-white p-10 sm:p-14 text-center">
-          <h2 className="text-3xl sm:text-4xl mb-3">Stay well, stay informed</h2>
-          <p className="text-white/85 max-w-xl mx-auto mb-7">
-            New articles from our clinicians, delivered fortnightly. No spam, just useful health guidance.
-          </p>
-          <form
-            onSubmit={(e) => e.preventDefault()}
-            className="flex flex-col sm:flex-row gap-2 max-w-md mx-auto"
-          >
-            <input
-              type="email"
-              required
-              placeholder="you@example.com"
-              className="flex-1 rounded-full px-5 py-3 text-sm text-[hsl(var(--mc-ink))] outline-none"
-            />
-            <button className="rounded-full bg-white text-[hsl(var(--mc-sage))] font-semibold px-6 py-3 text-sm hover:opacity-90">
-              Subscribe
-            </button>
-          </form>
-        </div>
-      </section>
+
+
 
       {/* Footer */}
       <footer className="bg-[hsl(var(--mc-sage-deep))] text-white">
