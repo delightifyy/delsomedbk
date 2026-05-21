@@ -42,7 +42,6 @@ const SERVICES: Service[] = [
   { id: "npp", name: "Nationwide Pathology Phlebotomy Service", description: "Blood draw service", duration: "15 min", price: 0 },
   { id: "nppm", name: "NP Phlebotomy with Blood Pressure & Measurements", description: "Phlebotomy plus vitals", duration: "15 min", price: 0 },
   { id: "army", name: "Army Entry Medical Examination", description: "Medical exam for army entry", duration: "60 min", price: 250 },
-  { id: "test", name: "Test", description: "Appointment not available", duration: "15 min", price: 0, available: false },
 ];
 
 const HOSPITAL_LOCATIONS = [
