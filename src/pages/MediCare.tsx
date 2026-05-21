@@ -545,12 +545,29 @@ const AppointmentPopup = ({
 /* ---------- Page ---------- */
 const MediCare = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { user, isAdmin } = useAuth();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [accessMethod, setAccessMethod] = useState<AccessMethod | null>(null);
   const settings = useMediCareSettings();
+
+  const handleBookClick = () => {
+    if (!user || isAdmin) {
+      navigate(`/patient/login?redirect=${encodeURIComponent("/doctor-portal?book=1")}`);
+      return;
+    }
+    setAccessOpen(true);
+  };
+
+  useEffect(() => {
+    if (searchParams.get("book") === "1" && user && !isAdmin) {
+      setAccessOpen(true);
+    }
+  }, [searchParams, user, isAdmin]);
+
   const selectedDoctorId = searchParams.get("doctor");
   const selectedDoctor = useMemo(
     () => DOCTORS.find((doctor) => doctor.id === selectedDoctorId) ?? DOCTORS[0],
