@@ -217,7 +217,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
     } else if (/INACT/i.test(enrolleeId)) {
       setSubVerified({ ok: false, reason: "Subscription inactive" });
     } else {
-      setSubVerified({ ok: false, reason: "Invalid enrollee ID" });
+      setSubVerified({ ok: false, reason: "Invalid Subscription ID" });
     }
     setSubChecking(false);
   }
