@@ -657,7 +657,7 @@ const MediCare = () => {
 
           <button
             type="button"
-            onClick={() => setAccessOpen(true)}
+            onClick={handleBookClick}
             className="hidden lg:inline-flex flex-col items-center justify-center rounded-full mc-grad-primary text-white px-5 py-2 text-xs font-bold hover:opacity-90 transition mc-shadow-card leading-tight"
           >
             <span className="text-[11px] font-semibold">Mon - Fri | 8:00 AM - 8:00 PM</span>
@@ -718,7 +718,7 @@ const MediCare = () => {
             <div className="mt-8 flex flex-col sm:flex-row gap-3 mc-anim-fade-up">
               <button
                 type="button"
-                onClick={() => setAccessOpen(true)}
+                onClick={handleBookClick}
                 className="inline-flex justify-center items-center gap-2 rounded-full mc-grad-primary text-white px-7 py-3.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition"
               >
                 Book Appointment <ArrowRight className="h-4 w-4" />
