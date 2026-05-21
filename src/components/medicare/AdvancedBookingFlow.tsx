@@ -463,18 +463,20 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
             <h3 className="font-display text-xl font-semibold">Verify your HMO policy</h3>
             <div className="space-y-2">
               <Label>Policy Number</Label>
-              <Input value={policyNumber} onChange={(e) => setPolicyNumber(e.target.value)} placeholder="e.g. POL-998877" />
+              <Input
+                value={policyNumber}
+                onChange={(e) => setPolicyNumber(e.target.value)}
+                onBlur={() => { if (policyNumber.trim() && hmoStatus !== "approved") verifyHmo(); }}
+                placeholder="e.g. POL-998877"
+              />
             </div>
             <div className="space-y-2">
               <Label>Member details (optional)</Label>
               <Input value={memberDetails} onChange={(e) => setMemberDetails(e.target.value)} placeholder="Full name / DOB" />
             </div>
-            <Button onClick={verifyHmo} disabled={!policyNumber || hmoStatus === "pending"}>
-              {hmoStatus === "pending" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit for verification"}
-            </Button>
             {hmoStatus === "pending" && (
-              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-amber-700 text-sm">
-                Verifying with HMO provider…
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-amber-700 text-sm flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" /> Verifying with HMO provider…
               </div>
             )}
             {hmoStatus === "approved" && (
@@ -487,9 +489,6 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
                 <AlertTriangle className="h-4 w-4" /> {hmoReason || "Verification failed"}
               </div>
             )}
-            <p className="text-xs text-muted-foreground">
-              Some verifications may take time. You'll receive an email and in-app notification when complete.
-            </p>
           </div>
         )}
 
