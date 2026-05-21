@@ -40,7 +40,7 @@ const OPTIONS: {
   {
     key: "organization",
     title: "Organization",
-    desc: "Book on behalf of your employer or organization",
+    desc: "Book true your organization",
     icon: Building2,
     accent: "from-amber-100 to-amber-50 border-amber-300",
   },
@@ -88,7 +88,7 @@ export default function AccessMethodModal({ open, onClose, onSelect }: Props) {
         </div>
 
         <p className="text-xs text-muted-foreground text-center mt-2">
-          You'll be guided through service selection, scheduling, and verification next.
+          {"\n"}
         </p>
       </DialogContent>
     </Dialog>
