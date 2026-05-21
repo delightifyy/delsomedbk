@@ -13,6 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const fmtNGN = (n: number) => `₦${n.toLocaleString("en-NG")}`;
+
 
 export type AccessMethod = "card" | "subscription" | "hmo" | "organization";
 
@@ -21,7 +25,7 @@ type Service = {
   name: string;
   description: string;
   duration: string;
-  price: number; // GBP
+  price: number; // NGN
   available?: boolean;
 };
 
@@ -38,7 +42,6 @@ const SERVICES: Service[] = [
   { id: "npp", name: "Nationwide Pathology Phlebotomy Service", description: "Blood draw service", duration: "15 min", price: 0 },
   { id: "nppm", name: "NP Phlebotomy with Blood Pressure & Measurements", description: "Phlebotomy plus vitals", duration: "15 min", price: 0 },
   { id: "army", name: "Army Entry Medical Examination", description: "Medical exam for army entry", duration: "60 min", price: 250 },
-  { id: "test", name: "Test", description: "Appointment not available", duration: "15 min", price: 0, available: false },
 ];
 
 const HOSPITAL_LOCATIONS = [
@@ -154,7 +157,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
   const steps = useMemo(() => {
     const base = ["Mode", "Service", "Schedule", "Login", "Consent", "Payment"];
     if (method === "card") return ["Mode", "Service", "Schedule", "Login", "Consent", "Payment"];
-    if (method === "subscription") return ["Service", "Enrollee", "Schedule", "Login", "Consent"];
+    if (method === "subscription") return ["Service", "Subscription", "Schedule", "Login", "Consent"];
     if (method === "hmo") return ["Provider", "Service", "Verify", "Schedule", "Login", "Consent"];
     if (method === "organization") return ["Service", "Details", "Schedule", "Login", "Consent"];
     return base;
@@ -171,7 +174,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
       case "Mode": return !!subMode && (subMode === "online" || !!location);
       case "Provider": return !!hmoProvider;
       case "Service": return !!service && service.available !== false;
-      case "Enrollee": return subVerified?.ok === true;
+      case "Subscription": return subVerified?.ok === true;
       case "Verify": return hmoStatus === "approved";
       case "Details": return !!orgId && !!employeeId && !!authFile && orgStatus === "approved";
       case "Schedule": return !!date && !!time;
@@ -214,7 +217,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
     } else if (/INACT/i.test(enrolleeId)) {
       setSubVerified({ ok: false, reason: "Subscription inactive" });
     } else {
-      setSubVerified({ ok: false, reason: "Invalid enrollee ID" });
+      setSubVerified({ ok: false, reason: "Invalid Subscription ID" });
     }
     setSubChecking(false);
   }
@@ -250,7 +253,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
       slot_date: date,
       slot_time: time,
       amount_cents: Math.round(service.price * 100),
-      currency: "GBP",
+      currency: "NGN",
       payment_method: method,
       patient_data: {
         user_id: user?.id,
@@ -361,26 +364,33 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
         )}
 
         {currentLabel === "Provider" && (
-          <div className="space-y-3">
+          <div className="space-y-3 max-w-md">
             <h3 className="font-display text-xl font-semibold">Select your HMO provider</h3>
-            <div className="grid sm:grid-cols-2 gap-2">
-              {HMO_PROVIDERS.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => setHmoProvider(p.id)}
-                  className={`text-left rounded-lg border-2 p-4 transition ${hmoProvider === p.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
-                >
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-primary" />
-                    <div className="font-semibold">{p.name}</div>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">{p.covered.length} services covered</div>
-                </button>
-              ))}
+            <div className="space-y-2">
+              <Label htmlFor="hmo-provider">HMO Provider</Label>
+              <select
+                id="hmo-provider"
+                value={hmoProvider}
+                onChange={(e) => setHmoProvider(e.target.value)}
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              >
+                <option value="">Choose your HMO provider</option>
+                {HMO_PROVIDERS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} — {p.covered.length} services covered
+                  </option>
+                ))}
+              </select>
+              {hmoProvider && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <ShieldCheck className="h-3 w-3 text-primary" />
+                  {HMO_PROVIDERS.find((p) => p.id === hmoProvider)?.name} selected
+                </p>
+              )}
             </div>
           </div>
         )}
+
 
         {currentLabel === "Service" && (
           <div className="space-y-3">
@@ -402,7 +412,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="font-semibold leading-tight">{s.name}</div>
-                      <div className="font-display font-bold text-primary whitespace-nowrap">£{s.price.toFixed(2)}</div>
+                      <div className="font-display font-bold text-primary whitespace-nowrap">{fmtNGN(s.price)}</div>
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">{s.description}</div>
                     <div className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
@@ -421,11 +431,11 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
           </div>
         )}
 
-        {currentLabel === "Enrollee" && (
+        {currentLabel === "Subscription" && (
           <div className="space-y-3 max-w-md">
-            <h3 className="font-display text-xl font-semibold">Enter your Enrollee ID</h3>
+            <h3 className="font-display text-xl font-semibold">Enter your Subscription ID</h3>
             <div className="space-y-2">
-              <Label>Enrollee ID</Label>
+              <Label>Subscription ID</Label>
               <Input value={enrolleeId} onChange={(e) => setEnrolleeId(e.target.value)} placeholder="e.g. DSM-123456" />
               <p className="text-xs text-muted-foreground">
                 Don't have a subscription?{" "}
@@ -453,18 +463,20 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
             <h3 className="font-display text-xl font-semibold">Verify your HMO policy</h3>
             <div className="space-y-2">
               <Label>Policy Number</Label>
-              <Input value={policyNumber} onChange={(e) => setPolicyNumber(e.target.value)} placeholder="e.g. POL-998877" />
+              <Input
+                value={policyNumber}
+                onChange={(e) => setPolicyNumber(e.target.value)}
+                onBlur={() => { if (policyNumber.trim() && hmoStatus !== "approved") verifyHmo(); }}
+                placeholder="e.g. POL-998877"
+              />
             </div>
             <div className="space-y-2">
               <Label>Member details (optional)</Label>
               <Input value={memberDetails} onChange={(e) => setMemberDetails(e.target.value)} placeholder="Full name / DOB" />
             </div>
-            <Button onClick={verifyHmo} disabled={!policyNumber || hmoStatus === "pending"}>
-              {hmoStatus === "pending" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit for verification"}
-            </Button>
             {hmoStatus === "pending" && (
-              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-amber-700 text-sm">
-                Verifying with HMO provider…
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-amber-700 text-sm flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" /> Verifying with HMO provider…
               </div>
             )}
             {hmoStatus === "approved" && (
@@ -477,9 +489,6 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
                 <AlertTriangle className="h-4 w-4" /> {hmoReason || "Verification failed"}
               </div>
             )}
-            <p className="text-xs text-muted-foreground">
-              Some verifications may take time. You'll receive an email and in-app notification when complete.
-            </p>
           </div>
         )}
 
@@ -487,7 +496,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
           <div className="space-y-3 max-w-md">
             <h3 className="font-display text-xl font-semibold">Organization details</h3>
             <div className="space-y-2">
-              <Label>Organization Enrollee ID</Label>
+              <Label>Organization Subscription ID</Label>
               <Input value={orgId} onChange={(e) => setOrgId(e.target.value)} placeholder="e.g. ORG-12345" />
             </div>
             <div className="space-y-2">
@@ -569,8 +578,61 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
                 </div>
               </div>
             )}
+
+            {date && time && (
+              <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 space-y-2">
+                <div className="flex items-center gap-2 font-display font-bold">
+                  <CheckCircle2 className="h-4 w-4 text-primary" /> Booking Summary
+                </div>
+                <div className="grid sm:grid-cols-2 gap-y-1 gap-x-4 text-sm">
+                  {service && (
+                    <>
+                      <span className="text-muted-foreground">Service</span>
+                      <span className="font-medium sm:text-right">{service.name}</span>
+                    </>
+                  )}
+                  <span className="text-muted-foreground">Date</span>
+                  <span className="font-medium sm:text-right">
+                    {new Date(date).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric", year: "numeric" })}
+                  </span>
+                  <span className="text-muted-foreground">Time</span>
+                  <span className="font-medium sm:text-right">{time}</span>
+                  {subMode && (
+                    <>
+                      <span className="text-muted-foreground">Mode</span>
+                      <span className="font-medium sm:text-right capitalize">{subMode}</span>
+                    </>
+                  )}
+                  {location && (
+                    <>
+                      <span className="text-muted-foreground">Location</span>
+                      <span className="font-medium sm:text-right">
+                        {HOSPITAL_LOCATIONS.find((l) => l.id === location)?.name}
+                      </span>
+                    </>
+                  )}
+                  {hmoProvider && (
+                    <>
+                      <span className="text-muted-foreground">HMO</span>
+                      <span className="font-medium sm:text-right">
+                        {HMO_PROVIDERS.find((p) => p.id === hmoProvider)?.name}
+                      </span>
+                    </>
+                  )}
+                  <span className="text-muted-foreground">Access</span>
+                  <span className="font-medium sm:text-right capitalize">{method}</span>
+                  {service && (
+                    <>
+                      <span className="text-muted-foreground">Amount</span>
+                      <span className="font-display font-bold text-primary sm:text-right">{fmtNGN(service.price)}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
+
 
         {currentLabel === "Login" && (
           <div className="space-y-3 max-w-md">
@@ -627,7 +689,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
             <div className="rounded-lg border border-border p-3 bg-muted/30">
               <div className="flex justify-between text-sm">
                 <span>{service.name}</span>
-                <span className="font-semibold">£{service.price.toFixed(2)}</span>
+                <span className="font-semibold">{fmtNGN(service.price)}</span>
               </div>
             </div>
             <div className="space-y-2">

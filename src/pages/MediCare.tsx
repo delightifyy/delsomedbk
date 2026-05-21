@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Stethoscope, Menu, X, Star, Video, ShieldCheck, Clock, CalendarCheck,
   Brain, Baby, Sparkles, HeartPulse, Pill, FileText, Headphones, FlaskConical,
@@ -121,7 +122,7 @@ const navLinks = [
   { href: "#top", label: "Home" },
   { href: "#about", label: "About Us" },
   { href: "/doctor-portal/services", label: "Services" },
-  { href: "/health-news", label: "Blogs" },
+  { href: "/doctor-portal/blogs", label: "Blogs" },
   { href: "/contact", label: "Contact Us" },
 ];
 
@@ -544,12 +545,29 @@ const AppointmentPopup = ({
 /* ---------- Page ---------- */
 const MediCare = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { user, isAdmin } = useAuth();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [accessOpen, setAccessOpen] = useState(false);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [accessMethod, setAccessMethod] = useState<AccessMethod | null>(null);
   const settings = useMediCareSettings();
+
+  const handleBookClick = () => {
+    if (!user || isAdmin) {
+      navigate(`/patient/login?redirect=${encodeURIComponent("/doctor-portal?book=1")}`);
+      return;
+    }
+    setAccessOpen(true);
+  };
+
+  useEffect(() => {
+    if (searchParams.get("book") === "1" && user && !isAdmin) {
+      setAccessOpen(true);
+    }
+  }, [searchParams, user, isAdmin]);
+
   const selectedDoctorId = searchParams.get("doctor");
   const selectedDoctor = useMemo(
     () => DOCTORS.find((doctor) => doctor.id === selectedDoctorId) ?? DOCTORS[0],
@@ -639,10 +657,11 @@ const MediCare = () => {
 
           <button
             type="button"
-            onClick={() => setAccessOpen(true)}
-            className="hidden lg:inline-flex items-center gap-2 rounded-full mc-grad-primary text-white px-5 py-2.5 text-sm font-bold hover:opacity-90 transition mc-shadow-card"
+            onClick={handleBookClick}
+            className="hidden lg:inline-flex flex-col items-center justify-center rounded-full mc-grad-primary text-white px-5 py-2 text-xs font-bold hover:opacity-90 transition mc-shadow-card leading-tight"
           >
-            Book Appointment <ArrowRight className="h-4 w-4" />
+            <span className="text-[11px] font-semibold">Mon - Fri | 8:00 AM - 8:00 PM</span>
+            <span className="flex items-center gap-1 text-sm">Book Appointment <ArrowRight className="h-3.5 w-3.5" /></span>
           </button>
 
           <button
@@ -699,7 +718,7 @@ const MediCare = () => {
             <div className="mt-8 flex flex-col sm:flex-row gap-3 mc-anim-fade-up">
               <button
                 type="button"
-                onClick={() => setAccessOpen(true)}
+                onClick={handleBookClick}
                 className="inline-flex justify-center items-center gap-2 rounded-full mc-grad-primary text-white px-7 py-3.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition"
               >
                 Book Appointment <ArrowRight className="h-4 w-4" />

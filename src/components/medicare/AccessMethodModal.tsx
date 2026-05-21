@@ -40,7 +40,7 @@ const OPTIONS: {
   {
     key: "organization",
     title: "Organization",
-    desc: "Book on behalf of your employer or organization",
+    desc: "Book true your Organization",
     icon: Building2,
     accent: "from-amber-100 to-amber-50 border-amber-300",
   },
@@ -51,7 +51,7 @@ export default function AccessMethodModal({ open, onClose, onSelect }: Props) {
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Choose how you'd like to book</DialogTitle>
+          <DialogTitle className="text-2xl">{"\n"}</DialogTitle>
           <DialogDescription>
             Select your preferred access method to continue with your appointment.
           </DialogDescription>
@@ -88,7 +88,7 @@ export default function AccessMethodModal({ open, onClose, onSelect }: Props) {
         </div>
 
         <p className="text-xs text-muted-foreground text-center mt-2">
-          You'll be guided through service selection, scheduling, and verification next.
+          {"\n"}
         </p>
       </DialogContent>
     </Dialog>

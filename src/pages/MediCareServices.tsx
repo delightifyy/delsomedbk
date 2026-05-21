@@ -59,11 +59,9 @@ const CARD_PALETTE = [
 ] as const;
 
 const formatPrice = (s: Service) => {
-  if (s.price_label) return s.price_label;
+  if (s.price_label) return s.price_label.replace(/£/g, "₦");
   if (s.price_amount == null) return "";
-  const c = s.price_currency || "GBP";
-  const sym = c === "GBP" ? "£" : c === "USD" ? "$" : c === "NGN" ? "₦" : c === "EUR" ? "€" : `${c} `;
-  return `${sym}${Number(s.price_amount).toLocaleString()}`;
+  return `₦${Number(s.price_amount).toLocaleString("en-NG")}`;
 };
 
 const MediCareServices = () => {
@@ -168,12 +166,13 @@ const MediCareServices = () => {
           </Link>
           <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-[hsl(var(--mc-muted))]">
             <Link to="/doctor-portal" className="hover:text-[hsl(var(--mc-sage))]">Home</Link>
+            <Link to="/doctor-portal#about" className="hover:text-[hsl(var(--mc-sage))]">About Us</Link>
             <Link to="/doctor-portal/services" className="ms-accent-sage">Services</Link>
-            <Link to="/doctor-portal#about" className="hover:text-[hsl(var(--mc-sage))]">About</Link>
-            <Link to="/doctor-portal#contact" className="hover:text-[hsl(var(--mc-sage))]">Contact</Link>
+            <Link to="/doctor-portal/blogs" className="hover:text-[hsl(var(--mc-sage))]">Blogs</Link>
+            <Link to="/doctor-portal#contact" className="hover:text-[hsl(var(--mc-sage))]">Contact Us</Link>
           </nav>
           <a href="/doctor-portal#cta" className="inline-flex items-center gap-2 rounded-full bg-[hsl(var(--mc-sage))] text-white px-4 py-2 text-sm font-semibold hover:opacity-90">
-            Book <ArrowRight className="h-4 w-4" />
+            Book Appointment <ArrowRight className="h-4 w-4" />
           </a>
         </div>
       </header>
@@ -184,8 +183,7 @@ const MediCareServices = () => {
           <ArrowLeft className="h-3.5 w-3.5" /> Back to home
         </Link>
         <h1 className="text-4xl sm:text-5xl lg:text-6xl">
-          <span className="ms-accent-sage">Our Services and</span>{" "}
-          <span className="text-[hsl(var(--mc-ink))]">&nbsp;Fees</span>
+          <span className="ms-accent-sage">Our Services&nbsp;</span>
         </h1>
         <p className="mt-4 max-w-2xl text-[hsl(var(--mc-muted))] leading-relaxed">
           {page?.hero_description ||
