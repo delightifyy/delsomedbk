@@ -431,11 +431,11 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
           </div>
         )}
 
-        {currentLabel === "Enrollee" && (
+        {currentLabel === "Subscription" && (
           <div className="space-y-3 max-w-md">
-            <h3 className="font-display text-xl font-semibold">Enter your Enrollee ID</h3>
+            <h3 className="font-display text-xl font-semibold">Enter your Subscription ID</h3>
             <div className="space-y-2">
-              <Label>Enrollee ID</Label>
+              <Label>Subscription ID</Label>
               <Input value={enrolleeId} onChange={(e) => setEnrolleeId(e.target.value)} placeholder="e.g. DSM-123456" />
               <p className="text-xs text-muted-foreground">
                 Don't have a subscription?{" "}
