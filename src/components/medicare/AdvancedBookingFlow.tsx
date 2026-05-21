@@ -42,7 +42,6 @@ const SERVICES: Service[] = [
   { id: "npp", name: "Nationwide Pathology Phlebotomy Service", description: "Blood draw service", duration: "15 min", price: 0 },
   { id: "nppm", name: "NP Phlebotomy with Blood Pressure & Measurements", description: "Phlebotomy plus vitals", duration: "15 min", price: 0 },
   { id: "army", name: "Army Entry Medical Examination", description: "Medical exam for army entry", duration: "60 min", price: 250 },
-  { id: "test", name: "Test", description: "Appointment not available", duration: "15 min", price: 0, available: false },
 ];
 
 const HOSPITAL_LOCATIONS = [
@@ -368,19 +367,20 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
           <div className="space-y-3 max-w-md">
             <h3 className="font-display text-xl font-semibold">Select your HMO provider</h3>
             <div className="space-y-2">
-              <Label>HMO Provider</Label>
-              <Select value={hmoProvider} onValueChange={setHmoProvider}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose your HMO provider" />
-                </SelectTrigger>
-                <SelectContent>
-                  {HMO_PROVIDERS.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name} — {p.covered.length} services covered
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="hmo-provider">HMO Provider</Label>
+              <select
+                id="hmo-provider"
+                value={hmoProvider}
+                onChange={(e) => setHmoProvider(e.target.value)}
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              >
+                <option value="">Choose your HMO provider</option>
+                {HMO_PROVIDERS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} — {p.covered.length} services covered
+                  </option>
+                ))}
+              </select>
               {hmoProvider && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <ShieldCheck className="h-3 w-3 text-primary" />
@@ -463,18 +463,20 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
             <h3 className="font-display text-xl font-semibold">Verify your HMO policy</h3>
             <div className="space-y-2">
               <Label>Policy Number</Label>
-              <Input value={policyNumber} onChange={(e) => setPolicyNumber(e.target.value)} placeholder="e.g. POL-998877" />
+              <Input
+                value={policyNumber}
+                onChange={(e) => setPolicyNumber(e.target.value)}
+                onBlur={() => { if (policyNumber.trim() && hmoStatus !== "approved") verifyHmo(); }}
+                placeholder="e.g. POL-998877"
+              />
             </div>
             <div className="space-y-2">
               <Label>Member details (optional)</Label>
               <Input value={memberDetails} onChange={(e) => setMemberDetails(e.target.value)} placeholder="Full name / DOB" />
             </div>
-            <Button onClick={verifyHmo} disabled={!policyNumber || hmoStatus === "pending"}>
-              {hmoStatus === "pending" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit for verification"}
-            </Button>
             {hmoStatus === "pending" && (
-              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-amber-700 text-sm">
-                Verifying with HMO provider…
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-amber-700 text-sm flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" /> Verifying with HMO provider…
               </div>
             )}
             {hmoStatus === "approved" && (
@@ -487,9 +489,6 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
                 <AlertTriangle className="h-4 w-4" /> {hmoReason || "Verification failed"}
               </div>
             )}
-            <p className="text-xs text-muted-foreground">
-              Some verifications may take time. You'll receive an email and in-app notification when complete.
-            </p>
           </div>
         )}
 
