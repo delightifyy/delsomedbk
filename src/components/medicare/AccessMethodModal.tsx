@@ -51,7 +51,7 @@ export default function AccessMethodModal({ open, onClose, onSelect }: Props) {
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Choose how you'd like to book</DialogTitle>
+          <DialogTitle className="text-2xl">{"\n"}</DialogTitle>
           <DialogDescription>
             Select your preferred access method to continue with your appointment.
           </DialogDescription>
