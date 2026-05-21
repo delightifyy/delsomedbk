@@ -25,7 +25,7 @@ type Service = {
   name: string;
   description: string;
   duration: string;
-  price: number; // GBP
+  price: number; // NGN
   available?: boolean;
 };
 
