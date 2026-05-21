@@ -406,7 +406,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="font-semibold leading-tight">{s.name}</div>
-                      <div className="font-display font-bold text-primary whitespace-nowrap">£{s.price.toFixed(2)}</div>
+                      <div className="font-display font-bold text-primary whitespace-nowrap">{fmtNGN(s.price)}</div>
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">{s.description}</div>
                     <div className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
