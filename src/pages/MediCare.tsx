@@ -640,9 +640,10 @@ const MediCare = () => {
           <button
             type="button"
             onClick={() => setAccessOpen(true)}
-            className="hidden lg:inline-flex items-center gap-2 rounded-full mc-grad-primary text-white px-5 py-2.5 text-sm font-bold hover:opacity-90 transition mc-shadow-card"
+            className="hidden lg:inline-flex flex-col items-center justify-center rounded-full mc-grad-primary text-white px-5 py-2 text-xs font-bold hover:opacity-90 transition mc-shadow-card leading-tight"
           >
-            Book Appointment <ArrowRight className="h-4 w-4" />
+            <span className="text-[11px] font-semibold">Mon - Fri | 8:00 AM - 8:00 PM</span>
+            <span className="flex items-center gap-1 text-sm">Book Appointment <ArrowRight className="h-3.5 w-3.5" /></span>
           </button>
 
           <button
