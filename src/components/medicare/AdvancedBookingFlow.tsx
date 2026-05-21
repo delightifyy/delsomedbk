@@ -579,8 +579,61 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
                 </div>
               </div>
             )}
+
+            {date && time && (
+              <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 space-y-2">
+                <div className="flex items-center gap-2 font-display font-bold">
+                  <CheckCircle2 className="h-4 w-4 text-primary" /> Booking Summary
+                </div>
+                <div className="grid sm:grid-cols-2 gap-y-1 gap-x-4 text-sm">
+                  {service && (
+                    <>
+                      <span className="text-muted-foreground">Service</span>
+                      <span className="font-medium sm:text-right">{service.name}</span>
+                    </>
+                  )}
+                  <span className="text-muted-foreground">Date</span>
+                  <span className="font-medium sm:text-right">
+                    {new Date(date).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric", year: "numeric" })}
+                  </span>
+                  <span className="text-muted-foreground">Time</span>
+                  <span className="font-medium sm:text-right">{time}</span>
+                  {subMode && (
+                    <>
+                      <span className="text-muted-foreground">Mode</span>
+                      <span className="font-medium sm:text-right capitalize">{subMode}</span>
+                    </>
+                  )}
+                  {location && (
+                    <>
+                      <span className="text-muted-foreground">Location</span>
+                      <span className="font-medium sm:text-right">
+                        {HOSPITAL_LOCATIONS.find((l) => l.id === location)?.name}
+                      </span>
+                    </>
+                  )}
+                  {hmoProvider && (
+                    <>
+                      <span className="text-muted-foreground">HMO</span>
+                      <span className="font-medium sm:text-right">
+                        {HMO_PROVIDERS.find((p) => p.id === hmoProvider)?.name}
+                      </span>
+                    </>
+                  )}
+                  <span className="text-muted-foreground">Access</span>
+                  <span className="font-medium sm:text-right capitalize">{method}</span>
+                  {service && (
+                    <>
+                      <span className="text-muted-foreground">Amount</span>
+                      <span className="font-display font-bold text-primary sm:text-right">{fmtNGN(service.price)}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
+
 
         {currentLabel === "Login" && (
           <div className="space-y-3 max-w-md">
