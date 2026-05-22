@@ -40,7 +40,7 @@ const OPTIONS: {
   {
     key: "organization",
     title: "Organization",
-    desc: "Book true your Organization",
+    desc: "Book through your Organization",
     icon: Building2,
     accent: "from-amber-100 to-amber-50 border-amber-300",
   },
