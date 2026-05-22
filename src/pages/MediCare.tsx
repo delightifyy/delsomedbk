@@ -555,18 +555,14 @@ const MediCare = () => {
   const settings = useMediCareSettings();
 
   const handleBookClick = () => {
-    if (!user || isAdmin) {
-      navigate(`/patient/login?redirect=${encodeURIComponent("/doctor-portal?book=1")}`);
-      return;
-    }
     setAccessOpen(true);
   };
 
   useEffect(() => {
-    if (searchParams.get("book") === "1" && user && !isAdmin) {
+    if (searchParams.get("book") === "1") {
       setAccessOpen(true);
     }
-  }, [searchParams, user, isAdmin]);
+  }, [searchParams]);
 
   const selectedDoctorId = searchParams.get("doctor");
   const selectedDoctor = useMemo(
