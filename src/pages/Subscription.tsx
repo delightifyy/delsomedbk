@@ -232,7 +232,7 @@ const Subscription = () => {
             <p className="text-center text-sm text-muted-foreground">
               Don't have an account?{" "}
               <Link
-                to="/register"
+                to="/register/patient"
                 onClick={() => setLoginOpen(false)}
                 className="font-semibold text-primary hover:underline"
               >
