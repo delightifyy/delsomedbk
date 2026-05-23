@@ -145,7 +145,8 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
   }, [open]);
 
   const availableServices = useMemo(() => {
-    if (method === "hmo" && hmoProvider) {
+    if (method === "hmo") {
+      if (!hmoProvider) return [];
       const p = HMO_PROVIDERS.find((x) => x.id === hmoProvider);
       if (!p) return [];
       return SERVICES.filter((s) => p.covered.includes(s.id));
@@ -155,11 +156,11 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
 
   // Build dynamic step list per method
   const steps = useMemo(() => {
-    const base = ["Mode", "Service", "Schedule", "Login", "Consent", "Payment"];
-    if (method === "card") return ["Mode", "Service", "Schedule", "Login", "Consent", "Payment"];
-    if (method === "subscription") return ["Service", "Subscription", "Schedule", "Login", "Consent"];
-    if (method === "hmo") return ["Provider", "Service", "Verify", "Schedule", "Login", "Consent"];
-    if (method === "organization") return ["Service", "Details", "Schedule", "Login", "Consent"];
+    const base = ["Service", "Schedule", "Mode", "Login", "Consent", "Payment"];
+    if (method === "card") return ["Service", "Schedule", "Mode", "Login", "Consent", "Payment"];
+    if (method === "subscription") return ["Service", "Schedule", "Subscription", "Login", "Consent"];
+    if (method === "hmo") return ["Service", "Schedule", "Verify", "Login", "Consent"];
+    if (method === "organization") return ["Service", "Schedule", "Details", "Login", "Consent"];
     return base;
   }, [method]);
 
@@ -172,8 +173,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
     const label = steps[step];
     switch (label) {
       case "Mode": return !!subMode && (subMode === "online" || !!location);
-      case "Provider": return !!hmoProvider;
-      case "Service": return !!service && service.available !== false;
+      case "Service": return method === "hmo" ? !!hmoProvider && !!service && service.available !== false : !!service && service.available !== false;
       case "Subscription": return subVerified?.ok === true;
       case "Verify": return hmoStatus === "approved";
       case "Details": return !!orgId && !!employeeId && !!authFile && orgStatus === "approved";
@@ -196,8 +196,8 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
     try {
       await signInPatientWithPassword({ email, password });
       toast.success("Logged in");
-    } catch (e: any) {
-      toast.error(e?.message || "Login failed");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Login failed");
     } finally {
       setAuthBusy(false);
     }
@@ -247,7 +247,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
   async function submitBooking() {
     if (!service) return;
     setSubmitting(true);
-    const payload: any = {
+    const payload = {
       concern_name: service.name,
       category_name: subMode === "physical" ? "Physical" : subMode === "online" ? "Online" : method,
       slot_date: date,
@@ -363,71 +363,73 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
           </div>
         )}
 
-        {currentLabel === "Provider" && (
-          <div className="space-y-3 max-w-md">
-            <h3 className="font-display text-xl font-semibold">Select your HMO provider</h3>
-            <div className="space-y-2">
-              <Label htmlFor="hmo-provider">HMO Provider</Label>
-              <select
-                id="hmo-provider"
-                value={hmoProvider}
-                onChange={(e) => setHmoProvider(e.target.value)}
-                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              >
-                <option value="">Choose your HMO provider</option>
-                {HMO_PROVIDERS.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} — {p.covered.length} services covered
-                  </option>
-                ))}
-              </select>
-              {hmoProvider && (
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <ShieldCheck className="h-3 w-3 text-primary" />
-                  {HMO_PROVIDERS.find((p) => p.id === hmoProvider)?.name} selected
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-
-
         {currentLabel === "Service" && (
           <div className="space-y-3">
             <h3 className="font-display text-xl font-semibold">Choose a service</h3>
             {method === "hmo" && (
-              <p className="text-sm text-muted-foreground">Showing services covered by {HMO_PROVIDERS.find((p) => p.id === hmoProvider)?.name}.</p>
-            )}
-            <div className="grid sm:grid-cols-2 gap-3 max-h-[55vh] overflow-y-auto pr-1">
-              {availableServices.map((s) => {
-                const active = service?.id === s.id;
-                const disabled = s.available === false;
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => setService(s)}
-                    className={`text-left rounded-xl border-2 p-4 transition ${active ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"} ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+              <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-4">
+                <div className="space-y-2">
+                  <Label htmlFor="hmo-provider">HMO Provider</Label>
+                  <select
+                    id="hmo-provider"
+                    value={hmoProvider}
+                    onChange={(e) => {
+                      setHmoProvider(e.target.value);
+                      setService(null);
+                    }}
+                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="font-semibold leading-tight">{s.name}</div>
-                      <div className="font-display font-bold text-primary whitespace-nowrap">{fmtNGN(s.price)}</div>
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">{s.description}</div>
-                    <div className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                      <Clock className="h-3 w-3" /> {s.duration}
-                      {disabled && <span className="ml-2 text-rose-600 font-medium">Appointment not available</span>}
-                    </div>
-                    <div className="mt-3">
-                      <span className={`inline-flex text-xs font-semibold px-2 py-1 rounded ${active ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
-                        {active ? "Selected" : "Select"}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+                    <option value="">Choose your HMO provider</option>
+                    {HMO_PROVIDERS.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} — {p.covered.length} services covered
+                      </option>
+                    ))}
+                  </select>
+                  {hmoProvider && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <ShieldCheck className="h-3 w-3 text-primary" />
+                      {HMO_PROVIDERS.find((p) => p.id === hmoProvider)?.name} selected
+                    </p>
+                  )}
+                </div>
+                {!hmoProvider && (
+                  <p className="text-sm text-muted-foreground">Choose your HMO provider first so we can show the covered services.</p>
+                )}
+              </div>
+            )}
+            {method !== "hmo" || hmoProvider ? (
+              <div className="grid sm:grid-cols-2 gap-3 max-h-[55vh] overflow-y-auto pr-1">
+                {availableServices.map((s) => {
+                  const active = service?.id === s.id;
+                  const disabled = s.available === false;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => setService(s)}
+                      className={`text-left rounded-xl border-2 p-4 transition ${active ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"} ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="font-semibold leading-tight">{s.name}</div>
+                        <div className="font-display font-bold text-primary whitespace-nowrap">{fmtNGN(s.price)}</div>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">{s.description}</div>
+                      <div className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                        <Clock className="h-3 w-3" /> {s.duration}
+                        {disabled && <span className="ml-2 text-rose-600 font-medium">Appointment not available</span>}
+                      </div>
+                      <div className="mt-3">
+                        <span className={`inline-flex text-xs font-semibold px-2 py-1 rounded ${active ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
+                          {active ? "Selected" : "Select"}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
           </div>
         )}
 
