@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Stethoscope, Search, Calendar, Clock, User } from "lucide-react";
 import { useMediCareSettings } from "@/lib/medicareSettings";
 import { BLOG_POSTS, BLOG_CATEGORIES, type BlogPost } from "@/data/blogs";
+import { supabase } from "@/integrations/supabase/client";
 
 const tokenStyles = `
 .medicare-blogs {
