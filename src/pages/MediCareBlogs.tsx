@@ -46,10 +46,40 @@ const MediCareBlogs = () => {
   const settings = useMediCareSettings();
   const [query, setQuery] = useState("");
   const [activeCat, setActiveCat] = useState<string>("All");
+  const [posts, setPosts] = useState<BlogPost[]>(BLOG_POSTS);
 
   useEffect(() => {
     document.title = `Blogs — ${settings.siteName || "MediCare"}`;
   }, [settings.siteName]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("blog_posts")
+        .select("id, slug, title, excerpt, cover_image, category, author_name, author_role, read_time, featured, publish_date, published")
+        .eq("published", true)
+        .order("featured", { ascending: false })
+        .order("publish_date", { ascending: false });
+      if (cancelled) return;
+      if (data && data.length) {
+        setPosts(data.map((d: any) => ({
+          id: d.id,
+          slug: d.slug,
+          title: d.title,
+          excerpt: d.excerpt ?? "",
+          category: (d.category as BlogPost["category"]) ?? "Wellness",
+          author: d.author_name ?? "MediCare Team",
+          authorRole: d.author_role ?? "",
+          date: d.publish_date ? new Date(d.publish_date).toLocaleDateString(undefined, { month: "short", day: "2-digit", year: "numeric" }) : "",
+          readTime: d.read_time ?? "5 min read",
+          cover: d.cover_image ?? "",
+          featured: !!d.featured,
+        })));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
