@@ -53,37 +53,58 @@ export type Database = {
       blog_posts: {
         Row: {
           author_id: string | null
+          author_name: string | null
+          author_role: string | null
+          category: string | null
           content: string | null
           cover_image: string | null
           created_at: string
           excerpt: string | null
+          featured: boolean
           id: string
+          publish_date: string
           published: boolean
+          read_time: string | null
           slug: string
+          sort_order: number
           title: string
           updated_at: string
         }
         Insert: {
           author_id?: string | null
+          author_name?: string | null
+          author_role?: string | null
+          category?: string | null
           content?: string | null
           cover_image?: string | null
           created_at?: string
           excerpt?: string | null
+          featured?: boolean
           id?: string
+          publish_date?: string
           published?: boolean
+          read_time?: string | null
           slug: string
+          sort_order?: number
           title: string
           updated_at?: string
         }
         Update: {
           author_id?: string | null
+          author_name?: string | null
+          author_role?: string | null
+          category?: string | null
           content?: string | null
           cover_image?: string | null
           created_at?: string
           excerpt?: string | null
+          featured?: boolean
           id?: string
+          publish_date?: string
           published?: boolean
+          read_time?: string | null
           slug?: string
+          sort_order?: number
           title?: string
           updated_at?: string
         }
