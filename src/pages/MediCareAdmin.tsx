@@ -7,8 +7,6 @@ import {
   Star, Sparkles, FileText, Layers, Megaphone, Phone as PhoneIcon, Search,
   Home, Info, Heart, Wrench, Video, MessageSquare, ChevronRight, ChevronDown, X,
   Facebook, Twitter, Instagram, Linkedin, Newspaper, Mail, MapPin,
-  CalendarCheck, CreditCard, Building2, Users, Calendar as CalendarIcon,
-  ClipboardList, ListChecks, Stethoscope, Link2,
 } from "lucide-react";
 import {
   defaultSettings, loadSettings, resetSettings, saveSettings,
