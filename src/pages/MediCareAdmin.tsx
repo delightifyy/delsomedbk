@@ -355,33 +355,266 @@ const ContactEditor = ({ s, setSettings }: EProps) => {
 };
 
 /* ---------- BLOG ---------- */
-const BlogEditor = () => (
-  <div className="space-y-6">
-    <SectionHeader title="Blog Posts" desc="Posts shown on the public Blog page." />
-    <Card>
-      <div className="flex items-start gap-4">
-        <div className="grid h-12 w-12 place-items-center rounded-xl bg-blue-50 text-blue-600 flex-shrink-0">
-          <Newspaper className="h-5 w-5" />
-        </div>
-        <div className="flex-1">
-          <h3 className="font-semibold text-slate-900">Manage blog posts in the main Dashboard</h3>
-          <p className="text-sm text-slate-600 mt-1">
-            Blog posts displayed on the public MediCare Blog page are authored from the main admin Dashboard.
-            Open it below to create, edit, or remove posts.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Link to="/dashboard/blog" className="inline-flex items-center gap-2 rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700">
-              <ExternalLink className="h-4 w-4" /> Open Blog Manager
-            </Link>
-            <a href="/doctor-portal/blogs" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50">
-              <Eye className="h-4 w-4" /> Preview Blog Page
-            </a>
+import { supabase } from "@/integrations/supabase/client";
+import { BLOG_CATEGORIES } from "@/data/blogs";
+
+type BlogRow = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  content: string | null;
+  cover_image: string | null;
+  category: string | null;
+  author_name: string | null;
+  author_role: string | null;
+  read_time: string | null;
+  featured: boolean;
+  published: boolean;
+  sort_order: number;
+  publish_date: string;
+};
+
+const slugify = (s: string) =>
+  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+const emptyPost = (): Partial<BlogRow> => ({
+  title: "",
+  slug: "",
+  excerpt: "",
+  content: "",
+  cover_image: "",
+  category: "Wellness",
+  author_name: "",
+  author_role: "",
+  read_time: "5 min read",
+  featured: false,
+  published: true,
+  sort_order: 0,
+});
+
+const BlogEditor = () => {
+  const [posts, setPosts] = useState<BlogRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Partial<BlogRow> | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [confirmDel, setConfirmDel] = useState<BlogRow | null>(null);
+  const [query, setQuery] = useState("");
+  const [pickCover, setPickCover] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("blog_posts")
+      .select("*")
+      .order("featured", { ascending: false })
+      .order("publish_date", { ascending: false });
+    if (error) toast.error(error.message);
+    else setPosts((data as BlogRow[]) ?? []);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return posts;
+    return posts.filter((p) =>
+      (p.title + " " + (p.author_name ?? "") + " " + (p.category ?? "")).toLowerCase().includes(q)
+    );
+  }, [posts, query]);
+
+  const save = async () => {
+    if (!editing) return;
+    const title = (editing.title ?? "").trim();
+    if (!title) return toast.error("Title is required");
+    const slug = (editing.slug?.trim() || slugify(title));
+    setSaving(true);
+    const payload = {
+      title,
+      slug,
+      excerpt: editing.excerpt ?? "",
+      content: editing.content ?? "",
+      cover_image: editing.cover_image ?? null,
+      category: editing.category ?? null,
+      author_name: editing.author_name ?? null,
+      author_role: editing.author_role ?? null,
+      read_time: editing.read_time ?? null,
+      featured: !!editing.featured,
+      published: editing.published !== false,
+      sort_order: editing.sort_order ?? 0,
+    };
+    const { error } = editing.id
+      ? await supabase.from("blog_posts").update(payload).eq("id", editing.id)
+      : await supabase.from("blog_posts").insert(payload);
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success(editing.id ? "Post updated" : "Post created");
+    setEditing(null);
+    load();
+  };
+
+  const remove = async (p: BlogRow) => {
+    const { error } = await supabase.from("blog_posts").delete().eq("id", p.id);
+    if (error) return toast.error(error.message);
+    toast.success("Post deleted");
+    setConfirmDel(null);
+    load();
+  };
+
+  const togglePublish = async (p: BlogRow) => {
+    const { error } = await supabase.from("blog_posts").update({ published: !p.published }).eq("id", p.id);
+    if (error) return toast.error(error.message);
+    load();
+  };
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader title="Blog Posts" desc="Manage posts shown on the public MediCare Blog page." />
+
+      <Card>
+        <div className="flex flex-wrap items-center gap-3 mb-5">
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search posts, authors..."
+              className={inputCls + " pl-9"}
+            />
           </div>
+          <a href="/doctor-portal/blogs" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-50">
+            <Eye className="h-4 w-4" /> Preview
+          </a>
+          <button onClick={() => setEditing(emptyPost())} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700">
+            <Plus className="h-4 w-4" /> New Post
+          </button>
         </div>
-      </div>
-    </Card>
-  </div>
-);
+
+        {loading ? (
+          <div className="py-12 text-center text-sm text-slate-500">Loading posts...</div>
+        ) : filtered.length === 0 ? (
+          <div className="py-16 text-center border border-dashed border-slate-200 rounded-xl">
+            <Newspaper className="h-8 w-8 mx-auto text-slate-300 mb-2" />
+            <p className="text-sm text-slate-500">No blog posts yet. Click "New Post" to create one.</p>
+          </div>
+        ) : (
+          <div className="grid gap-3">
+            {filtered.map((p) => (
+              <div key={p.id} className="flex items-center gap-4 rounded-xl border border-slate-200 p-3 hover:border-blue-300 transition">
+                <div className="h-16 w-24 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
+                  {p.cover_image ? (
+                    <img src={p.cover_image} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="h-full w-full grid place-items-center text-slate-300"><ImageIcon className="h-5 w-5" /></div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {p.featured && <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full"><Star className="h-3 w-3" />Featured</span>}
+                    {p.category && <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">{p.category}</span>}
+                    <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${p.published ? "text-emerald-700 bg-emerald-50" : "text-slate-500 bg-slate-100"}`}>
+                      {p.published ? "Published" : "Draft"}
+                    </span>
+                  </div>
+                  <h4 className="font-semibold text-slate-900 truncate mt-1">{p.title}</h4>
+                  <p className="text-xs text-slate-500 truncate">
+                    {p.author_name || "—"} · {new Date(p.publish_date).toLocaleDateString()} · {p.read_time || "—"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button onClick={() => togglePublish(p)} title={p.published ? "Unpublish" : "Publish"} className="p-2 rounded-lg hover:bg-slate-100 text-slate-600">
+                    {p.published ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  </button>
+                  <button onClick={() => setEditing(p)} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">Edit</button>
+                  <button onClick={() => setConfirmDel(p)} className="p-2 rounded-lg hover:bg-rose-50 text-rose-600"><Trash2 className="h-4 w-4" /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {/* Edit drawer */}
+      {editing && (
+        <div className="fixed inset-0 z-[140] grid place-items-center bg-black/60 p-4 overflow-auto">
+          <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl my-8">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+              <h3 className="font-bold text-slate-900 text-lg">{editing.id ? "Edit Post" : "New Post"}</h3>
+              <button onClick={() => setEditing(null)} className="p-2 rounded-lg hover:bg-slate-100"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="p-5 space-y-4 max-h-[70vh] overflow-auto">
+              <Field label="Title">
+                <input value={editing.title ?? ""} onChange={(e) => setEditing({ ...editing, title: e.target.value, slug: editing.id ? editing.slug : slugify(e.target.value) })} className={inputCls} />
+              </Field>
+              <Field label="Slug" hint="URL identifier (auto-generated from title)">
+                <input value={editing.slug ?? ""} onChange={(e) => setEditing({ ...editing, slug: e.target.value })} className={inputCls} />
+              </Field>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Field label="Category">
+                  <select value={editing.category ?? ""} onChange={(e) => setEditing({ ...editing, category: e.target.value })} className={inputCls}>
+                    {BLOG_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </Field>
+                <Field label="Read time">
+                  <input value={editing.read_time ?? ""} onChange={(e) => setEditing({ ...editing, read_time: e.target.value })} placeholder="6 min read" className={inputCls} />
+                </Field>
+                <Field label="Author name">
+                  <input value={editing.author_name ?? ""} onChange={(e) => setEditing({ ...editing, author_name: e.target.value })} className={inputCls} />
+                </Field>
+                <Field label="Author role">
+                  <input value={editing.author_role ?? ""} onChange={(e) => setEditing({ ...editing, author_role: e.target.value })} placeholder="Cardiologist" className={inputCls} />
+                </Field>
+              </div>
+              <Field label="Cover image">
+                <div className="flex gap-2">
+                  <input value={editing.cover_image ?? ""} onChange={(e) => setEditing({ ...editing, cover_image: e.target.value })} placeholder="https://..." className={inputCls} />
+                  <button type="button" onClick={() => setPickCover(true)} className="rounded-lg border border-slate-200 px-3 text-sm font-semibold hover:bg-slate-50 whitespace-nowrap"><ImageIcon className="h-4 w-4 inline" /> Pick</button>
+                </div>
+                {editing.cover_image && <img src={editing.cover_image} alt="" className="mt-2 h-32 w-full object-cover rounded-lg" />}
+              </Field>
+              <Field label="Excerpt">
+                <textarea value={editing.excerpt ?? ""} onChange={(e) => setEditing({ ...editing, excerpt: e.target.value })} className={textareaCls} />
+              </Field>
+              <Field label="Content" hint="Full article body (shown on the article page).">
+                <textarea value={editing.content ?? ""} onChange={(e) => setEditing({ ...editing, content: e.target.value })} className={textareaCls + " min-h-[180px]"} />
+              </Field>
+              <div className="flex flex-wrap gap-6">
+                <label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+                  <input type="checkbox" checked={!!editing.featured} onChange={(e) => setEditing({ ...editing, featured: e.target.checked })} />
+                  Featured post
+                </label>
+                <label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+                  <input type="checkbox" checked={editing.published !== false} onChange={(e) => setEditing({ ...editing, published: e.target.checked })} />
+                  Published
+                </label>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 p-5 border-t border-slate-100">
+              <button onClick={() => setEditing(null)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Cancel</button>
+              <button onClick={save} disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700 disabled:opacity-60">
+                <Save className="h-4 w-4" /> {saving ? "Saving..." : "Save Post"}
+              </button>
+            </div>
+          </div>
+          {pickCover && (
+            <MediaPicker
+              onSelect={(url) => { setEditing((e) => e ? { ...e, cover_image: url } : e); setPickCover(false); }}
+              onClose={() => setPickCover(false)}
+            />
+          )}
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={!!confirmDel}
+        title="Delete post?"
+        message={`"${confirmDel?.title}" will be permanently removed.`}
+        onCancel={() => setConfirmDel(null)}
+        onConfirm={() => confirmDel && remove(confirmDel)}
+      />
+    </div>
+  );
+};
 
 
 /* =========================================================
