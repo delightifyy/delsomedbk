@@ -5,8 +5,8 @@ import {
   ArrowLeft, Save, RotateCcw, Plus, Trash2, ArrowUp, ArrowDown,
   Eye, EyeOff, ExternalLink, Image as ImageIcon, Settings, Menu as MenuIcon,
   Star, Sparkles, FileText, Layers, Megaphone, Phone as PhoneIcon, Search,
-  Home, Info, Heart, Wrench, Video, MessageSquare, ChevronRight, X,
-  Facebook, Twitter, Instagram, Linkedin,
+  Home, Info, Heart, Wrench, Video, MessageSquare, ChevronRight, ChevronDown, X,
+  Facebook, Twitter, Instagram, Linkedin, Newspaper, Mail, MapPin,
 } from "lucide-react";
 import {
   defaultSettings, loadSettings, resetSettings, saveSettings,
