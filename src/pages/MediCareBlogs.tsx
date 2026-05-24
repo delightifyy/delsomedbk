@@ -83,16 +83,16 @@ const MediCareBlogs = () => {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return BLOG_POSTS.filter((p) => {
+    return posts.filter((p) => {
       if (activeCat !== "All" && p.category !== activeCat) return false;
       if (!q) return true;
       return (p.title + " " + p.excerpt + " " + p.author + " " + p.category)
         .toLowerCase().includes(q);
     });
-  }, [query, activeCat]);
+  }, [query, activeCat, posts]);
 
-  const featured = BLOG_POSTS.find((p) => p.featured) ?? BLOG_POSTS[0];
-  const rest = filtered.filter((p) => p.id !== featured.id);
+  const featured = posts.find((p) => p.featured) ?? posts[0];
+  const rest = filtered.filter((p) => featured && p.id !== featured.id);
 
   return (
     <div className="medicare-blogs min-h-screen">
