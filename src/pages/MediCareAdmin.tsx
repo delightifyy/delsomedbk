@@ -567,11 +567,12 @@ const BlogEditor = () => {
                 </Field>
               </div>
               <Field label="Cover image">
-                <div className="flex gap-2">
-                  <input value={editing.cover_image ?? ""} onChange={(e) => setEditing({ ...editing, cover_image: e.target.value })} placeholder="https://..." className={inputCls} />
-                  <button type="button" onClick={() => setPickCover(true)} className="rounded-lg border border-slate-200 px-3 text-sm font-semibold hover:bg-slate-50 whitespace-nowrap"><ImageIcon className="h-4 w-4 inline" /> Pick</button>
-                </div>
-                {editing.cover_image && <img src={editing.cover_image} alt="" className="mt-2 h-32 w-full object-cover rounded-lg" />}
+                <ImageUploader
+                  value={editing.cover_image ?? ""}
+                  onChange={(url) => setEditing((e) => e ? { ...e, cover_image: url } : e)}
+                  folder="blog"
+                />
+                <input value={editing.cover_image ?? ""} onChange={(e) => setEditing({ ...editing, cover_image: e.target.value })} placeholder="Or paste image URL" className={inputCls + " mt-2"} />
               </Field>
               <Field label="Excerpt">
                 <textarea value={editing.excerpt ?? ""} onChange={(e) => setEditing({ ...editing, excerpt: e.target.value })} className={textareaCls} />
