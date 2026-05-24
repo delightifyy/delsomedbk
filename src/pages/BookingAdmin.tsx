@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
   ArrowLeft, Plus, Trash2, Pencil, X, Save, Loader2, RefreshCw,
@@ -217,7 +217,13 @@ const newDefaultRow = (r: Resource) => {
                        Main Page
 ========================================================= */
 export default function BookingAdmin() {
-  const [active, setActive] = useState<TableName>("booking_concern_categories");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const validTabs = new Set<string>([...RESOURCES.map((r) => r.id), "bookings"]);
+  const initialTab = (() => {
+    const t = searchParams.get("tab");
+    return t && validTabs.has(t) ? (t as TableName) : ("booking_concern_categories" as TableName);
+  })();
+  const [active, setActive] = useState<TableName>(initialTab);
   const [rows, setRows] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -227,6 +233,21 @@ export default function BookingAdmin() {
   const resource = useMemo(() => RESOURCES.find((r) => r.id === active)!, [active]);
 
   useEffect(() => { document.title = "Booking Admin — MediCare"; }, []);
+
+  // Sync ?tab= → active when URL changes (e.g. clicking sidebar links inside admin)
+  useEffect(() => {
+    const t = searchParams.get("tab");
+    if (t && validTabs.has(t) && t !== active) setActive(t as TableName);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // Keep URL in sync when user switches tabs from the sidebar
+  useEffect(() => {
+    if (searchParams.get("tab") !== active) {
+      setSearchParams({ tab: active }, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active]);
 
   const refresh = async () => {
     setLoading(true);

@@ -7,6 +7,8 @@ import {
   Star, Sparkles, FileText, Layers, Megaphone, Phone as PhoneIcon, Search,
   Home, Info, Heart, Wrench, Video, MessageSquare, ChevronRight, ChevronDown, X,
   Facebook, Twitter, Instagram, Linkedin, Newspaper, Mail, MapPin,
+  CalendarCheck, CreditCard, Building2, Users, Calendar as CalendarIcon,
+  ClipboardList, ListChecks, Stethoscope, Link2,
 } from "lucide-react";
 import {
   defaultSettings, loadSettings, resetSettings, saveSettings,
@@ -84,7 +86,7 @@ type PageGroup = {
   label: string;
   icon: any;
   /** Sections that exist on this public page */
-  sections: { id: Tab; label: string }[];
+  sections: { id: Tab; label: string; externalHref?: string; icon?: any }[];
 };
 
 /**
@@ -131,6 +133,25 @@ const PAGE_GROUPS: PageGroup[] = [
     icon: Newspaper,
     sections: [
       { id: "blog", label: "Blog Posts" },
+    ],
+  },
+  {
+    id: "booking",
+    label: "Book Appointment",
+    icon: CalendarCheck,
+    sections: [
+      { id: "blog" as Tab, label: "Concern Categories",   icon: Stethoscope,    externalHref: "/doctor-portal/admin/booking?tab=booking_concern_categories" },
+      { id: "blog" as Tab, label: "Concerns",             icon: ListChecks,     externalHref: "/doctor-portal/admin/booking?tab=booking_concerns" },
+      { id: "blog" as Tab, label: "Clinician Types",      icon: Users,          externalHref: "/doctor-portal/admin/booking?tab=booking_clinician_types" },
+      { id: "blog" as Tab, label: "Concern → Clinician",  icon: Link2,          externalHref: "/doctor-portal/admin/booking?tab=booking_concern_clinician_map" },
+      { id: "blog" as Tab, label: "Time Slots",           icon: CalendarIcon,   externalHref: "/doctor-portal/admin/booking?tab=booking_time_slots" },
+      { id: "blog" as Tab, label: "Intake Form Fields",   icon: ClipboardList,  externalHref: "/doctor-portal/admin/booking?tab=booking_intake_fields" },
+      { id: "blog" as Tab, label: "Legal Agreements",     icon: FileText,       externalHref: "/doctor-portal/admin/booking?tab=booking_legal_agreements" },
+      { id: "blog" as Tab, label: "Payment Methods (Card/HMO/Subscription/Org)", icon: CreditCard, externalHref: "/doctor-portal/admin/booking?tab=booking_payment_methods" },
+      { id: "blog" as Tab, label: "HMO Providers",        icon: Building2,      externalHref: "/doctor-portal/admin/booking?tab=booking_hmo_providers" },
+      { id: "blog" as Tab, label: "Subscription Plans",   icon: Sparkles,       externalHref: "/doctor-portal/admin/booking?tab=booking_subscription_plans" },
+      { id: "blog" as Tab, label: "Booking Settings",     icon: Settings,       externalHref: "/doctor-portal/admin/booking?tab=booking_settings" },
+      { id: "blog" as Tab, label: "Bookings (Orders)",    icon: ClipboardList,  externalHref: "/doctor-portal/admin/booking?tab=bookings" },
     ],
   },
   {
@@ -209,7 +230,21 @@ const MediCareAdmin = () => {
                   </button>
                   {isOpen && (
                     <div className="mt-1 ml-3 pl-3 border-l border-slate-200 space-y-0.5">
-                      {g.sections.map((sec) => {
+                      {g.sections.map((sec, idx) => {
+                        if (sec.externalHref) {
+                          const SecIcon = sec.icon;
+                          return (
+                            <Link
+                              key={`${sec.id}-${idx}-${sec.label}`}
+                              to={sec.externalHref}
+                              className="w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium text-emerald-700 hover:bg-emerald-50"
+                            >
+                              {SecIcon ? <SecIcon className="h-3.5 w-3.5" /> : <ExternalLink className="h-3.5 w-3.5" />}
+                              <span className="flex-1">{sec.label}</span>
+                              <ExternalLink className="h-3 w-3 opacity-50" />
+                            </Link>
+                          );
+                        }
                         if (sec.id === "servicesPage") {
                           return (
                             <Link
