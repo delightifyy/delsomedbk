@@ -230,7 +230,21 @@ const MediCareAdmin = () => {
                   </button>
                   {isOpen && (
                     <div className="mt-1 ml-3 pl-3 border-l border-slate-200 space-y-0.5">
-                      {g.sections.map((sec) => {
+                      {g.sections.map((sec, idx) => {
+                        if (sec.externalHref) {
+                          const SecIcon = sec.icon;
+                          return (
+                            <Link
+                              key={`${sec.id}-${idx}-${sec.label}`}
+                              to={sec.externalHref}
+                              className="w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium text-emerald-700 hover:bg-emerald-50"
+                            >
+                              {SecIcon ? <SecIcon className="h-3.5 w-3.5" /> : <ExternalLink className="h-3.5 w-3.5" />}
+                              <span className="flex-1">{sec.label}</span>
+                              <ExternalLink className="h-3 w-3 opacity-50" />
+                            </Link>
+                          );
+                        }
                         if (sec.id === "servicesPage") {
                           return (
                             <Link
