@@ -14,6 +14,7 @@ import {
   type TestimonialItem, type Partner, type NavItem, type SocialLink, type FooterLink,
 } from "@/lib/medicareSettings";
 import { MediaPicker } from "@/components/medicare-admin/MediaPicker";
+import { ImageUploader } from "@/components/medicare-admin/ImageUploader";
 import { Icon, ICON_NAMES } from "@/components/medicare-admin/icons";
 
 const uid = (p = "id") => `${p}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
