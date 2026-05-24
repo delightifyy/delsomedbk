@@ -86,7 +86,7 @@ type PageGroup = {
   label: string;
   icon: any;
   /** Sections that exist on this public page */
-  sections: { id: Tab; label: string }[];
+  sections: { id: Tab; label: string; externalHref?: string; icon?: any }[];
 };
 
 /**
