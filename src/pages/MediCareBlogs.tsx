@@ -170,7 +170,7 @@ const MediCareBlogs = () => {
       </section>
 
       {/* Featured */}
-      {activeCat === "All" && !query && (
+      {activeCat === "All" && !query && featured && (
         <section className="mx-auto max-w-7xl px-4 sm:px-6 pb-12">
           <Link to={`/health-news/${featured.slug}`} className="block mb-card group">
             <div className="grid md:grid-cols-2">
