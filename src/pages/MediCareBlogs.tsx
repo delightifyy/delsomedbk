@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Stethoscope, Search, Calendar, Clock, User } from "lucide-react";
 import { useMediCareSettings } from "@/lib/medicareSettings";
 import { BLOG_POSTS, BLOG_CATEGORIES, type BlogPost } from "@/data/blogs";
+import { supabase } from "@/integrations/supabase/client";
 
 const tokenStyles = `
 .medicare-blogs {
@@ -45,23 +46,53 @@ const MediCareBlogs = () => {
   const settings = useMediCareSettings();
   const [query, setQuery] = useState("");
   const [activeCat, setActiveCat] = useState<string>("All");
+  const [posts, setPosts] = useState<BlogPost[]>(BLOG_POSTS);
 
   useEffect(() => {
     document.title = `Blogs — ${settings.siteName || "MediCare"}`;
   }, [settings.siteName]);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("blog_posts")
+        .select("id, slug, title, excerpt, cover_image, category, author_name, author_role, read_time, featured, publish_date, published")
+        .eq("published", true)
+        .order("featured", { ascending: false })
+        .order("publish_date", { ascending: false });
+      if (cancelled) return;
+      if (data && data.length) {
+        setPosts(data.map((d: any) => ({
+          id: d.id,
+          slug: d.slug,
+          title: d.title,
+          excerpt: d.excerpt ?? "",
+          category: (d.category as BlogPost["category"]) ?? "Wellness",
+          author: d.author_name ?? "MediCare Team",
+          authorRole: d.author_role ?? "",
+          date: d.publish_date ? new Date(d.publish_date).toLocaleDateString(undefined, { month: "short", day: "2-digit", year: "numeric" }) : "",
+          readTime: d.read_time ?? "5 min read",
+          cover: d.cover_image ?? "",
+          featured: !!d.featured,
+        })));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return BLOG_POSTS.filter((p) => {
+    return posts.filter((p) => {
       if (activeCat !== "All" && p.category !== activeCat) return false;
       if (!q) return true;
       return (p.title + " " + p.excerpt + " " + p.author + " " + p.category)
         .toLowerCase().includes(q);
     });
-  }, [query, activeCat]);
+  }, [query, activeCat, posts]);
 
-  const featured = BLOG_POSTS.find((p) => p.featured) ?? BLOG_POSTS[0];
-  const rest = filtered.filter((p) => p.id !== featured.id);
+  const featured = posts.find((p) => p.featured) ?? posts[0];
+  const rest = filtered.filter((p) => featured && p.id !== featured.id);
 
   return (
     <div className="medicare-blogs min-h-screen">
@@ -139,7 +170,7 @@ const MediCareBlogs = () => {
       </section>
 
       {/* Featured */}
-      {activeCat === "All" && !query && (
+      {activeCat === "All" && !query && featured && (
         <section className="mx-auto max-w-7xl px-4 sm:px-6 pb-12">
           <Link to={`/health-news/${featured.slug}`} className="block mb-card group">
             <div className="grid md:grid-cols-2">
