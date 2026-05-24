@@ -401,7 +401,7 @@ const BlogEditor = () => {
   const [saving, setSaving] = useState(false);
   const [confirmDel, setConfirmDel] = useState<BlogRow | null>(null);
   const [query, setQuery] = useState("");
-  const [pickCover, setPickCover] = useState(false);
+  
 
   const load = async () => {
     setLoading(true);
