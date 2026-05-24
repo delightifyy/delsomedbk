@@ -598,12 +598,6 @@ const BlogEditor = () => {
               </button>
             </div>
           </div>
-          {pickCover && (
-            <MediaPicker
-              onSelect={(url) => { setEditing((e) => e ? { ...e, cover_image: url } : e); setPickCover(false); }}
-              onClose={() => setPickCover(false)}
-            />
-          )}
         </div>
       )}
 
