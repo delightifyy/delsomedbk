@@ -288,9 +288,7 @@ export default function BookingFlow({ open, onClose, initialPaymentMethod }: Pro
       toast.error("Could not create booking. Please try again.");
       return;
     }
-    supabase.from("booking_time_slots").update({
-      booked_count: selectedSlot.booked_count + 1,
-    }).eq("id", selectedSlot.id).then(() => {});
+    supabase.rpc("increment_booking_slot", { _slot_id: selectedSlot.id }).then(() => {});
     setBookingRef(data.reference);
     setStep(6);
   }
