@@ -697,18 +697,18 @@ const MediCare = () => {
           <div className="lg:col-span-10 lg:col-start-2 text-white">
             <span className="inline-flex items-center gap-2 rounded-full mc-glass-dark px-4 py-1.5 text-xs sm:text-sm font-semibold mc-anim-fade-up">
               <span className="h-2 w-2 rounded-full bg-[hsl(var(--mc-accent-glow))] mc-anim-pulse-dot" />
-              Live 24/7
+              {settings.hero.eyebrow}
             </span>
 
             <h1 className="mt-6 font-display text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-[1.05] text-balance mc-anim-fade-up">
-              Advanced Healthcare<br />
+              {settings.hero.titleLead}<br />
               <span className="bg-gradient-to-r from-white via-[hsl(174_80%_75%)] to-[hsl(200_95%_75%)] bg-clip-text text-transparent">
-                Designed Around You
+                {settings.hero.titleHighlight}
               </span>
             </h1>
 
-            <p className="mt-6 max-w-xl text-base sm:text-lg leading-relaxed text-white/80 mc-anim-fade-up">
-              Book Appointments, Consult Certified Doctors, Receive World class Healthcare Digitally and physically.
+            <p className="mt-6 max-w-xl text-base sm:text-lg leading-relaxed text-white/80 mc-anim-fade-up whitespace-pre-line">
+              {settings.hero.subtitle}
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3 mc-anim-fade-up">
@@ -717,12 +717,13 @@ const MediCare = () => {
                 onClick={handleBookClick}
                 className="inline-flex justify-center items-center gap-2 rounded-full mc-grad-primary text-white px-7 py-3.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition"
               >
-                Book Appointment <ArrowRight className="h-4 w-4" />
+                {settings.hero.ctaLabel} <ArrowRight className="h-4 w-4" />
               </button>
             </div>
 
           </div>
         </div>
+
 
         {/* Marquee partners */}
         <div className="absolute bottom-0 inset-x-0 py-4 bg-gradient-to-t from-black/60 to-transparent">
@@ -743,7 +744,7 @@ const MediCare = () => {
           <div className="relative">
             <div className="relative rounded-[2rem] overflow-hidden mc-shadow-elegant aspect-[4/5]">
               <img
-                src={aboutHospitalImg}
+                src={settings.about.image || aboutHospitalImg}
                 alt="Modern hospital facility"
                 width={1000}
                 height={1200}
@@ -757,15 +758,15 @@ const MediCare = () => {
                 <Users className="h-6 w-6" />
               </span>
               <div>
-                <p className="font-display text-2xl font-bold leading-none">98%</p>
-                <p className="text-xs text-[hsl(var(--mc-muted))] mt-1">Patient satisfaction</p>
+                <p className="font-display text-2xl font-bold leading-none">{settings.about.satisfaction.value}</p>
+                <p className="text-xs text-[hsl(var(--mc-muted))] mt-1">{settings.about.satisfaction.label}</p>
               </div>
             </div>
           </div>
 
           {/* Content side */}
           <div>
-            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">About MediCare</p>
+            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">{settings.about.label}</p>
             <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold leading-[1.1]">
               {settings.about.title}
             </h2>
@@ -775,15 +776,15 @@ const MediCare = () => {
 
             <div className="mt-10 grid sm:grid-cols-2 gap-8">
               <div>
-                <h3 className="font-display text-lg font-bold">Our Mission</h3>
-                <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">
-                  Provide accessible, world-class care that respects every patient as a person.
+                <h3 className="font-display text-lg font-bold">{settings.about.mission.title}</h3>
+                <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed whitespace-pre-line">
+                  {settings.about.mission.body}
                 </p>
               </div>
               <div>
-                <h3 className="font-display text-lg font-bold">Our Vision</h3>
-                <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">
-                  Be the most trusted healthcare brand on the continent — a benchmark for excellence.
+                <h3 className="font-display text-lg font-bold">{settings.about.vision.title}</h3>
+                <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed whitespace-pre-line">
+                  {settings.about.vision.body}
                 </p>
               </div>
             </div>
@@ -796,19 +797,19 @@ const MediCare = () => {
       <section className="py-20 sm:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="max-w-3xl mx-auto text-center">
-            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Why Choose Us</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Care you can <span className="mc-grad-text">truly trust</span></h2>
-            <p className="mt-4 text-[hsl(var(--mc-muted))] max-w-xl">Built on decades of clinical excellence and powered by modern technology, MediCare delivers a healthcare experience that feels human at every step.</p>
+            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">{settings.whyChoose.label}</p>
+            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">{settings.whyChoose.title}</h2>
+            <p className="mt-4 text-[hsl(var(--mc-muted))] max-w-xl mx-auto whitespace-pre-line">{settings.whyChoose.description}</p>
 
-            <div className="mt-10 grid sm:grid-cols-2 gap-4">
-              {reasons.map((r, i) => (
-                <div key={r.title} className="flex gap-4 mc-anim-fade-up" style={{ animationDelay: `${i * 0.07}s` }}>
+            <div className="mt-10 grid sm:grid-cols-2 gap-4 text-left">
+              {settings.whyChoose.features.filter((f) => f.active).sort((a, b) => a.order - b.order).map((r, i) => (
+                <div key={r.id} className="flex gap-4 mc-anim-fade-up" style={{ animationDelay: `${i * 0.07}s` }}>
                   <span className="shrink-0 grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow">
-                    <r.icon className="h-5 w-5" />
+                    <McIcon name={r.icon} className="h-5 w-5" />
                   </span>
                   <div>
                     <h3 className="font-display text-lg font-bold">{r.title}</h3>
-                    <p className="mt-1 text-sm text-[hsl(var(--mc-muted))]">{r.desc}</p>
+                    <p className="mt-1 text-sm text-[hsl(var(--mc-muted))]">{r.description}</p>
                   </div>
                 </div>
               ))}
@@ -816,6 +817,7 @@ const MediCare = () => {
           </div>
         </div>
       </section>
+
 
       {/* ============ SERVICES ============ */}
       <section id="services" className="py-20 sm:py-28 mc-grad-soft">
