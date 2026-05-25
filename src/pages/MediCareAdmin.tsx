@@ -75,7 +75,7 @@ const reorder = <T extends { order: number }>(items: T[], id: string, dir: -1 | 
 
 /* ---------- Page-grouped navigation (mirrors public site) ---------- */
 type Tab =
-  | "navbar" | "hero" | "partners" | "about" | "whyChoose" | "services"
+  | "home" | "navbar" | "hero" | "partners" | "about" | "whyChoose" | "services"
   | "virtualCare" | "testimonials" | "ctaBanner" | "footer" | "media" | "seo"
   | "branding" | "contact" | "blog" | "servicesPage";
 
@@ -97,17 +97,10 @@ const PAGE_GROUPS: PageGroup[] = [
     label: "Home",
     icon: Home,
     sections: [
-      { id: "navbar",       label: "Navbar" },
-      { id: "hero",         label: "Hero" },
-      { id: "partners",     label: "Partners" },
-      { id: "whyChoose",    label: "Why Choose Us" },
-      { id: "services",     label: "Featured Services" },
-      { id: "virtualCare",  label: "Virtual Care" },
-      { id: "testimonials", label: "Testimonials" },
-      { id: "ctaBanner",    label: "CTA Banner" },
-      { id: "footer",       label: "Footer" },
+      { id: "home", label: "Home Page" },
     ],
   },
+
   {
     id: "about",
     label: "About Us",
