@@ -1237,6 +1237,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_booking_slot: { Args: { _slot_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"
