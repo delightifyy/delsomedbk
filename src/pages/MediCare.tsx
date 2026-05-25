@@ -837,6 +837,9 @@ const MediCare = () => {
                     {svc.ctaLabel} <ArrowRight className="h-4 w-4" />
                   </a>
                 )}
+                <Link to="/doctor-portal/services" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[hsl(var(--mc-primary))]">
+                  Read more <ArrowRight className="h-4 w-4" />
+                </Link>
               </div>
             ))}
           </div>
