@@ -846,61 +846,6 @@ const MediCare = () => {
         </div>
       </section>
 
-      {/* ============ TESTIMONIALS ============ */}
-      <section className="py-20 sm:py-28">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="text-center max-w-2xl mx-auto">
-            <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Patient Stories</p>
-            <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Real people. <span className="mc-grad-text">Real outcomes.</span></h2>
-          </div>
-          <div className="mt-14 grid md:grid-cols-3 gap-6">
-            {testimonials.map((t, i) => (
-              <figure key={t.name} className={`relative bg-[hsl(var(--mc-card))] rounded-3xl p-7 border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover ${i === 1 ? "md:translate-y-6" : ""}`}>
-                <Quote className="absolute top-5 right-5 h-10 w-10 text-[hsl(var(--mc-primary)/.12)]" />
-                <div className="flex items-center gap-1 text-amber-400">
-                  {Array.from({ length: 5 }).map((_, k) => <Star key={k} className="h-4 w-4 fill-current" />)}
-                </div>
-                <blockquote className="mt-4 font-display text-lg leading-relaxed">"{t.quote}"</blockquote>
-                <figcaption className="mt-6 flex items-center gap-3 pt-5 border-t border-[hsl(var(--mc-border))]">
-                  <img src={t.img} alt={t.name} className="h-11 w-11 rounded-full object-cover" />
-                  <div>
-                    <p className="text-sm font-bold">{t.name}</p>
-                    <p className="text-xs text-[hsl(var(--mc-muted))]">{t.loc}</p>
-                  </div>
-                </figcaption>
-              </figure>
-            ))}
-          </div>
-        </div>
-      </section>
-
-
-      {/* ============ FINAL CTA ============ */}
-      <section id="cta" className="relative py-24 sm:py-32 overflow-hidden">
-        <img
-          className="absolute inset-0 h-full w-full object-cover"
-          src="/healthcare-human.jpg"
-          alt="Caring nurse with elderly patient"
-        />
-        <div className="absolute inset-0" style={{ background: "var(--mc-grad-cta-overlay)" }} />
-        <div className="absolute inset-0 mc-grid-pattern opacity-20" />
-
-        <div className="relative mx-auto max-w-4xl px-4 sm:px-6 text-center text-white">
-          <span className="inline-flex items-center gap-2 rounded-full mc-glass-dark px-4 py-1.5 text-xs font-semibold">
-            <HeartPulse className="h-3.5 w-3.5 text-rose-400" /> Care that fits your life
-          </span>
-          <h2 className="mt-6 font-display text-4xl sm:text-6xl font-bold leading-tight">Healthcare that <br /><span className="bg-gradient-to-r from-white to-[hsl(174_80%_75%)] bg-clip-text text-transparent">feels human</span></h2>
-          <p className="mt-5 max-w-xl mx-auto text-white/85">Experience trusted digital healthcare built around your comfort, dignity and safety.</p>
-          <div className="mt-9 flex flex-col sm:flex-row gap-3 justify-center">
-            <a href="#doctors" className="inline-flex justify-center items-center gap-2 rounded-full bg-white text-[hsl(var(--mc-primary))] px-7 py-3.5 text-sm font-bold hover:bg-white/95 transition">
-              Get Started <ArrowRight className="h-4 w-4" />
-            </a>
-            <a href="#telemedicine" className="inline-flex justify-center items-center gap-2 rounded-full mc-glass-dark text-white px-7 py-3.5 text-sm font-bold hover:bg-white/15 transition">
-              <Video className="h-4 w-4" /> Talk to a Doctor
-            </a>
-          </div>
-        </div>
-      </section>
 
 
 
