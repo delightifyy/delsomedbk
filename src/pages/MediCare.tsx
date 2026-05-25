@@ -825,7 +825,7 @@ const MediCare = () => {
             <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">{settings.services.title}</h2>
           </div>
           <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {settings.services.items.filter((x) => x.active).sort((a, b) => a.order - b.order).map((svc) => (
+            {settings.services.items.filter((x) => x.active).sort((a, b) => a.order - b.order).slice(0, 3).map((svc) => (
               <div key={svc.id} className="group bg-[hsl(var(--mc-card))] rounded-3xl overflow-hidden border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover p-7">
                 <span className="inline-grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow mb-4">
                   <McIcon name={svc.icon} className="h-5 w-5" />
