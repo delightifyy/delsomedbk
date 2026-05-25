@@ -75,7 +75,7 @@ const reorder = <T extends { order: number }>(items: T[], id: string, dir: -1 | 
 
 /* ---------- Page-grouped navigation (mirrors public site) ---------- */
 type Tab =
-  | "navbar" | "hero" | "partners" | "about" | "whyChoose" | "services"
+  | "home" | "navbar" | "hero" | "partners" | "about" | "whyChoose" | "services"
   | "virtualCare" | "testimonials" | "ctaBanner" | "footer" | "media" | "seo"
   | "branding" | "contact" | "blog" | "servicesPage";
 
@@ -97,17 +97,10 @@ const PAGE_GROUPS: PageGroup[] = [
     label: "Home",
     icon: Home,
     sections: [
-      { id: "navbar",       label: "Navbar" },
-      { id: "hero",         label: "Hero" },
-      { id: "partners",     label: "Partners" },
-      { id: "whyChoose",    label: "Why Choose Us" },
-      { id: "services",     label: "Featured Services" },
-      { id: "virtualCare",  label: "Virtual Care" },
-      { id: "testimonials", label: "Testimonials" },
-      { id: "ctaBanner",    label: "CTA Banner" },
-      { id: "footer",       label: "Footer" },
+      { id: "home", label: "Home Page" },
     ],
   },
+
   {
     id: "about",
     label: "About Us",
@@ -149,8 +142,9 @@ const PAGE_GROUPS: PageGroup[] = [
 ========================================================= */
 const MediCareAdmin = () => {
   const [s, setS] = useState<MediCareSettings>(defaultSettings);
-  const [tab, setTab] = useState<Tab>("hero");
+  const [tab, setTab] = useState<Tab>("home");
   const [openGroup, setOpenGroup] = useState<string>("home");
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [confirm, setConfirm] = useState<null | { title: string; message: string; onConfirm: () => void }>(null);
   const [dirty, setDirty] = useState(false);
@@ -194,6 +188,23 @@ const MediCareAdmin = () => {
           <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Manage Pages</p>
           <nav className="space-y-1">
             {PAGE_GROUPS.map((g) => {
+              // Single-section group → render as flat button (no dropdown)
+              if (g.sections.length === 1) {
+                const sec = g.sections[0];
+                const active = tab === sec.id;
+                return (
+                  <button
+                    key={g.id}
+                    onClick={() => { setTab(sec.id); setSidebarOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition ${
+                      active ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <g.icon className="h-4 w-4" />
+                    <span className="flex-1 text-left">{g.label}</span>
+                  </button>
+                );
+              }
               const isOpen = openGroup === g.id;
               return (
                 <div key={g.id}>
@@ -253,6 +264,7 @@ const MediCareAdmin = () => {
               );
             })}
 
+
             <div className="my-3 border-t border-slate-200" />
             <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Site-wide</p>
             <button
@@ -305,7 +317,9 @@ const MediCareAdmin = () => {
         </header>
 
         <main className="flex-1 px-4 sm:px-8 py-6 sm:py-8 max-w-5xl w-full mx-auto">
+          {tab === "home"         && <HomeEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
           {tab === "branding"     && <BrandingEditor s={s} update={update} setSettings={setSettings} />}
+
           {tab === "navbar"       && <NavbarEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
           {tab === "hero"         && <HeroEditor s={s} setSettings={setSettings} />}
           {tab === "partners"     && <PartnersEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
@@ -335,6 +349,24 @@ const MediCareAdmin = () => {
 };
 
 export default MediCareAdmin;
+
+/* ---------- HOME (composite of all home-page sections) ---------- */
+const HomeEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => (
+  <div className="space-y-12">
+    <SectionHeader title="Home Page" desc="Edit every section that appears on the public MediCare home page." />
+    <NavbarEditor s={s} setSettings={setSettings} askDelete={askDelete} />
+    <HeroEditor s={s} setSettings={setSettings} />
+    <PartnersEditor s={s} setSettings={setSettings} askDelete={askDelete} />
+    <WhyChooseEditor s={s} setSettings={setSettings} askDelete={askDelete} />
+    <ServicesEditor s={s} setSettings={setSettings} askDelete={askDelete} />
+    <VirtualCareEditor s={s} setSettings={setSettings} />
+    <TestimonialsEditor s={s} setSettings={setSettings} askDelete={askDelete} />
+    <CtaBannerEditor s={s} setSettings={setSettings} />
+    <FooterEditor s={s} setSettings={setSettings} askDelete={askDelete} />
+  </div>
+);
+
+
 
 /* ---------- CONTACT ---------- */
 const ContactEditor = ({ s, setSettings }: EProps) => {
