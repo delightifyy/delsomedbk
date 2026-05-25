@@ -710,7 +710,7 @@ const HeroEditor = ({ s, setSettings }: EProps) => {
     setSettings((st) => ({ ...st, hero: { ...st.hero, ...patch } }));
   return (
     <div className="space-y-6">
-      <SectionHeader title="Hero Section" desc="Headline, subtitle, background, and floating cards." />
+      <SectionHeader title="Home Boarding" desc="Headline, subtitle, background, and floating cards." />
       <Card>
         <div className="grid gap-4">
           <Field label="Badge text"><input className={inputCls} value={s.hero.eyebrow} onChange={(e) => set({ eyebrow: e.target.value })} /></Field>
