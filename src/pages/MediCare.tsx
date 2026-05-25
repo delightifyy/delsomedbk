@@ -694,7 +694,7 @@ const MediCare = () => {
         <div className="absolute inset-0 mc-grid-pattern opacity-30" />
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 w-full grid lg:grid-cols-12 gap-10 items-center">
-          <div className="lg:col-span-7 text-white">
+          <div className="lg:col-span-10 lg:col-start-2 text-white">
             <span className="inline-flex items-center gap-2 rounded-full mc-glass-dark px-4 py-1.5 text-xs sm:text-sm font-semibold mc-anim-fade-up">
               <span className="h-2 w-2 rounded-full bg-[hsl(var(--mc-accent-glow))] mc-anim-pulse-dot" />
               Live 24/7
@@ -721,67 +721,6 @@ const MediCare = () => {
               </button>
             </div>
 
-          </div>
-
-          {/* Floating dashboard cards */}
-          <div className="hidden lg:block lg:col-span-5 relative h-[520px]">
-            <div className="absolute top-4 right-0 w-72 mc-glass mc-shadow-elegant rounded-3xl p-5 mc-anim-float">
-              <div className="flex items-center gap-3">
-                <span className="grid place-items-center h-11 w-11 rounded-2xl mc-grad-primary text-white">
-                  <Video className="h-5 w-5" />
-                </span>
-                <div>
-                  <p className="text-xs text-[hsl(var(--mc-muted))]">In session</p>
-                  <p className="text-sm font-bold">Dr. Amara Okafor</p>
-                </div>
-                <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold text-rose-500">
-                  <span className="h-1.5 w-1.5 rounded-full bg-rose-500 mc-anim-pulse-dot" /> LIVE
-                </span>
-              </div>
-              <div className="mt-4 h-24 rounded-2xl overflow-hidden bg-[hsl(var(--mc-muted-soft))]">
-                <img src="/care-anywhere-v2.jpg" alt="Live telemedicine consultation" className="h-full w-full object-cover" />
-              </div>
-              <div className="mt-3 flex gap-2">
-                <button className="flex-1 rounded-xl bg-[hsl(var(--mc-muted-soft))] py-2 text-xs font-semibold">Mute</button>
-                <button className="flex-1 rounded-xl mc-grad-primary text-white py-2 text-xs font-semibold">Join</button>
-              </div>
-            </div>
-
-            <div className="absolute top-44 left-0 w-64 mc-glass mc-shadow-elegant rounded-3xl p-5 mc-anim-float" style={{ animationDelay: ".4s" }}>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[hsl(var(--mc-primary))]">Today's Schedule</p>
-              {[
-                { t: "09:30", n: "Cardiology check-in" },
-                { t: "11:15", n: "Pediatric video call" },
-                { t: "14:00", n: "Lab results review" },
-              ].map((row) => (
-                <div key={row.t} className="mt-3 flex items-center gap-3 text-sm">
-                  <span className="font-mono text-xs font-bold text-[hsl(var(--mc-primary))]">{row.t}</span>
-                  <span className="flex-1 truncate">{row.n}</span>
-                  <CheckCircle2 className="h-4 w-4 text-[hsl(var(--mc-accent))]" />
-                </div>
-              ))}
-            </div>
-
-            <div className="absolute bottom-6 right-8 w-60 mc-glass mc-shadow-elegant rounded-3xl p-5 mc-anim-float" style={{ animationDelay: ".7s" }}>
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-[hsl(var(--mc-muted))]">Heart rate</p>
-                <HeartPulse className="h-4 w-4 text-rose-500" />
-              </div>
-              <p className="mt-1 font-display text-3xl font-bold">72<span className="text-sm font-medium text-[hsl(var(--mc-muted))] ml-1">bpm</span></p>
-              <svg viewBox="0 0 200 40" className="mt-2 w-full h-10 text-[hsl(var(--mc-primary))]">
-                <polyline fill="none" stroke="currentColor" strokeWidth="2" points="0,20 30,20 38,8 46,32 54,20 100,20 110,4 120,36 130,20 200,20" />
-              </svg>
-            </div>
-
-            <div className="absolute bottom-32 left-10 w-56 mc-glass mc-shadow-elegant rounded-3xl p-4 mc-anim-float" style={{ animationDelay: "1s" }}>
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-[hsl(var(--mc-accent))]" />
-                <p className="text-xs font-bold">98% Patient Satisfaction</p>
-              </div>
-              <div className="mt-2 h-1.5 rounded-full bg-[hsl(var(--mc-muted-soft))] overflow-hidden">
-                <div className="h-full w-[98%] mc-grad-primary rounded-full" />
-              </div>
-            </div>
           </div>
         </div>
 
