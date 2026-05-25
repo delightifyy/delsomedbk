@@ -882,7 +882,7 @@ const MediCare = () => {
                 { label: "About", href: "#about" },
                 { label: "Blogs", href: "#blogs" },
                 { label: "Contact Us", href: "#contact" },
-                { label: "FAQ", href: "#faq" },
+                { label: "\n", href: "#faq" },
               ]},
               { title: "Support", items: [
                 { label: "Privacy Policy", href: "#" },
