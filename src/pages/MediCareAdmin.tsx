@@ -75,8 +75,8 @@ const reorder = <T extends { order: number }>(items: T[], id: string, dir: -1 | 
 
 /* ---------- Page-grouped navigation (mirrors public site) ---------- */
 type Tab =
-  | "home" | "navbar" | "hero" | "partners" | "about" | "whyChoose" | "services"
-  | "virtualCare" | "testimonials" | "ctaBanner" | "footer" | "media" | "seo"
+  | "home" | "navbar" | "hero" | "partners" | "about" | "whyChoose"
+  | "media" | "seo"
   | "branding" | "contact" | "blog" | "servicesPage";
 
 type PageGroup = {
