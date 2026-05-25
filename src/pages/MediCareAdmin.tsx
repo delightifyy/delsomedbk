@@ -681,7 +681,7 @@ const BrandingEditor = ({ s, update, setSettings }: EProps & { update: (p: Parti
 );
 
 /* ---------- NAVBAR ---------- */
-const NavbarEditor = ({ s, setSettings }: EProps) => {
+const NavbarEditor = ({ s, setSettings }: EPropsWithDelete) => {
   return (
     <div className="space-y-6">
       <SectionHeader title="Navbar" desc="Manage menu links, order, and visibility." />
