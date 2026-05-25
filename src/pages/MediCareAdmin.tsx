@@ -356,13 +356,12 @@ const HomeEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => (
     <SectionHeader title="Home Page" desc="Edit every section that appears on the public MediCare home page." />
     <NavbarEditor s={s} setSettings={setSettings} askDelete={askDelete} />
     <HeroEditor s={s} setSettings={setSettings} />
-    <PartnersEditor s={s} setSettings={setSettings} askDelete={askDelete} />
-    <WhyChooseEditor s={s} setSettings={setSettings} askDelete={askDelete} />
     <ServicesEditor s={s} setSettings={setSettings} askDelete={askDelete} />
     <VirtualCareEditor s={s} setSettings={setSettings} />
     <TestimonialsEditor s={s} setSettings={setSettings} askDelete={askDelete} />
     <CtaBannerEditor s={s} setSettings={setSettings} />
     <FooterEditor s={s} setSettings={setSettings} askDelete={askDelete} />
+
   </div>
 );
 
@@ -786,45 +785,13 @@ const HeroEditor = ({ s, setSettings }: EProps) => {
       </Card>
 
       <Card>
-        <h3 className="font-semibold text-slate-900 mb-4">Floating doctor card</h3>
+        <h3 className="font-semibold text-slate-900 mb-4">Satisfaction card</h3>
         <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Doctor name"><input className={inputCls} value={s.hero.doctorCard.name} onChange={(e) => set({ doctorCard: { ...s.hero.doctorCard, name: e.target.value } })} /></Field>
-          <Field label="Status / role"><input className={inputCls} value={s.hero.doctorCard.role} onChange={(e) => set({ doctorCard: { ...s.hero.doctorCard, role: e.target.value } })} /></Field>
-        </div>
-        <div className="mt-4">
-          <MediaPicker label="Doctor card image" value={s.hero.doctorCard.imageUrl} onChange={(v) => set({ doctorCard: { ...s.hero.doctorCard, imageUrl: v ?? "" } })} settings={s} setSettings={setSettings} accept="image" />
+          <Field label="Value"><input className={inputCls} value={s.hero.satisfactionCard.value} onChange={(e) => set({ satisfactionCard: { ...s.hero.satisfactionCard, value: e.target.value } })} /></Field>
+          <Field label="Label"><input className={inputCls} value={s.hero.satisfactionCard.label} onChange={(e) => set({ satisfactionCard: { ...s.hero.satisfactionCard, label: e.target.value } })} /></Field>
         </div>
       </Card>
 
-      <Card>
-        <h3 className="font-semibold text-slate-900 mb-4">Floating checklist card</h3>
-        <Field label="Title"><input className={inputCls} value={s.hero.checklistCard.title} onChange={(e) => set({ checklistCard: { ...s.hero.checklistCard, title: e.target.value } })} /></Field>
-        <div className="mt-3 space-y-2">
-          {s.hero.checklistCard.items.map((it, i) => (
-            <div key={i} className="grid grid-cols-12 gap-2 items-center">
-              <input className={inputCls + " col-span-3"} value={it.time}
-                onChange={(e) => set({ checklistCard: { ...s.hero.checklistCard, items: s.hero.checklistCard.items.map((x, j) => i === j ? { ...x, time: e.target.value } : x) } })} placeholder="09:30" />
-              <input className={inputCls + " col-span-8"} value={it.label}
-                onChange={(e) => set({ checklistCard: { ...s.hero.checklistCard, items: s.hero.checklistCard.items.map((x, j) => i === j ? { ...x, label: e.target.value } : x) } })} placeholder="Activity" />
-              <button onClick={() => set({ checklistCard: { ...s.hero.checklistCard, items: s.hero.checklistCard.items.filter((_, j) => i !== j) } })}
-                className="grid place-items-center h-9 w-9 rounded text-rose-600 hover:bg-rose-50 col-span-1"><Trash2 className="h-4 w-4" /></button>
-            </div>
-          ))}
-        </div>
-        <button onClick={() => set({ checklistCard: { ...s.hero.checklistCard, items: [...s.hero.checklistCard.items, { time: "12:00", label: "New item" }] } })}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-blue-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-blue-700">
-          <Plus className="h-3.5 w-3.5" /> Add item
-        </button>
-      </Card>
-
-      <Card>
-        <h3 className="font-semibold text-slate-900 mb-4">Vitals card</h3>
-        <div className="grid sm:grid-cols-3 gap-4">
-          <Field label="Label"><input className={inputCls} value={s.hero.vitalsCard.label} onChange={(e) => set({ vitalsCard: { ...s.hero.vitalsCard, label: e.target.value } })} /></Field>
-          <Field label="Value"><input className={inputCls} value={s.hero.vitalsCard.value} onChange={(e) => set({ vitalsCard: { ...s.hero.vitalsCard, value: e.target.value } })} /></Field>
-          <Field label="Unit"><input className={inputCls} value={s.hero.vitalsCard.unit} onChange={(e) => set({ vitalsCard: { ...s.hero.vitalsCard, unit: e.target.value } })} /></Field>
-        </div>
-      </Card>
 
       <Card>
         <h3 className="font-semibold text-slate-900 mb-4">Satisfaction card</h3>
