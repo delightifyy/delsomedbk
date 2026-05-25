@@ -730,34 +730,6 @@ const HeroEditor = ({ s, setSettings }: EProps) => {
         </div>
       </Card>
 
-      <Card>
-        <h3 className="font-semibold text-slate-900 mb-4">Background</h3>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <MediaPicker label="Background video URL" value={s.hero.bgVideo} onChange={(v) => set({ bgVideo: v ?? "" })} settings={s} setSettings={setSettings} accept="video" />
-          <MediaPicker label="Poster / fallback image" value={s.hero.bgImage} onChange={(v) => set({ bgImage: v ?? "" })} settings={s} setSettings={setSettings} accept="image" />
-        </div>
-        <Field label={`Overlay darkness: ${Math.round(s.hero.overlayOpacity * 100)}%`}>
-          <input type="range" min={0} max={100} value={Math.round(s.hero.overlayOpacity * 100)}
-            onChange={(e) => set({ overlayOpacity: Number(e.target.value) / 100 })} className="w-full" />
-        </Field>
-      </Card>
-
-      <Card>
-        <h3 className="font-semibold text-slate-900 mb-4">Satisfaction card</h3>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Value"><input className={inputCls} value={s.hero.satisfactionCard.value} onChange={(e) => set({ satisfactionCard: { ...s.hero.satisfactionCard, value: e.target.value } })} /></Field>
-          <Field label="Label"><input className={inputCls} value={s.hero.satisfactionCard.label} onChange={(e) => set({ satisfactionCard: { ...s.hero.satisfactionCard, label: e.target.value } })} /></Field>
-        </div>
-      </Card>
-
-
-      <Card>
-        <h3 className="font-semibold text-slate-900 mb-4">Satisfaction card</h3>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Value"><input className={inputCls} value={s.hero.satisfactionCard.value} onChange={(e) => set({ satisfactionCard: { ...s.hero.satisfactionCard, value: e.target.value } })} /></Field>
-          <Field label="Label"><input className={inputCls} value={s.hero.satisfactionCard.label} onChange={(e) => set({ satisfactionCard: { ...s.hero.satisfactionCard, label: e.target.value } })} /></Field>
-        </div>
-      </Card>
     </div>
   );
 };
