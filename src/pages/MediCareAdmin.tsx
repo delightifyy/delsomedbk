@@ -131,7 +131,6 @@ const PAGE_GROUPS: PageGroup[] = [
     icon: PhoneIcon,
     sections: [
       { id: "contact", label: "Contact Info" },
-      { id: "footer",  label: "Footer Links" },
     ],
   },
 ];
@@ -324,11 +323,6 @@ const MediCareAdmin = () => {
           {tab === "partners"     && <PartnersEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
           {tab === "about"        && <AboutEditor s={s} setSettings={setSettings} />}
           {tab === "whyChoose"    && <WhyChooseEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
-          {tab === "services"     && <ServicesEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
-          {tab === "virtualCare"  && <VirtualCareEditor s={s} setSettings={setSettings} />}
-          {tab === "testimonials" && <TestimonialsEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
-          {tab === "ctaBanner"    && <CtaBannerEditor s={s} setSettings={setSettings} />}
-          {tab === "footer"       && <FooterEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
           {tab === "media"        && <MediaLibraryEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
           {tab === "seo"          && <SeoEditor s={s} setSettings={setSettings} />}
           {tab === "contact"      && <ContactEditor s={s} setSettings={setSettings} />}
@@ -355,12 +349,6 @@ const HomeEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => (
     <SectionHeader title="Home Page" desc="Edit every section that appears on the public MediCare home page." />
     <NavbarEditor s={s} setSettings={setSettings} askDelete={askDelete} />
     <HeroEditor s={s} setSettings={setSettings} />
-    <ServicesEditor s={s} setSettings={setSettings} askDelete={askDelete} />
-    <VirtualCareEditor s={s} setSettings={setSettings} />
-    <TestimonialsEditor s={s} setSettings={setSettings} askDelete={askDelete} />
-    <CtaBannerEditor s={s} setSettings={setSettings} />
-    <FooterEditor s={s} setSettings={setSettings} askDelete={askDelete} />
-
   </div>
 );
 
