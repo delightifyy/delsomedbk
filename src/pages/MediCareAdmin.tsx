@@ -356,13 +356,12 @@ const HomeEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => (
     <SectionHeader title="Home Page" desc="Edit every section that appears on the public MediCare home page." />
     <NavbarEditor s={s} setSettings={setSettings} askDelete={askDelete} />
     <HeroEditor s={s} setSettings={setSettings} />
-    <PartnersEditor s={s} setSettings={setSettings} askDelete={askDelete} />
-    <WhyChooseEditor s={s} setSettings={setSettings} askDelete={askDelete} />
     <ServicesEditor s={s} setSettings={setSettings} askDelete={askDelete} />
     <VirtualCareEditor s={s} setSettings={setSettings} />
     <TestimonialsEditor s={s} setSettings={setSettings} askDelete={askDelete} />
     <CtaBannerEditor s={s} setSettings={setSettings} />
     <FooterEditor s={s} setSettings={setSettings} askDelete={askDelete} />
+
   </div>
 );
 
