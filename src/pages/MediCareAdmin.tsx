@@ -114,7 +114,6 @@ const PAGE_GROUPS: PageGroup[] = [
     label: "Services",
     icon: Wrench,
     sections: [
-      { id: "services",     label: "Featured Services" },
       { id: "servicesPage", label: "Services Page CMS →" },
     ],
   },
