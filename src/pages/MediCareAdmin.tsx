@@ -187,6 +187,23 @@ const MediCareAdmin = () => {
           <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Manage Pages</p>
           <nav className="space-y-1">
             {PAGE_GROUPS.map((g) => {
+              // Single-section group → render as flat button (no dropdown)
+              if (g.sections.length === 1) {
+                const sec = g.sections[0];
+                const active = tab === sec.id;
+                return (
+                  <button
+                    key={g.id}
+                    onClick={() => { setTab(sec.id); setSidebarOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition ${
+                      active ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <g.icon className="h-4 w-4" />
+                    <span className="flex-1 text-left">{g.label}</span>
+                  </button>
+                );
+              }
               const isOpen = openGroup === g.id;
               return (
                 <div key={g.id}>
@@ -245,6 +262,7 @@ const MediCareAdmin = () => {
                 </div>
               );
             })}
+
 
             <div className="my-3 border-t border-slate-200" />
             <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Site-wide</p>
