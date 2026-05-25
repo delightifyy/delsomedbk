@@ -788,24 +788,14 @@ const MediCare = () => {
               </div>
             </div>
 
-            <a href="#services" className="mt-10 inline-flex items-center gap-2 font-semibold text-[hsl(var(--mc-primary))] hover:gap-3 transition-all">
-              Read our full story <ArrowRight className="h-4 w-4" />
-            </a>
           </div>
         </div>
       </section>
 
       {/* ============ WHY CHOOSE US ============ */}
       <section className="py-20 sm:py-28">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 grid lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-6 relative">
-            <div className="relative rounded-[2.5rem] overflow-hidden mc-shadow-elegant aspect-[4/5] sm:aspect-[5/6]">
-              <img src="/healthcare-hero.webp" alt="Doctor attending to a patient" className="h-full w-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[hsl(var(--mc-dark)/.7)] via-transparent to-transparent" />
-            </div>
-          </div>
-
-          <div className="lg:col-span-6">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="max-w-3xl mx-auto text-center">
             <p className="text-xs font-semibold tracking-[0.2em] text-[hsl(var(--mc-primary))] uppercase">Why Choose Us</p>
             <h2 className="mt-3 font-display text-3xl sm:text-5xl font-bold">Care you can <span className="mc-grad-text">truly trust</span></h2>
             <p className="mt-4 text-[hsl(var(--mc-muted))] max-w-xl">Built on decades of clinical excellence and powered by modern technology, MediCare delivers a healthcare experience that feels human at every step.</p>
