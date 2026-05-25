@@ -681,11 +681,7 @@ const BrandingEditor = ({ s, update, setSettings }: EProps & { update: (p: Parti
 );
 
 /* ---------- NAVBAR ---------- */
-const NavbarEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => {
-  const items = [...s.nav.items].sort((a, b) => a.order - b.order);
-  const setItems = (mut: (items: NavItem[]) => NavItem[]) =>
-    setSettings((st) => ({ ...st, nav: { ...st.nav, items: mut(st.nav.items) } }));
-
+const NavbarEditor = ({ s, setSettings }: EProps) => {
   return (
     <div className="space-y-6">
       <SectionHeader title="Navbar" desc="Manage menu links, order, and visibility." />
