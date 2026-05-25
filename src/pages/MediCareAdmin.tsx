@@ -704,35 +704,6 @@ const NavbarEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => {
         </div>
       </Card>
 
-      <Card>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-slate-900">Menu items</h3>
-          <button onClick={() => setItems((it) => [...it, { id: uid("nav"), label: "New item", href: "#", enabled: true, order: it.length }])}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-blue-700">
-            <Plus className="h-3.5 w-3.5" /> Add
-          </button>
-        </div>
-        <div className="space-y-2">
-          {items.map((it) => (
-            <div key={it.id} className="grid grid-cols-12 gap-2 items-center bg-slate-50 rounded-lg p-3 border border-slate-200">
-              <input className={inputCls + " col-span-4"} value={it.label}
-                onChange={(e) => setItems((arr) => arr.map((x) => x.id === it.id ? { ...x, label: e.target.value } : x))} placeholder="Label" />
-              <input className={inputCls + " col-span-5"} value={it.href}
-                onChange={(e) => setItems((arr) => arr.map((x) => x.id === it.id ? { ...x, href: e.target.value } : x))} placeholder="#section or URL" />
-              <div className="col-span-3 flex items-center justify-end gap-1">
-                <button title={it.enabled ? "Hide" : "Show"} onClick={() => setItems((arr) => arr.map((x) => x.id === it.id ? { ...x, enabled: !x.enabled } : x))}
-                  className={`grid place-items-center h-8 w-8 rounded ${it.enabled ? "text-emerald-600 hover:bg-emerald-50" : "text-slate-400 hover:bg-slate-100"}`}>
-                  {it.enabled ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                </button>
-                <button title="Move up" onClick={() => setItems((arr) => reorder(arr, it.id, -1))} className="grid place-items-center h-8 w-8 rounded text-slate-500 hover:bg-slate-100"><ArrowUp className="h-4 w-4" /></button>
-                <button title="Move down" onClick={() => setItems((arr) => reorder(arr, it.id, 1))} className="grid place-items-center h-8 w-8 rounded text-slate-500 hover:bg-slate-100"><ArrowDown className="h-4 w-4" /></button>
-                <button title="Delete" onClick={() => askDelete(`"${it.label}"`, () => setItems((arr) => arr.filter((x) => x.id !== it.id)))}
-                  className="grid place-items-center h-8 w-8 rounded text-rose-600 hover:bg-rose-50"><Trash2 className="h-4 w-4" /></button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
     </div>
   );
 };
