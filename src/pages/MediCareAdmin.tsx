@@ -142,8 +142,9 @@ const PAGE_GROUPS: PageGroup[] = [
 ========================================================= */
 const MediCareAdmin = () => {
   const [s, setS] = useState<MediCareSettings>(defaultSettings);
-  const [tab, setTab] = useState<Tab>("hero");
+  const [tab, setTab] = useState<Tab>("home");
   const [openGroup, setOpenGroup] = useState<string>("home");
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [confirm, setConfirm] = useState<null | { title: string; message: string; onConfirm: () => void }>(null);
   const [dirty, setDirty] = useState(false);
@@ -316,7 +317,9 @@ const MediCareAdmin = () => {
         </header>
 
         <main className="flex-1 px-4 sm:px-8 py-6 sm:py-8 max-w-5xl w-full mx-auto">
+          {tab === "home"         && <HomeEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
           {tab === "branding"     && <BrandingEditor s={s} update={update} setSettings={setSettings} />}
+
           {tab === "navbar"       && <NavbarEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
           {tab === "hero"         && <HeroEditor s={s} setSettings={setSettings} />}
           {tab === "partners"     && <PartnersEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
