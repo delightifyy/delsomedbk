@@ -205,9 +205,6 @@ export const MedicareFooter = ({
           <div className="flex flex-col items-center justify-between gap-3 py-6 text-xs text-white/60 sm:flex-row">
             <p>{copyright} In Partnership With Desolmedical Solution Limited.</p>
             <div className="flex items-center gap-3">
-              {settings.footer.availabilityText && (
-                <span className="rounded-full border border-white/15 px-3 py-1.5">{settings.footer.availabilityText}</span>
-              )}
               {showAdminLink && (
                 <Link to="/doctor-portal/admin" className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 transition hover:border-white/40 hover:text-white">
                   <Settings className="h-3.5 w-3.5" /> Admin
