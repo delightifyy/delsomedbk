@@ -897,7 +897,7 @@ const ServicesEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => {
       <Card>
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-slate-900">Service cards</h3>
-          <button onClick={() => setI((arr) => [...arr, { id: uid("s"), icon: "Stethoscope", title: "New service", description: "", image: "", order: arr.length, active: true, ctaLabel: "", ctaHref: "" }])}
+          <button onClick={() => setI((arr) => [...arr, { id: uid("s"), icon: "Stethoscope", title: "New service", description: "", order: arr.length, active: true, price_amount: null, price_currency: "GBP", price_label: "" }])}
             className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-blue-700">
             <Plus className="h-3.5 w-3.5" /> Add service
           </button>
@@ -912,10 +912,10 @@ const ServicesEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => {
               </div>
               <Field label="Description"><textarea className={textareaCls} value={it.description}
                 onChange={(e) => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, description: e.target.value } : x))} /></Field>
-              <div className="mt-3"><MediaPicker label="Image" value={it.image} onChange={(v) => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, image: v } : x))} settings={s} setSettings={setSettings} accept="image" /></div>
-              <div className="mt-3 grid sm:grid-cols-2 gap-3">
-                <Field label="Button label"><input className={inputCls} value={it.ctaLabel ?? ""} onChange={(e) => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, ctaLabel: e.target.value } : x))} /></Field>
-                <Field label="Button link"><input className={inputCls} value={it.ctaHref ?? ""} onChange={(e) => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, ctaHref: e.target.value } : x))} /></Field>
+              <div className="mt-3 grid sm:grid-cols-3 gap-3">
+                <Field label="Price amount"><input type="number" step="0.01" className={inputCls} value={it.price_amount ?? ""} onChange={(e) => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, price_amount: e.target.value ? Number(e.target.value) : null } : x))} /></Field>
+                <Field label="Currency"><select className={inputCls} value={it.price_currency || "GBP"} onChange={(e) => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, price_currency: e.target.value } : x))}>{["GBP","USD","EUR","NGN"].map((c) => <option key={c} value={c}>{c}</option>)}</select></Field>
+                <Field label="Price label"><input className={inputCls} value={it.price_label ?? ""} onChange={(e) => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, price_label: e.target.value } : x))} placeholder="From £95" /></Field>
               </div>
               <div className="mt-3 flex items-center justify-end gap-1 border-t border-slate-200 pt-3">
                 <button onClick={() => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, active: !x.active } : x))}

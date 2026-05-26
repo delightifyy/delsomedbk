@@ -435,8 +435,7 @@ const ServicesEditor = ({
     featured: false,
     visible: true,
     sort_order: services.length,
-    cta_label: "",
-    cta_href: "",
+    
   });
 
   useEffect(() => {
@@ -460,8 +459,7 @@ const ServicesEditor = ({
       featured: false,
       visible: true,
       sort_order: services.length,
-      cta_label: "",
-      cta_href: "",
+      
     });
   }, [addOpen, categories, services.length]);
 
@@ -482,8 +480,7 @@ const ServicesEditor = ({
         price_label: addDraft.price_label ?? null,
         duration_minutes: addDraft.duration_minutes ?? null,
         preparation: addDraft.preparation ?? null,
-        cta_label: addDraft.cta_label ?? null,
-        cta_href: addDraft.cta_href ?? null,
+        
         tags: addDraft.tags || [],
         recommended_clinicians: addDraft.recommended_clinicians || [],
         whats_included: addDraft.whats_included || [],
