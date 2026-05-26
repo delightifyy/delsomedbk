@@ -16,7 +16,6 @@ import {
 import { MediaPicker } from "@/components/medicare-admin/MediaPicker";
 import { ImageUploader } from "@/components/medicare-admin/ImageUploader";
 import { Icon, ICON_NAMES } from "@/components/medicare-admin/icons";
-import MediCareServicesAdmin from "@/pages/MediCareServicesAdmin";
 
 const uid = (p = "id") => `${p}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
@@ -234,17 +233,6 @@ const MediCareAdmin = () => {
                             </Link>
                           );
                         }
-                        if (sec.id === "servicesPage") {
-                          return (
-                            <Link
-                              key={sec.id}
-                              to="/doctor-portal/admin/services"
-                              className="w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium text-emerald-700 hover:bg-emerald-50"
-                            >
-                              <ExternalLink className="h-3.5 w-3.5" /> {sec.label}
-                            </Link>
-                          );
-                        }
                         return (
                           <button
                             key={sec.id}
@@ -311,14 +299,7 @@ const MediCareAdmin = () => {
           {tab === "partners"     && <PartnersEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
           {tab === "about"        && <AboutEditor s={s} setSettings={setSettings} />}
           {tab === "whyChoose"    && <WhyChooseEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
-          {tab === "services" && (
-            <div className="space-y-6">
-              <ServicesEditor s={s} setSettings={setSettings} askDelete={askDelete} />
-              <div className="pt-6">
-                <MediCareServicesAdmin />
-              </div>
-            </div>
-          )}
+          {tab === "services" && <ServicesEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
           {tab === "media"        && <MediaLibraryEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
           {tab === "seo"          && <SeoEditor s={s} setSettings={setSettings} />}
           {tab === "contact"      && <ContactEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
