@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, Plus, Trash2, ArrowUp, ArrowDown, Eye, EyeOff, Save, Layers,
   Wrench, MessageSquare, Settings as SettingsIcon, ExternalLink, Star, StarOff,
-  ChevronRight, Loader2,
+  ChevronRight, Loader2, X,
 } from "lucide-react";
 import {
   fetchAll, upsertCategory, deleteCategory, upsertService, deleteService,
@@ -45,6 +45,36 @@ const IconPicker = ({ value, onChange }: { value: string; onChange: (n: string) 
     {ICON_NAMES.map((n) => <option key={n} value={n}>{n}</option>)}
   </select>
 );
+
+const ModalShell = ({
+  open,
+  title,
+  children,
+  onClose,
+  footer,
+}: {
+  open: boolean;
+  title: string;
+  children: React.ReactNode;
+  onClose: () => void;
+  footer?: React.ReactNode;
+}) => {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[140] grid place-items-center bg-black/60 p-4 overflow-y-auto">
+      <div className="w-full max-w-3xl rounded-2xl bg-white shadow-2xl my-8">
+        <div className="flex items-center justify-between border-b border-slate-100 p-5">
+          <h3 className="font-bold text-slate-900 text-lg">{title}</h3>
+          <button onClick={onClose} className="rounded-lg p-2 hover:bg-slate-100">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="p-5">{children}</div>
+        {footer && <div className="flex justify-end gap-2 border-t border-slate-100 p-5">{footer}</div>}
+      </div>
+    </div>
+  );
+};
 
 type Tab = "page" | "categories" | "services" | "faqs";
 const TABS: { id: Tab; label: string; icon: any }[] = [
@@ -100,18 +130,7 @@ const MediCareServicesAdmin = () => {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 grid lg:grid-cols-[220px_1fr] gap-6">
-        <nav className="lg:sticky lg:top-20 self-start bg-white rounded-2xl border border-slate-200 p-2 flex lg:flex-col gap-1 overflow-x-auto">
-          {TABS.map((t) => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
-                tab === t.id ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50"
-              }`}>
-              <t.icon className="h-4 w-4" /> {t.label}
-            </button>
-          ))}
-        </nav>
-
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         <main>
           {loading ? (
             <div className="grid place-items-center py-24 text-slate-400">
@@ -119,10 +138,10 @@ const MediCareServicesAdmin = () => {
             </div>
           ) : (
             <>
-              {tab === "page" && <PageEditor page={page} reload={reload} />}
-              {tab === "categories" && <CategoriesEditor categories={categories} reload={reload} services={services} />}
-              {tab === "services" && <ServicesEditor services={services} categories={categories} reload={reload} />}
-              {tab === "faqs" && <FaqsEditor faqs={faqs} services={services} reload={reload} />}
+              {/* All service admin editors on a single page (no sidebar/tabs) */}
+              <PageEditor page={page} reload={reload} />
+              <CategoriesEditor categories={categories} reload={reload} services={services} />
+              <ServicesEditor services={services} categories={categories} reload={reload} />
             </>
           )}
         </main>
@@ -221,15 +240,51 @@ const PageEditor = ({ page, reload }: { page: ServicesPage | null; reload: () =>
 const CategoriesEditor = ({
   categories, reload, services,
 }: { categories: ServiceCategory[]; reload: () => void; services: Service[] }) => {
-  const addCategory = async () => {
-    const name = `New category ${categories.length + 1}`;
+  const [addOpen, setAddOpen] = useState(false);
+  const [addDraft, setAddDraft] = useState<Partial<ServiceCategory>>({
+    name: "",
+    slug: "",
+    description: "",
+    icon: "Stethoscope",
+    banner_image: null,
+    color: null,
+    search_keywords: "",
+    sort_order: categories.length,
+    visible: true,
+  });
+
+  useEffect(() => {
+    if (!addOpen) return;
+    setAddDraft({
+      name: "",
+      slug: "",
+      description: "",
+      icon: "Stethoscope",
+      banner_image: null,
+      color: null,
+      search_keywords: "",
+      sort_order: categories.length,
+      visible: true,
+    });
+  }, [addOpen, categories.length]);
+
+  const saveNewCategory = async () => {
+    const name = (addDraft.name ?? "").trim();
+    if (!name) return toast.error("Category name is required");
     try {
       await upsertCategory({
-        name, slug: slugify(name) + "-" + Math.random().toString(36).slice(2, 6),
-        icon: "Stethoscope", sort_order: categories.length, visible: true,
+        ...addDraft,
+        name,
+        slug: slugify(addDraft.slug?.trim() || name),
+        sort_order: addDraft.sort_order ?? categories.length,
+        visible: addDraft.visible ?? true,
       });
-      toast.success("Category added"); reload();
-    } catch (e: any) { toast.error(e.message); }
+      toast.success("Category added");
+      setAddOpen(false);
+      reload();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to add category");
+    }
   };
 
   const move = async (c: ServiceCategory, dir: -1 | 1) => {
@@ -250,13 +305,58 @@ const CategoriesEditor = ({
   return (
     <div className="space-y-4">
       <SectionHeader title="Categories" desc="Group services into navigable categories."
-        action={<button onClick={addCategory} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700"><Plus className="h-4 w-4" /> Add</button>}
+        action={<button onClick={() => setAddOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700"><Plus className="h-4 w-4" /> Add</button>}
       />
       {categories.length === 0 && <Card><p className="text-sm text-slate-500">No categories yet.</p></Card>}
       {categories.map((c) => (
         <CategoryRow key={c.id} cat={c} reload={reload} move={move}
           serviceCount={services.filter((s) => s.category_id === c.id).length} />
       ))}
+
+      <ModalShell
+        open={addOpen}
+        title="Add Category"
+        onClose={() => setAddOpen(false)}
+        footer={(
+          <>
+            <button onClick={() => setAddOpen(false)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Cancel</button>
+            <button onClick={saveNewCategory} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700">
+              <Save className="h-4 w-4" /> Save Category
+            </button>
+          </>
+        )}
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Name">
+            <input className={inputCls} value={addDraft.name ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, name: e.target.value, slug: d.slug?.trim() ? d.slug : slugify(e.target.value) }))} />
+          </Field>
+          <Field label="Slug">
+            <input className={inputCls} value={addDraft.slug ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, slug: slugify(e.target.value) }))} />
+          </Field>
+          <Field label="Icon">
+            <IconPicker value={(addDraft.icon as string) || "Stethoscope"} onChange={(v) => setAddDraft((d) => ({ ...d, icon: v }))} />
+          </Field>
+          <Field label="Color tag">
+            <input className={inputCls} value={addDraft.color ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, color: e.target.value }))} placeholder="#1F8FFF" />
+          </Field>
+          <Field label="Description">
+            <textarea className={textareaCls} value={addDraft.description ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, description: e.target.value }))} />
+          </Field>
+          <Field label="Banner image">
+            <ImageUploader value={addDraft.banner_image || ""} onChange={(url) => setAddDraft((d) => ({ ...d, banner_image: url }))} />
+          </Field>
+          <Field label="Search keywords" hint="Helps users find this category">
+            <input className={inputCls} value={addDraft.search_keywords ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, search_keywords: e.target.value }))} />
+          </Field>
+          <Field label="Sort order">
+            <input type="number" className={inputCls} value={addDraft.sort_order ?? categories.length} onChange={(e) => setAddDraft((d) => ({ ...d, sort_order: Number(e.target.value) }))} />
+          </Field>
+          <label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 sm:col-span-2">
+            <input type="checkbox" checked={addDraft.visible ?? true} onChange={(e) => setAddDraft((d) => ({ ...d, visible: e.target.checked }))} />
+            Visible
+          </label>
+        </div>
+      </ModalShell>
     </div>
   );
 };
@@ -330,6 +430,95 @@ const ServicesEditor = ({
   services, categories, reload,
 }: { services: Service[]; categories: ServiceCategory[]; reload: () => void }) => {
   const [filter, setFilter] = useState<string>("");
+  const [addOpen, setAddOpen] = useState(false);
+  const [addDraft, setAddDraft] = useState<Partial<Service>>({
+    title: "",
+    slug: "",
+    category_id: categories[0]?.id || null,
+    icon: "Stethoscope",
+    summary: "",
+    description: "",
+    hero_image: null,
+    gallery_images: [],
+    tags: [],
+    search_keywords: "",
+    price_amount: null,
+    price_currency: "GBP",
+    price_label: "",
+    duration_minutes: null,
+    recommended_clinicians: [],
+    whats_included: [],
+    preparation: "",
+    featured: false,
+    visible: true,
+    sort_order: services.length,
+    cta_label: "",
+    cta_href: "",
+  });
+
+  useEffect(() => {
+    if (!addOpen) return;
+    setAddDraft({
+      title: "",
+      slug: "",
+      category_id: categories[0]?.id || null,
+      icon: "Stethoscope",
+      summary: "",
+      description: "",
+      hero_image: null,
+      gallery_images: [],
+      tags: [],
+      search_keywords: "",
+      price_amount: null,
+      price_currency: "GBP",
+      price_label: "",
+      duration_minutes: null,
+      recommended_clinicians: [],
+      whats_included: [],
+      preparation: "",
+      featured: false,
+      visible: true,
+      sort_order: services.length,
+      cta_label: "",
+      cta_href: "",
+    });
+  }, [addOpen, categories, services.length]);
+
+  const saveNewService = async () => {
+    const title = (addDraft.title ?? "").trim();
+    if (!title) return toast.error("Service title is required");
+    try {
+      await upsertService({
+        ...addDraft,
+        title,
+        slug: slugify(addDraft.slug?.trim() || title),
+        category_id: addDraft.category_id || null,
+        summary: addDraft.summary ?? null,
+        description: addDraft.description ?? null,
+        hero_image: addDraft.hero_image ?? null,
+        search_keywords: addDraft.search_keywords ?? null,
+        price_amount: addDraft.price_amount ?? null,
+        price_currency: addDraft.price_currency || "GBP",
+        price_label: addDraft.price_label ?? null,
+        duration_minutes: addDraft.duration_minutes ?? null,
+        preparation: addDraft.preparation ?? null,
+        cta_label: addDraft.cta_label ?? null,
+        cta_href: addDraft.cta_href ?? null,
+        gallery_images: addDraft.gallery_images || [],
+        tags: addDraft.tags || [],
+        recommended_clinicians: addDraft.recommended_clinicians || [],
+        whats_included: addDraft.whats_included || [],
+        featured: addDraft.featured ?? false,
+        visible: addDraft.visible ?? true,
+        sort_order: addDraft.sort_order ?? services.length,
+      });
+      toast.success("Service added");
+      setAddOpen(false);
+      reload();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to add service");
+    }
+  };
 
   const filtered = useMemo(() => {
     if (!filter) return services;
@@ -372,7 +561,7 @@ const ServicesEditor = ({
               <option value="">All categories</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            <button onClick={add} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700"><Plus className="h-4 w-4" /> Add service</button>
+            <button onClick={() => setAddOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700"><Plus className="h-4 w-4" /> Add service</button>
           </div>
         }
       />
@@ -380,6 +569,83 @@ const ServicesEditor = ({
       {filtered.map((s) => (
         <ServiceRow key={s.id} svc={s} categories={categories} reload={reload} move={move} />
       ))}
+
+      <ModalShell
+        open={addOpen}
+        title="Add Service"
+        onClose={() => setAddOpen(false)}
+        footer={(
+          <>
+            <button onClick={() => setAddOpen(false)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50">Cancel</button>
+            <button onClick={saveNewService} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700">
+              <Save className="h-4 w-4" /> Save Service
+            </button>
+          </>
+        )}
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Title">
+            <input className={inputCls} value={addDraft.title ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, title: e.target.value, slug: d.slug?.trim() ? d.slug : slugify(e.target.value) }))} />
+          </Field>
+          <Field label="Slug">
+            <input className={inputCls} value={addDraft.slug ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, slug: slugify(e.target.value) }))} />
+          </Field>
+          <Field label="Category">
+            <select className={inputCls} value={addDraft.category_id || ""} onChange={(e) => setAddDraft((d) => ({ ...d, category_id: e.target.value || null }))}>
+              <option value="">Uncategorised</option>
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </Field>
+          <Field label="Icon">
+            <IconPicker value={(addDraft.icon as string) || "Stethoscope"} onChange={(v) => setAddDraft((d) => ({ ...d, icon: v as any }))} />
+          </Field>
+          <Field label="Summary" hint="Short line under the title">
+            <input className={inputCls} value={addDraft.summary ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, summary: e.target.value }))} />
+          </Field>
+          <Field label="Hero image">
+            <ImageUploader value={addDraft.hero_image || ""} onChange={(url) => setAddDraft((d) => ({ ...d, hero_image: url }))} />
+          </Field>
+          <Field label="Long description">
+            <textarea className={textareaCls} value={addDraft.description ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, description: e.target.value }))} />
+          </Field>
+          <Field label="Preparation notes">
+            <textarea className={textareaCls} value={addDraft.preparation ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, preparation: e.target.value }))} />
+          </Field>
+          <Field label="Price amount">
+            <input type="number" step="0.01" className={inputCls} value={addDraft.price_amount ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, price_amount: e.target.value ? Number(e.target.value) : null }))} />
+          </Field>
+          <Field label="Currency">
+            <select className={inputCls} value={addDraft.price_currency || "GBP"} onChange={(e) => setAddDraft((d) => ({ ...d, price_currency: e.target.value }))}>
+              {["GBP", "USD", "EUR", "NGN"].map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </Field>
+          <Field label="Price label override"><input className={inputCls} value={addDraft.price_label ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, price_label: e.target.value }))} placeholder="From £95" /></Field>
+          <Field label="Duration (mins)"><input type="number" className={inputCls} value={addDraft.duration_minutes ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, duration_minutes: e.target.value ? Number(e.target.value) : null }))} /></Field>
+          <Field label="Tags / chips" hint="Comma-separated">
+            <input className={inputCls} value={(addDraft.tags || []).join(", ")} onChange={(e) => setAddDraft((d) => ({ ...d, tags: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) }))} />
+          </Field>
+          <Field label="Recommended clinicians" hint="Comma-separated">
+            <input className={inputCls} value={(addDraft.recommended_clinicians || []).join(", ")} onChange={(e) => setAddDraft((d) => ({ ...d, recommended_clinicians: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) }))} />
+          </Field>
+          <Field label="What's included" hint="One per line">
+            <textarea className={textareaCls} value={(addDraft.whats_included || []).join("\n")} onChange={(e) => setAddDraft((d) => ({ ...d, whats_included: e.target.value.split("\n").map((x) => x.trim()).filter(Boolean) }))} />
+          </Field>
+          <Field label="Search keywords">
+            <input className={inputCls} value={addDraft.search_keywords ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, search_keywords: e.target.value }))} />
+          </Field>
+          <Field label="CTA label"><input className={inputCls} value={addDraft.cta_label ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, cta_label: e.target.value }))} placeholder="Book consultation" /></Field>
+          <Field label="CTA link"><input className={inputCls} value={addDraft.cta_href ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, cta_href: e.target.value }))} placeholder="/doctor-portal#cta" /></Field>
+          <Field label="Sort order"><input type="number" className={inputCls} value={addDraft.sort_order ?? services.length} onChange={(e) => setAddDraft((d) => ({ ...d, sort_order: Number(e.target.value) }))} /></Field>
+          <label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 sm:col-span-2">
+            <input type="checkbox" checked={addDraft.featured ?? false} onChange={(e) => setAddDraft((d) => ({ ...d, featured: e.target.checked }))} />
+            Featured
+          </label>
+          <label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 sm:col-span-2">
+            <input type="checkbox" checked={addDraft.visible ?? true} onChange={(e) => setAddDraft((d) => ({ ...d, visible: e.target.checked }))} />
+            Visible
+          </label>
+        </div>
+      </ModalShell>
     </div>
   );
 };

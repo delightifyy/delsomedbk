@@ -7,6 +7,7 @@ import { Search, ArrowRight, Stethoscope, ArrowLeft, Check } from "lucide-react"
 import { Icon as McIcon } from "@/components/medicare-admin/icons";
 import type { LucideIconName } from "@/lib/medicareSettings";
 import { useMediCareSettings } from "@/lib/medicareSettings";
+import { MedicareFooter, MedicareSimpleHeader, medicareThemeStyle } from "@/components/medicare/MediCareChrome";
 import {
   fetchAll,
   type Service,
@@ -18,15 +19,17 @@ import {
 /* Scoped tokens — sage + terracotta palette inspired by reference, MediCare semantics */
 const tokenStyles = `
 .medicare-services {
+  --mc-primary: 212 88% 32%;
+  --mc-accent: 174 72% 42%;
   --mc-bg: 0 0% 100%;
   --mc-cream: 210 20% 96%;
   --mc-fg: 205 30% 20%;
   --mc-muted: 205 12% 42%;
   --mc-border: 205 18% 88%;
-  --mc-sage: 205 30% 33%;        /* #3b596d */
-  --mc-sage-deep: 205 24% 37%;   /* #486475 */
+  --mc-sage: var(--mc-primary);
+  --mc-sage-deep: var(--mc-primary);
   --mc-sage-soft: 205 25% 82%;
-  --mc-blue: 204 92% 51%;        /* #0f9cf5 */
+  --mc-blue: var(--mc-accent);
   --mc-ink: 205 30% 20%;
   background: hsl(var(--mc-bg));
   color: hsl(var(--mc-fg));
@@ -152,38 +155,29 @@ const MediCareServices = () => {
 
   const pageFaqs = useMemo(() => faqs.filter((f) => !f.service_id), [faqs]);
   const allFilteredServices = services.filter(matchSvc);
+  const themeStyle = useMemo(
+    () => medicareThemeStyle(settings),
+    [settings.primaryColor, settings.accentColor],
+  );
 
   return (
-    <div className="medicare-services min-h-screen">
+    <div className="medicare-services min-h-screen" style={themeStyle}>
       <style>{tokenStyles}</style>
 
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-[hsl(var(--mc-bg))]/90 backdrop-blur border-b border-[hsl(var(--mc-border))]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-          <Link to="/doctor-portal" className="flex items-center gap-2 font-bold text-[hsl(var(--mc-ink))]">
-            <Stethoscope className="h-5 w-5 ms-accent-sage" />
-            <span>{settings.siteName || "MediCare"}</span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-[hsl(var(--mc-muted))]">
-            <Link to="/doctor-portal" className="hover:text-[hsl(var(--mc-sage))]">Home</Link>
-            <Link to="/doctor-portal#about" className="hover:text-[hsl(var(--mc-sage))]">About Us</Link>
-            <Link to="/doctor-portal/services" className="ms-accent-sage">Services</Link>
-            <Link to="/doctor-portal/blogs" className="hover:text-[hsl(var(--mc-sage))]">Blogs</Link>
-            <Link to="/doctor-portal#contact" className="hover:text-[hsl(var(--mc-sage))]">Contact Us</Link>
-          </nav>
-          <a href="/doctor-portal#cta" className="inline-flex items-center gap-2 rounded-full bg-[hsl(var(--mc-sage))] text-white px-4 py-2 text-sm font-semibold hover:opacity-90">
-            Book Appointment <ArrowRight className="h-4 w-4" />
-          </a>
-        </div>
-      </header>
+      <MedicareSimpleHeader settings={settings} activeHref="/doctor-portal/services" />
 
       {/* Title */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 pt-14 pb-10">
         <Link to="/doctor-portal" className="inline-flex items-center gap-2 text-xs font-semibold text-[hsl(var(--mc-muted))] mb-5 hover:text-[hsl(var(--mc-sage))]">
           <ArrowLeft className="h-3.5 w-3.5" /> Back to home
         </Link>
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl">
-          <span className="ms-accent-sage">Our Services&nbsp;</span>
+        {page?.hero_eyebrow && (
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[hsl(var(--mc-primary))]">
+            {page.hero_eyebrow}
+          </p>
+        )}
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl text-[hsl(var(--mc-ink))]">
+          {page?.hero_title || "Our Services"}
         </h1>
         <p className="mt-4 max-w-2xl text-[hsl(var(--mc-muted))] leading-relaxed">
           {page?.hero_description ||
@@ -347,7 +341,8 @@ const MediCareServices = () => {
       )}
 
       {/* Footer band */}
-      <footer className="bg-[hsl(var(--mc-terracotta))] text-white">
+      <MedicareFooter settings={settings} />
+      <footer className="hidden">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-12 grid sm:grid-cols-2 gap-6 items-center">
           <div className="space-y-1 text-sm">
             <Link to="/doctor-portal" className="block hover:underline">Home</Link>

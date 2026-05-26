@@ -191,12 +191,13 @@ export const defaultSettings: MediCareSettings = {
 
   nav: {
     items: [
-      { id: uid("nav"), label: "Home", href: "#top", enabled: true, order: 0 },
-      { id: uid("nav"), label: "Specialties", href: "#specialties", enabled: true, order: 1 },
-      { id: uid("nav"), label: "Services", href: "#services", enabled: true, order: 2 },
-      { id: uid("nav"), label: "About", href: "#about", enabled: true, order: 3 },
+      { id: uid("nav"), label: "Home", href: "/doctor-portal", enabled: true, order: 0 },
+      { id: uid("nav"), label: "About Us", href: "/doctor-portal#about", enabled: true, order: 1 },
+      { id: uid("nav"), label: "Services", href: "/doctor-portal/services", enabled: true, order: 2 },
+      { id: uid("nav"), label: "Blogs", href: "/doctor-portal/blogs", enabled: true, order: 3 },
+      { id: uid("nav"), label: "Contact Us", href: "/doctor-portal/contact", enabled: true, order: 4 },
     ],
-    cta: { enabled: false, label: "Book Appointment", href: "#cta" },
+    cta: { enabled: false, label: "Book Appointment", href: "/doctor-portal?book=1" },
   },
 
   hero: {
@@ -341,12 +342,13 @@ export const defaultSettings: MediCareSettings = {
       { id: uid("l"), label: "Oncology",         href: "#specialties" },
     ],
     quickLinks: [
-      { id: uid("l"), label: "Telemedicine", href: "#telemedicine" },
-      { id: uid("l"), label: "Services",     href: "#services" },
-      { id: uid("l"), label: "About",        href: "#about" },
+      { id: uid("l"), label: "Home",     href: "/doctor-portal" },
+      { id: uid("l"), label: "Services", href: "/doctor-portal/services" },
+      { id: uid("l"), label: "Blogs",    href: "/doctor-portal/blogs" },
+      { id: uid("l"), label: "About",    href: "/doctor-portal#about" },
     ],
     supportLinks: [
-      { id: uid("l"), label: "Contact",        href: "#contact" },
+      { id: uid("l"), label: "Contact",        href: "/doctor-portal/contact" },
       { id: uid("l"), label: "Privacy Policy", href: "#" },
       { id: uid("l"), label: "Terms",          href: "#" },
     ],
@@ -367,9 +369,9 @@ export const defaultSettings: MediCareSettings = {
   },
 
   contact: {
-    email: "hello@medicare.app",
-    phone: "+1 (800) 633-4227",
-    address: "Available worldwide",
+    email: "enquiry@desolmed.com",
+    phone: "+234 818 689 9594",
+    address: "10, Abeokuta Street, Ebute Metta, Yaba, Lagos, Nigeria",
   },
 
   footerTagline: "Modern telemedicine for everyday people. Trusted, secure, available 24/7.",

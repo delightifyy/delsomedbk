@@ -25,6 +25,8 @@ const MediCareAdmin = lazy(() => import("./pages/MediCareAdmin.tsx"));
 const BookingAdmin = lazy(() => import("./pages/BookingAdmin.tsx"));
 const MediCareServices = lazy(() => import("./pages/MediCareServices.tsx"));
 const MediCareBlogs = lazy(() => import("./pages/MediCareBlogs.tsx"));
+const MediCareBlogArticle = lazy(() => import("./pages/MediCareBlogArticle.tsx"));
+const MediCareContact = lazy(() => import("./pages/MediCareContact.tsx"));
 const MediCareServicesAdmin = lazy(() => import("./pages/MediCareServicesAdmin.tsx"));
 const DoctorMediCare = lazy(() => import("./pages/DoctorMediCare.tsx"));
 const RegisterPatient = lazy(() => import("./pages/RegisterPatient.tsx"));
@@ -98,6 +100,8 @@ const App = () => (
               <Route path="/doctor-portal/admin/booking" element={<BookingAdmin />} />
               <Route path="/doctor-portal/services" element={<MediCareServices />} />
               <Route path="/doctor-portal/blogs" element={<MediCareBlogs />} />
+              <Route path="/doctor-portal/blogs/:slug" element={<MediCareBlogArticle />} />
+              <Route path="/doctor-portal/contact" element={<MediCareContact />} />
               <Route path="/doctor-portal/admin/services" element={<MediCareServicesAdmin />} />
               <Route path="/register" element={<Register />} />
               <Route path="/register/doctor" element={<Navigate to="/register?type=doctor" replace />} />

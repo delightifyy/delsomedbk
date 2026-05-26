@@ -2,19 +2,22 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Stethoscope, Search, Calendar, Clock, User } from "lucide-react";
 import { useMediCareSettings } from "@/lib/medicareSettings";
+import { MedicareFooter, MedicareSimpleHeader, medicareThemeStyle } from "@/components/medicare/MediCareChrome";
 import { BLOG_POSTS, BLOG_CATEGORIES, type BlogPost } from "@/data/blogs";
 import { supabase } from "@/integrations/supabase/client";
 
 const tokenStyles = `
 .medicare-blogs {
+  --mc-primary: 212 88% 32%;
+  --mc-accent: 174 72% 42%;
   --mc-bg: 0 0% 100%;
   --mc-cream: 210 20% 96%;
   --mc-fg: 205 30% 20%;
   --mc-muted: 205 12% 42%;
   --mc-border: 205 18% 88%;
-  --mc-sage: 205 30% 33%;
-  --mc-sage-deep: 205 24% 37%;
-  --mc-blue: 204 92% 51%;
+  --mc-sage: var(--mc-primary);
+  --mc-sage-deep: var(--mc-primary);
+  --mc-blue: var(--mc-accent);
   --mc-ink: 205 30% 20%;
   background: hsl(var(--mc-bg));
   color: hsl(var(--mc-fg));
@@ -93,30 +96,16 @@ const MediCareBlogs = () => {
 
   const featured = posts.find((p) => p.featured) ?? posts[0];
   const rest = filtered.filter((p) => featured && p.id !== featured.id);
+  const themeStyle = useMemo(
+    () => medicareThemeStyle(settings),
+    [settings.primaryColor, settings.accentColor],
+  );
 
   return (
-    <div className="medicare-blogs min-h-screen">
+    <div className="medicare-blogs min-h-screen" style={themeStyle}>
       <style>{tokenStyles}</style>
 
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-[hsl(var(--mc-bg))]/90 backdrop-blur border-b border-[hsl(var(--mc-border))]">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-          <Link to="/doctor-portal" className="flex items-center gap-2 font-bold text-[hsl(var(--mc-ink))]">
-            <Stethoscope className="h-5 w-5 mb-accent" />
-            <span>{settings.siteName || "MediCare"}</span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-[hsl(var(--mc-muted))]">
-            <Link to="/doctor-portal" className="hover:text-[hsl(var(--mc-sage))]">Home</Link>
-            <Link to="/doctor-portal#about" className="hover:text-[hsl(var(--mc-sage))]">About Us</Link>
-            <Link to="/doctor-portal/services" className="hover:text-[hsl(var(--mc-sage))]">Services</Link>
-            <Link to="/doctor-portal/blogs" className="mb-accent">Blogs</Link>
-            <Link to="/doctor-portal#contact" className="hover:text-[hsl(var(--mc-sage))]">Contact Us</Link>
-          </nav>
-          <a href="/doctor-portal#cta" className="inline-flex items-center gap-2 rounded-full bg-[hsl(var(--mc-sage))] text-white px-4 py-2 text-sm font-semibold hover:opacity-90">
-            Book Appointment <ArrowRight className="h-4 w-4" />
-          </a>
-        </div>
-      </header>
+      <MedicareSimpleHeader settings={settings} activeHref="/doctor-portal/blogs" />
 
       {/* Hero */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 pt-14 pb-10">
@@ -172,7 +161,7 @@ const MediCareBlogs = () => {
       {/* Featured */}
       {activeCat === "All" && !query && featured && (
         <section className="mx-auto max-w-7xl px-4 sm:px-6 pb-12">
-          <Link to={`/health-news/${featured.slug}`} className="block mb-card group">
+          <Link to={`/doctor-portal/blogs/${featured.slug}`} className="block mb-card group">
             <div className="grid md:grid-cols-2">
               <div className="aspect-[16/10] md:aspect-auto overflow-hidden bg-[hsl(var(--mc-cream))]">
                 <img src={featured.cover} alt={featured.title} loading="lazy"
@@ -218,7 +207,7 @@ const MediCareBlogs = () => {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {rest.map((p: BlogPost) => (
-              <Link key={p.id} to={`/health-news/${p.slug}`} className="mb-card group flex flex-col">
+              <Link key={p.id} to={`/doctor-portal/blogs/${p.slug}`} className="mb-card group flex flex-col">
                 <div className="aspect-[16/10] overflow-hidden bg-[hsl(var(--mc-cream))]">
                   <img src={p.cover} alt={p.title} loading="lazy"
                     className="h-full w-full object-cover group-hover:scale-[1.05] transition-transform duration-500" />
@@ -246,7 +235,8 @@ const MediCareBlogs = () => {
 
 
       {/* Footer */}
-      <footer className="bg-[hsl(var(--mc-sage-deep))] text-white">
+      <MedicareFooter settings={settings} />
+      <footer className="hidden">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-12 grid sm:grid-cols-2 gap-6 items-center">
           <div className="space-y-1 text-sm">
             <Link to="/doctor-portal" className="block hover:underline">Home</Link>

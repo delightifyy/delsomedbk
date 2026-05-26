@@ -10,10 +10,10 @@ import {
   CheckCircle2, Award, Globe2, Languages, Building2, MonitorSmartphone, Users,
 } from "lucide-react";
 import {
-  hexToHslString,
   useMediCareSettings,
 } from "@/lib/medicareSettings";
 import { Icon as McIcon } from "@/components/medicare-admin/icons";
+import { getMedicareNavItems, MedicareFooter, medicareThemeStyle } from "@/components/medicare/MediCareChrome";
 import AdvancedBookingFlow from "@/components/medicare/AdvancedBookingFlow";
 import AccessMethodModal, { type AccessMethod } from "@/components/medicare/AccessMethodModal";
 import { DOCTORS, type Doctor } from "@/data/doctors";
@@ -117,14 +117,6 @@ const tokenStyles = `
 /* ---------- Data ---------- */
 const HERO_VIDEO = "https://videos.pexels.com/video-files/4124426/4124426-uhd_2560_1440_25fps.mp4";
 const CTA_VIDEO  = "https://videos.pexels.com/video-files/7088526/7088526-uhd_2560_1440_25fps.mp4";
-
-const navLinks = [
-  { href: "#top", label: "Home" },
-  { href: "#about", label: "About Us" },
-  { href: "/doctor-portal/services", label: "Services" },
-  { href: "/doctor-portal/blogs", label: "Blogs" },
-  { href: "/contact", label: "Contact Us" },
-];
 
 const quickAccess = [
   { icon: Ambulance,  title: "Emergency Care",     desc: "24/7 immediate medical support",      tone: "from-rose-500 to-orange-500" },
@@ -557,6 +549,22 @@ const MediCare = () => {
   const handleBookClick = () => {
     setAccessOpen(true);
   };
+  const handleHeroButtonClick = () => {
+    const href = settings.hero.ctaHref?.trim();
+    if (!href || href === "#cta" || href === "/doctor-portal?book=1") {
+      handleBookClick();
+      return;
+    }
+    if (href.startsWith("#")) {
+      document.querySelector(href)?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+    if (/^https?:\/\//i.test(href)) {
+      window.location.href = href;
+      return;
+    }
+    navigate(href);
+  };
 
   useEffect(() => {
     if (searchParams.get("book") === "1") {
@@ -569,13 +577,10 @@ const MediCare = () => {
     () => DOCTORS.find((doctor) => doctor.id === selectedDoctorId) ?? DOCTORS[0],
     [selectedDoctorId],
   );
+  const navLinks = useMemo(() => getMedicareNavItems(settings), [settings]);
 
   const themeStyle = useMemo(
-    () =>
-      ({
-        ["--mc-primary" as string]: hexToHslString(settings.primaryColor),
-        ["--mc-accent" as string]: hexToHslString(settings.accentColor),
-      }) as React.CSSProperties,
+    () => medicareThemeStyle(settings),
     [settings.primaryColor, settings.accentColor],
   );
 
@@ -695,12 +700,7 @@ const MediCare = () => {
 
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 w-full grid lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-10 lg:col-start-2 text-white">
-            <span className="inline-flex items-center gap-2 rounded-full mc-glass-dark px-4 py-1.5 text-xs sm:text-sm font-semibold mc-anim-fade-up">
-              <span className="h-2 w-2 rounded-full bg-[hsl(var(--mc-accent-glow))] mc-anim-pulse-dot" />
-              {settings.hero.eyebrow}
-            </span>
-
-            <h1 className="mt-6 font-display text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-[1.05] text-balance mc-anim-fade-up">
+            <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-[1.05] text-balance mc-anim-fade-up">
               {settings.hero.titleLead}<br />
               <span className="bg-gradient-to-r from-white via-[hsl(174_80%_75%)] to-[hsl(200_95%_75%)] bg-clip-text text-transparent">
                 {settings.hero.titleHighlight}
@@ -714,7 +714,7 @@ const MediCare = () => {
             <div className="mt-8 flex flex-col sm:flex-row gap-3 mc-anim-fade-up">
               <button
                 type="button"
-                onClick={handleBookClick}
+                onClick={handleHeroButtonClick}
                 className="inline-flex justify-center items-center gap-2 rounded-full mc-grad-primary text-white px-7 py-3.5 text-sm font-semibold mc-shadow-glow hover:opacity-95 transition"
               >
                 {settings.hero.ctaLabel} <ArrowRight className="h-4 w-4" />
@@ -852,7 +852,8 @@ const MediCare = () => {
 
 
       {/* ============ FOOTER (premium dark) ============ */}
-      <footer className="relative mc-grad-dark text-white pt-20">
+      <MedicareFooter settings={settings} showAdminLink />
+      <footer className="hidden">
         <div className="absolute inset-0 mc-grid-pattern opacity-10" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
           {/* Columns */}

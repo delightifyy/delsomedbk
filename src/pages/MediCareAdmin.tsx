@@ -16,6 +16,7 @@ import {
 import { MediaPicker } from "@/components/medicare-admin/MediaPicker";
 import { ImageUploader } from "@/components/medicare-admin/ImageUploader";
 import { Icon, ICON_NAMES } from "@/components/medicare-admin/icons";
+import MediCareServicesAdmin from "@/pages/MediCareServicesAdmin";
 
 const uid = (p = "id") => `${p}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
@@ -76,7 +77,7 @@ const reorder = <T extends { order: number }>(items: T[], id: string, dir: -1 | 
 /* ---------- Page-grouped navigation (mirrors public site) ---------- */
 type Tab =
   | "home" | "navbar" | "hero" | "partners" | "about" | "whyChoose"
-  | "media" | "seo"
+  | "services" | "media" | "seo"
   | "branding" | "contact" | "blog" | "servicesPage";
 
 type PageGroup = {
@@ -114,7 +115,7 @@ const PAGE_GROUPS: PageGroup[] = [
     label: "Services",
     icon: Wrench,
     sections: [
-      { id: "servicesPage", label: "Services Page CMS →" },
+      { id: "services", label: "Services" },
     ],
   },
   {
@@ -130,7 +131,7 @@ const PAGE_GROUPS: PageGroup[] = [
     label: "Contact Us",
     icon: PhoneIcon,
     sections: [
-      { id: "contact", label: "Contact Info" },
+      { id: "contact", label: "Contact Info + Footer" },
     ],
   },
 ];
@@ -263,26 +264,6 @@ const MediCareAdmin = () => {
             })}
 
 
-            <div className="my-3 border-t border-slate-200" />
-            <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Site-wide</p>
-            <button
-              onClick={() => { setTab("branding"); setSidebarOpen(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium ${tab === "branding" ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-100"}`}
-            >
-              <Settings className="h-4 w-4" /> Branding
-            </button>
-            <button
-              onClick={() => { setTab("media"); setSidebarOpen(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium ${tab === "media" ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-100"}`}
-            >
-              <ImageIcon className="h-4 w-4" /> Media Library
-            </button>
-            <button
-              onClick={() => { setTab("seo"); setSidebarOpen(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium ${tab === "seo" ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-100"}`}
-            >
-              <Search className="h-4 w-4" /> SEO
-            </button>
           </nav>
         </div>
       </aside>
@@ -315,17 +296,32 @@ const MediCareAdmin = () => {
         </header>
 
         <main className="flex-1 px-4 sm:px-8 py-6 sm:py-8 max-w-5xl w-full mx-auto">
-          {tab === "home"         && <HomeEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
+          {tab === "home" && (
+            <div className="space-y-12">
+              {/* Home page header removed per request */}
+              {/* NavbarEditor removed per request - previously allowed editing navbar links */}
+              <HeroEditor s={s} setSettings={setSettings} />
+            </div>
+          )}
           {tab === "branding"     && <BrandingEditor s={s} update={update} setSettings={setSettings} />}
 
-          {tab === "navbar"       && <NavbarEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
+          {/* NavbarEditor disabled - component commented out above */}
+          {/* {tab === "navbar"       && <NavbarEditor s={s} setSettings={setSettings} askDelete={askDelete} />} */}
           {tab === "hero"         && <HeroEditor s={s} setSettings={setSettings} />}
           {tab === "partners"     && <PartnersEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
           {tab === "about"        && <AboutEditor s={s} setSettings={setSettings} />}
           {tab === "whyChoose"    && <WhyChooseEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
+          {tab === "services" && (
+            <div className="space-y-6">
+              <ServicesEditor s={s} setSettings={setSettings} askDelete={askDelete} />
+              <div className="pt-6">
+                <MediCareServicesAdmin />
+              </div>
+            </div>
+          )}
           {tab === "media"        && <MediaLibraryEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
           {tab === "seo"          && <SeoEditor s={s} setSettings={setSettings} />}
-          {tab === "contact"      && <ContactEditor s={s} setSettings={setSettings} />}
+          {tab === "contact"      && <ContactEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
           {tab === "blog"         && <BlogEditor />}
         </main>
       </div>
@@ -344,23 +340,23 @@ const MediCareAdmin = () => {
 export default MediCareAdmin;
 
 /* ---------- HOME (composite of all home-page sections) ---------- */
-const HomeEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => (
-  <div className="space-y-12">
-    <SectionHeader title="Home Page" desc="Edit every section that appears on the public MediCare home page." />
-    <NavbarEditor s={s} setSettings={setSettings} askDelete={askDelete} />
-    <HeroEditor s={s} setSettings={setSettings} />
-  </div>
-);
+// const HomeEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => (
+//   <div className="space-y-12">
+//     <SectionHeader title="Home Page" desc="Edit every section that appears on the public MediCare home page." />
+//     {/* NavbarEditor removed per request - previously allowed editing navbar links */}
+//     <HeroEditor s={s} setSettings={setSettings} />
+//   </div>
+// );
 
 
 
 /* ---------- CONTACT ---------- */
-const ContactEditor = ({ s, setSettings }: EProps) => {
+const ContactEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => {
   const set = (patch: Partial<MediCareSettings["contact"]>) =>
     setSettings((st) => ({ ...st, contact: { ...st.contact, ...patch } }));
   return (
     <div className="space-y-6">
-      <SectionHeader title="Contact Info" desc="Email, phone and address shown across the site." />
+      <SectionHeader title="Contact Us" desc="Contact page details and footer content for the Medicare site." />
       <Card>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Email">
@@ -383,6 +379,7 @@ const ContactEditor = ({ s, setSettings }: EProps) => {
           </Field>
         </div>
       </Card>
+      <FooterEditor s={s} setSettings={setSettings} askDelete={askDelete} />
     </div>
   );
 };
@@ -680,29 +677,63 @@ const BrandingEditor = ({ s, update, setSettings }: EProps & { update: (p: Parti
   </div>
 );
 
-/* ---------- NAVBAR ---------- */
-const NavbarEditor = ({ s, setSettings }: EPropsWithDelete) => {
+/* ---------- NAVBAR ----------
+const NavbarEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => {
+  const items = [...s.nav.items].sort((a, b) => a.order - b.order);
+  const setItems = (mut: (arr: NavItem[]) => NavItem[]) =>
+    setSettings((st) => ({ ...st, nav: { ...st.nav, items: mut(st.nav.items) } }));
+
   return (
     <div className="space-y-6">
       <SectionHeader title="Navbar" desc="Manage menu links, order, and visibility." />
       <Card>
-        <h3 className="font-semibold text-slate-900 mb-3">CTA Button</h3>
-        <div className="grid sm:grid-cols-3 gap-3">
-          <Field label="Visible">
-            <select className={inputCls} value={String(s.nav.cta.enabled)}
-              onChange={(e) => setSettings((st) => ({ ...st, nav: { ...st.nav, cta: { ...st.nav.cta, enabled: e.target.value === "true" } } }))}>
-              <option value="false">Hidden</option>
-              <option value="true">Shown</option>
-            </select>
-          </Field>
-          <Field label="Label"><input className={inputCls} value={s.nav.cta.label} onChange={(e) => setSettings((st) => ({ ...st, nav: { ...st.nav, cta: { ...st.nav.cta, label: e.target.value } } }))} /></Field>
-          <Field label="Link URL"><input className={inputCls} value={s.nav.cta.href} onChange={(e) => setSettings((st) => ({ ...st, nav: { ...st.nav, cta: { ...st.nav.cta, href: e.target.value } } }))} /></Field>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h3 className="font-semibold text-slate-900">Menu links</h3>
+          <button
+            onClick={() => setItems((arr) => [...arr, { id: uid("nav"), label: "New link", href: "/doctor-portal", enabled: true, order: arr.length }])}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-blue-700"
+          >
+            <Plus className="h-3.5 w-3.5" /> Add link
+          </button>
+        </div>
+        <div className="space-y-3">
+          {items.map((item) => (
+            <div key={item.id} className="grid grid-cols-12 gap-2 items-center rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <button
+                onClick={() => setItems((arr) => arr.map((x) => x.id === item.id ? { ...x, enabled: !x.enabled } : x))}
+                className={`col-span-1 grid h-9 place-items-center rounded ${item.enabled ? "text-emerald-600 hover:bg-emerald-50" : "text-slate-400 hover:bg-slate-100"}`}
+                title={item.enabled ? "Visible" : "Hidden"}
+              >
+                {item.enabled ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+              </button>
+              <input
+                className={inputCls + " col-span-4"}
+                value={item.label}
+                placeholder="Label"
+                onChange={(e) => setItems((arr) => arr.map((x) => x.id === item.id ? { ...x, label: e.target.value } : x))}
+              />
+              <input
+                className={inputCls + " col-span-5"}
+                value={item.href}
+                placeholder="/doctor-portal/contact"
+                onChange={(e) => setItems((arr) => arr.map((x) => x.id === item.id ? { ...x, href: e.target.value } : x))}
+              />
+              <div className="col-span-2 flex justify-end gap-1">
+                <button onClick={() => setItems((arr) => reorder(arr, item.id, -1))} className="grid h-8 w-8 place-items-center rounded text-slate-500 hover:bg-slate-100"><ArrowUp className="h-4 w-4" /></button>
+                <button onClick={() => setItems((arr) => reorder(arr, item.id, 1))} className="grid h-8 w-8 place-items-center rounded text-slate-500 hover:bg-slate-100"><ArrowDown className="h-4 w-4" /></button>
+                <button onClick={() => askDelete(`nav link "${item.label}"`, () => setItems((arr) => arr.filter((x) => x.id !== item.id)))}
+                  className="grid h-8 w-8 place-items-center rounded text-rose-600 hover:bg-rose-50"><Trash2 className="h-4 w-4" /></button>
+              </div>
+            </div>
+          ))}
+          {items.length === 0 && <p className="py-8 text-center text-sm text-slate-500">No menu links yet.</p>}
         </div>
       </Card>
 
     </div>
   );
 };
+*/
 
 /* ---------- HERO ---------- */
 const HeroEditor = ({ s, setSettings }: EProps) => {
@@ -710,15 +741,14 @@ const HeroEditor = ({ s, setSettings }: EProps) => {
     setSettings((st) => ({ ...st, hero: { ...st.hero, ...patch } }));
   return (
     <div className="space-y-6">
-      <SectionHeader title="Home Boarding" desc="Headline, subtitle, background, and floating cards." />
+      <SectionHeader title="Home Boarding" desc="Headline, body copy, button text, and button link." />
       <Card>
         <div className="grid gap-4">
-          <Field label="Badge text"><input className={inputCls} value={s.hero.eyebrow} onChange={(e) => set({ eyebrow: e.target.value })} /></Field>
           <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Headline (line 1)"><input className={inputCls} value={s.hero.titleLead} onChange={(e) => set({ titleLead: e.target.value })} /></Field>
-            <Field label="Headline (highlighted)"><input className={inputCls} value={s.hero.titleHighlight} onChange={(e) => set({ titleHighlight: e.target.value })} /></Field>
+            <Field label="Headline"><input className={inputCls} value={s.hero.titleLead} onChange={(e) => set({ titleLead: e.target.value })} /></Field>
+            <Field label="Highlighted headline"><input className={inputCls} value={s.hero.titleHighlight} onChange={(e) => set({ titleHighlight: e.target.value })} /></Field>
           </div>
-          <Field label="Subtitle"><textarea className={textareaCls} value={s.hero.subtitle} onChange={(e) => set({ subtitle: e.target.value })} /></Field>
+          <Field label="Body"><textarea className={textareaCls} value={s.hero.subtitle} onChange={(e) => set({ subtitle: e.target.value })} /></Field>
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Button text"><input className={inputCls} value={s.hero.ctaLabel} onChange={(e) => set({ ctaLabel: e.target.value })} /></Field>
             <Field label="Button link"><input className={inputCls} value={s.hero.ctaHref} onChange={(e) => set({ ctaHref: e.target.value })} /></Field>
@@ -876,7 +906,7 @@ const ServicesEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => {
 
   return (
     <div className="space-y-6">
-      <SectionHeader title="Services" />
+      <SectionHeader title="Home Services Section" desc="Controls the Services section on the Medicare home page." />
       <Card>
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Section label"><input className={inputCls} value={s.services.label} onChange={(e) => set({ label: e.target.value })} /></Field>
