@@ -11,7 +11,6 @@ import {
   upsertFaq, deleteFaq, updatePage, slugify,
   type Service, type ServiceCategory, type ServiceFaq, type ServicesPage,
 } from "@/lib/medicareServicesApi";
-import { ImageUploader } from "@/components/medicare-admin/ImageUploader";
 import { Icon, ICON_NAMES } from "@/components/medicare-admin/icons";
 import type { LucideIconName } from "@/lib/medicareSettings";
 
@@ -186,9 +185,6 @@ const PageEditor = ({ page, reload }: { page: ServicesPage | null; reload: () =>
           <Field label="Description" hint="Shown under the title">
             <textarea className={textareaCls} value={draft.hero_description || ""} onChange={(e) => set({ hero_description: e.target.value })} />
           </Field>
-          <Field label="Hero image">
-            <ImageUploader value={draft.hero_image || ""} onChange={(url) => set({ hero_image: url })} />
-          </Field>
         </div>
       </Card>
 
@@ -215,9 +211,6 @@ const PageEditor = ({ page, reload }: { page: ServicesPage | null; reload: () =>
           <Field label="Badge"><input className={inputCls} value={draft.cta_badge || ""} onChange={(e) => set({ cta_badge: e.target.value })} /></Field>
           <Field label="Title"><input className={inputCls} value={draft.cta_title || ""} onChange={(e) => set({ cta_title: e.target.value })} /></Field>
           <Field label="Description"><textarea className={textareaCls} value={draft.cta_description || ""} onChange={(e) => set({ cta_description: e.target.value })} /></Field>
-          <Field label="Background image">
-            <ImageUploader value={draft.cta_image || ""} onChange={(url) => set({ cta_image: url })} />
-          </Field>
           <Field label="Primary button label"><input className={inputCls} value={draft.cta_primary_label || ""} onChange={(e) => set({ cta_primary_label: e.target.value })} /></Field>
           <Field label="Primary button link"><input className={inputCls} value={draft.cta_primary_href || ""} onChange={(e) => set({ cta_primary_href: e.target.value })} /></Field>
           <Field label="Secondary button label"><input className={inputCls} value={draft.cta_secondary_label || ""} onChange={(e) => set({ cta_secondary_label: e.target.value })} /></Field>
@@ -246,7 +239,6 @@ const CategoriesEditor = ({
     slug: "",
     description: "",
     icon: "Stethoscope",
-    banner_image: null,
     color: null,
     search_keywords: "",
     sort_order: categories.length,
@@ -260,7 +252,6 @@ const CategoriesEditor = ({
       slug: "",
       description: "",
       icon: "Stethoscope",
-      banner_image: null,
       color: null,
       search_keywords: "",
       sort_order: categories.length,
@@ -342,9 +333,6 @@ const CategoriesEditor = ({
           <Field label="Description">
             <textarea className={textareaCls} value={addDraft.description ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, description: e.target.value }))} />
           </Field>
-          <Field label="Banner image">
-            <ImageUploader value={addDraft.banner_image || ""} onChange={(url) => setAddDraft((d) => ({ ...d, banner_image: url }))} />
-          </Field>
           <Field label="Search keywords" hint="Helps users find this category">
             <input className={inputCls} value={addDraft.search_keywords ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, search_keywords: e.target.value }))} />
           </Field>
@@ -408,9 +396,6 @@ const CategoryRow = ({
           <Field label="Icon"><IconPicker value={draft.icon || ""} onChange={(v) => set({ icon: v })} /></Field>
           <Field label="Color tag"><input className={inputCls} value={draft.color || ""} onChange={(e) => set({ color: e.target.value })} placeholder="#1F8FFF" /></Field>
           <Field label="Description"><textarea className={textareaCls} value={draft.description || ""} onChange={(e) => set({ description: e.target.value })} /></Field>
-          <Field label="Banner image">
-            <ImageUploader value={draft.banner_image || ""} onChange={(url) => set({ banner_image: url })} />
-          </Field>
           <Field label="Search keywords" hint="Helps users find this category">
             <input className={inputCls} value={draft.search_keywords || ""} onChange={(e) => set({ search_keywords: e.target.value })} />
           </Field>
@@ -438,8 +423,6 @@ const ServicesEditor = ({
     icon: "Stethoscope",
     summary: "",
     description: "",
-    hero_image: null,
-    gallery_images: [],
     tags: [],
     search_keywords: "",
     price_amount: null,
@@ -465,8 +448,6 @@ const ServicesEditor = ({
       icon: "Stethoscope",
       summary: "",
       description: "",
-      hero_image: null,
-      gallery_images: [],
       tags: [],
       search_keywords: "",
       price_amount: null,
@@ -495,7 +476,6 @@ const ServicesEditor = ({
         category_id: addDraft.category_id || null,
         summary: addDraft.summary ?? null,
         description: addDraft.description ?? null,
-        hero_image: addDraft.hero_image ?? null,
         search_keywords: addDraft.search_keywords ?? null,
         price_amount: addDraft.price_amount ?? null,
         price_currency: addDraft.price_currency || "GBP",
@@ -504,7 +484,6 @@ const ServicesEditor = ({
         preparation: addDraft.preparation ?? null,
         cta_label: addDraft.cta_label ?? null,
         cta_href: addDraft.cta_href ?? null,
-        gallery_images: addDraft.gallery_images || [],
         tags: addDraft.tags || [],
         recommended_clinicians: addDraft.recommended_clinicians || [],
         whats_included: addDraft.whats_included || [],
@@ -602,9 +581,6 @@ const ServicesEditor = ({
           <Field label="Summary" hint="Short line under the title">
             <input className={inputCls} value={addDraft.summary ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, summary: e.target.value }))} />
           </Field>
-          <Field label="Hero image">
-            <ImageUploader value={addDraft.hero_image || ""} onChange={(url) => setAddDraft((d) => ({ ...d, hero_image: url }))} />
-          </Field>
           <Field label="Long description">
             <textarea className={textareaCls} value={addDraft.description ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, description: e.target.value }))} />
           </Field>
@@ -675,6 +651,7 @@ const ServiceRow = ({
   };
 
   const cat = categories.find((c) => c.id === svc.category_id);
+  const displayPrice = svc.price_label || (svc.price_amount != null ? `$${Number(svc.price_amount).toLocaleString("en-US")}` : "Set price");
 
   return (
     <Card>
@@ -683,11 +660,14 @@ const ServiceRow = ({
           <Icon name={(svc.icon as LucideIconName) || "Stethoscope"} className="h-5 w-5" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-semibold truncate flex items-center gap-2">
-            {svc.title}
-            {svc.featured && <span className="rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-[10px] font-bold">FEATURED</span>}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="font-semibold truncate flex items-center gap-2">
+              {svc.title}
+              {svc.featured && <span className="rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-[10px] font-bold">FEATURED</span>}
+            </div>
+            <span className="rounded-full bg-blue-50 text-blue-700 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">{displayPrice}</span>
           </div>
-          <div className="text-xs text-slate-500 truncate">{cat?.name || "Uncategorised"} · {svc.duration_minutes ?? "—"}min · {svc.price_label || (svc.price_amount ? `${svc.price_currency || "GBP"} ${svc.price_amount}` : "no price")}</div>
+          <div className="text-xs text-slate-500 truncate">{cat?.name || "Uncategorised"} · {svc.duration_minutes ?? "—"}min</div>
         </div>
         <button onClick={() => toggle({ featured: !svc.featured })} className="p-2 rounded-lg hover:bg-slate-50" title="Featured">
           {svc.featured ? <Star className="h-4 w-4 text-amber-500 fill-current" /> : <StarOff className="h-4 w-4 text-slate-400" />}
@@ -714,9 +694,6 @@ const ServiceRow = ({
           <Field label="Icon"><IconPicker value={draft.icon || ""} onChange={(v) => set({ icon: v })} /></Field>
           <Field label="Summary" hint="Short line under the title">
             <input className={inputCls} value={draft.summary || ""} onChange={(e) => set({ summary: e.target.value })} />
-          </Field>
-          <Field label="Hero image">
-            <ImageUploader value={draft.hero_image || ""} onChange={(url) => set({ hero_image: url })} />
           </Field>
           <Field label="Long description">
             <textarea className={textareaCls} value={draft.description || ""} onChange={(e) => set({ description: e.target.value })} />

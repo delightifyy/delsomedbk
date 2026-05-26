@@ -6,7 +6,6 @@ export type ServiceCategory = {
   slug: string;
   description: string | null;
   icon: string | null;
-  banner_image: string | null;
   color: string | null;
   search_keywords: string | null;
   sort_order: number;
@@ -21,8 +20,6 @@ export type Service = {
   summary: string | null;
   description: string | null;
   icon: string | null;
-  hero_image: string | null;
-  gallery_images: string[];
   tags: string[];
   search_keywords: string | null;
   price_amount: number | null;
@@ -53,7 +50,6 @@ export type ServicesPage = {
   hero_eyebrow: string;
   hero_title: string;
   hero_description: string;
-  hero_image: string | null;
   intro_stats: { label: string; value: string }[];
   cta_badge: string;
   cta_title: string;
@@ -62,7 +58,6 @@ export type ServicesPage = {
   cta_primary_href: string;
   cta_secondary_label: string;
   cta_secondary_href: string;
-  cta_image: string | null;
   seo_title: string;
   seo_description: string;
 };
@@ -85,13 +80,13 @@ const uid = (p = "id") => `${p}-${Date.now().toString(36)}-${Math.random().toStr
 
 const defaultState = (): CmsState => ({
   categories: [
-    { id: "cat-1", name: "General Practice", slug: "general-practice", description: "Everyday primary care and check-ups.", icon: "Stethoscope", banner_image: null, color: null, search_keywords: null, sort_order: 0, visible: true },
-    { id: "cat-2", name: "Specialist Consultations", slug: "specialist", description: "Access leading specialists across multiple disciplines.", icon: "HeartPulse", banner_image: null, color: null, search_keywords: null, sort_order: 1, visible: true },
-    { id: "cat-3", name: "Diagnostics & Screening", slug: "diagnostics", description: "Comprehensive health checks and laboratory tests.", icon: "FlaskConical", banner_image: null, color: null, search_keywords: null, sort_order: 2, visible: true },
+    { id: "cat-1", name: "General Practice", slug: "general-practice", description: "Everyday primary care and check-ups.", icon: "Stethoscope", color: null, search_keywords: null, sort_order: 0, visible: true },
+    { id: "cat-2", name: "Specialist Consultations", slug: "specialist", description: "Access leading specialists across multiple disciplines.", icon: "HeartPulse", color: null, search_keywords: null, sort_order: 1, visible: true },
+    { id: "cat-3", name: "Diagnostics & Screening", slug: "diagnostics", description: "Comprehensive health checks and laboratory tests.", icon: "FlaskConical", color: null, search_keywords: null, sort_order: 2, visible: true },
   ],
   services: [
-    { id: "svc-1", category_id: "cat-1", title: "GP Consultation", slug: "gp-consultation", summary: "Same-day appointments with experienced general practitioners.", description: "Comprehensive in-person or video consultations covering everyday illnesses, minor injuries, prescriptions and referrals.", icon: "Stethoscope", hero_image: null, gallery_images: [], tags: ["Same-day", "In-person", "Video"], search_keywords: null, price_amount: 95, price_currency: "GBP", price_label: "From £95", duration_minutes: 20, recommended_clinicians: ["GP", "Family Doctor"], whats_included: ["Full medical assessment", "Prescription if needed", "Referral letters", "Follow-up notes"], preparation: null, featured: true, visible: true, sort_order: 0, cta_label: null, cta_href: null },
-    { id: "svc-2", category_id: "cat-3", title: "Health Screening", slug: "health-screening", summary: "Comprehensive head-to-toe screening tailored to your age and lifestyle.", description: "A full-body screening including bloods, ECG, and a detailed report with lifestyle recommendations.", icon: "Activity", hero_image: null, gallery_images: [], tags: ["Preventive", "Bloods", "ECG"], search_keywords: null, price_amount: 450, price_currency: "GBP", price_label: "From £450", duration_minutes: 90, recommended_clinicians: ["GP", "Cardiologist"], whats_included: ["Blood panel", "ECG", "Body composition", "Doctor consultation", "Written report"], preparation: null, featured: false, visible: true, sort_order: 1, cta_label: null, cta_href: null },
+    { id: "svc-1", category_id: "cat-1", title: "GP Consultation", slug: "gp-consultation", summary: "Same-day appointments with experienced general practitioners.", description: "Comprehensive in-person or video consultations covering everyday illnesses, minor injuries, prescriptions and referrals.", icon: "Stethoscope", tags: ["Same-day", "In-person", "Video"], search_keywords: null, price_amount: 95, price_currency: "GBP", price_label: "From £95", duration_minutes: 20, recommended_clinicians: ["GP", "Family Doctor"], whats_included: ["Full medical assessment", "Prescription if needed", "Referral letters", "Follow-up notes"], preparation: null, featured: true, visible: true, sort_order: 0, cta_label: null, cta_href: null },
+    { id: "svc-2", category_id: "cat-3", title: "Health Screening", slug: "health-screening", summary: "Comprehensive head-to-toe screening tailored to your age and lifestyle.", description: "A full-body screening including bloods, ECG, and a detailed report with lifestyle recommendations.", icon: "Activity", tags: ["Preventive", "Bloods", "ECG"], search_keywords: null, price_amount: 450, price_currency: "GBP", price_label: "From £450", duration_minutes: 90, recommended_clinicians: ["GP", "Cardiologist"], whats_included: ["Blood panel", "ECG", "Body composition", "Doctor consultation", "Written report"], preparation: null, featured: false, visible: true, sort_order: 1, cta_label: null, cta_href: null },
   ],
   faqs: [
     { id: "faq-1", service_id: null, question: "How quickly can I be seen?", answer: "Most appointments are available same day or next day, both in-person and via video.", sort_order: 0, visible: true },
@@ -102,7 +97,6 @@ const defaultState = (): CmsState => ({
     hero_eyebrow: "Our Services",
     hero_title: "Healthcare designed around you",
     hero_description: "Discover our full range of medical services — from everyday GP care to specialist consultations.",
-    hero_image: null,
     intro_stats: [{ label: "Clinicians", value: "12+" }],
     cta_badge: "Ready when you are",
     cta_title: "Book your consultation today",
@@ -111,7 +105,6 @@ const defaultState = (): CmsState => ({
     cta_primary_href: "#cta",
     cta_secondary_label: "Talk to Us",
     cta_secondary_href: "#contact",
-    cta_image: null,
     seo_title: "Services — MediCare",
     seo_description: "Explore the full range of MediCare services.",
   },
@@ -156,8 +149,6 @@ const normalizeService = (row: Partial<Service>, fallbackOrder: number): Service
   summary: row.summary ?? null,
   description: row.description ?? null,
   icon: row.icon ?? "Stethoscope",
-  hero_image: row.hero_image ?? null,
-  gallery_images: Array.isArray(row.gallery_images) ? row.gallery_images : [],
   tags: Array.isArray(row.tags) ? row.tags : [],
   search_keywords: row.search_keywords ?? null,
   price_amount: row.price_amount ?? null,
@@ -180,7 +171,6 @@ const normalizeCategory = (row: Partial<ServiceCategory>, fallbackOrder: number)
   slug: row.slug ?? slugify(row.name ?? "new-category"),
   description: row.description ?? null,
   icon: row.icon ?? "Stethoscope",
-  banner_image: row.banner_image ?? null,
   color: row.color ?? null,
   search_keywords: row.search_keywords ?? null,
   sort_order: row.sort_order ?? fallbackOrder,

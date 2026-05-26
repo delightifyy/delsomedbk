@@ -1,9 +1,9 @@
-import { useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { ArrowRight, ArrowLeft } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowRight } from "lucide-react";
 import { Icon as McIcon } from "@/components/medicare-admin/icons";
 import { useMediCareSettings } from "@/lib/medicareSettings";
 import { MedicareFooter, MedicareSimpleHeader, medicareThemeStyle } from "@/components/medicare/MediCareChrome";
+import { fetchAll, type Service } from "@/lib/medicareServicesApi";
 
 /* Scoped tokens — sage + terracotta palette inspired by reference, MediCare semantics */
 const tokenStyles = `
@@ -42,10 +42,27 @@ const tokenStyles = `
 
 const MediCareServices = () => {
   const settings = useMediCareSettings();
+  const [priceServices, setPriceServices] = useState<Service[]>([]);
+  const [pricesLoading, setPricesLoading] = useState(true);
   const services = useMemo(
     () => settings.services.items.filter((item) => item.active).sort((a, b) => a.order - b.order),
     [settings.services.items],
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchAll()
+      .then((result) => {
+        if (cancelled) return;
+        setPriceServices(result.services.filter((service) => service.visible));
+      })
+      .finally(() => {
+        if (!cancelled) setPricesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     document.title = `${settings.services.title || "Services"} — MediCare`;
@@ -61,10 +78,24 @@ const MediCareServices = () => {
     }
   }, [settings.services.title]);
 
-  const themeStyle = useMemo(
-    () => medicareThemeStyle(settings),
-    [settings.primaryColor, settings.accentColor],
-  );
+  const themeStyle = medicareThemeStyle(settings);
+
+  const priceByTitle = useMemo(() => {
+    const map = new Map<string, string>();
+    const format = (service: Service) => {
+      if (service.price_label) return service.price_label.replace(/£/g, "₦");
+      if (service.price_amount == null) return "";
+      return `$${Number(service.price_amount).toLocaleString("en-US")}`;
+    };
+
+    priceServices.forEach((service) => {
+      const price = format(service);
+      if (!price) return;
+      map.set(service.title.trim().toLowerCase(), price);
+    });
+
+    return map;
+  }, [priceServices]);
 
   return (
     <div className="medicare-services min-h-screen" style={themeStyle}>
@@ -80,8 +111,7 @@ const MediCareServices = () => {
           {settings.services.title || "Our Services"}
         </h1>
         <p className="mt-4 max-w-2xl text-[hsl(var(--mc-muted))] leading-relaxed">
-          {settings.services.description ||
-            "All our services are designed to provide you with the best healthcare experience. Browse through our offerings and find the right care for you."}
+          All our services are designed to provide you with the best healthcare experience. Browse through our offerings and find the right care for you.
         </p>
       </section>
 
@@ -103,6 +133,11 @@ const MediCareServices = () => {
                 <h3 className="font-display text-xl font-bold">{svc.title}</h3>
                 <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">
                   {svc.description}
+                </p>
+                <p className="mt-4 text-sm font-semibold text-[hsl(var(--mc-ink))]">
+                  {pricesLoading
+                    ? "$14"
+                    : priceByTitle.get(svc.title.trim().toLowerCase()) || "$14"}
                 </p>
                 {svc.ctaLabel && svc.ctaHref && (
                   <a href={svc.ctaHref} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[hsl(var(--mc-primary))]">
