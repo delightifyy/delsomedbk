@@ -18,7 +18,9 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
+import { usePatientCategory, PATIENT_CATEGORY_OPTIONS, PatientCategory } from "@/hooks/usePatientCategory";
 import desolmedLogo from "@/assets/desolmed-logo.png";
 
 export type PortalNavItem = { title: string; url: string; icon: LucideIcon };
