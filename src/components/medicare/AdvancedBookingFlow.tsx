@@ -369,7 +369,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
             {method === "hmo" && (
               <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-4">
                 <div className="space-y-2">
-                  <Label htmlFor="hmo-provider">HMO Provider</Label>
+                  <Label htmlFor="hmo-provider">\u200BCard Provider</Label>
                   <select
                     id="hmo-provider"
                     value={hmoProvider}
@@ -389,7 +389,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
                   {hmoProvider && (
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <ShieldCheck className="h-3 w-3 text-primary" />
-                      {HMO_PROVIDERS.find((p) => p.id === hmoProvider)?.name} selected
+                      {HMO_PROVIDERS.find((p) => p.id === hmoProvider)?.name.replace("HMO", "\u200BCard")} selected
                     </p>
                   )}
                 </div>
@@ -462,7 +462,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
 
         {currentLabel === "Verify" && (
           <div className="space-y-3 max-w-md">
-            <h3 className="font-display text-xl font-semibold">Verify your HMO policy</h3>
+            <h3 className="font-display text-xl font-semibold">Verify your \u200BCard policy</h3>
             <div className="space-y-2">
               <Label>Policy Number</Label>
               <Input
@@ -600,9 +600,9 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
                   )}
                   {hmoProvider && (
                     <>
-                      <span className="text-muted-foreground">HMO</span>
+                      <span className="text-muted-foreground">\u200BCard</span>
                       <span className="font-medium sm:text-right">
-                        {HMO_PROVIDERS.find((p) => p.id === hmoProvider)?.name}
+                        {HMO_PROVIDERS.find((p) => p.id === hmoProvider)?.name.replace("HMO", "\u200BCard")}
                       </span>
                     </>
                   )}

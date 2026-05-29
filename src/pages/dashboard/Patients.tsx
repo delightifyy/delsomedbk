@@ -41,7 +41,7 @@ const PATIENTS: AdminPatient[] = [
 const CATEGORY_META: Record<PatientCategory | "all", { label: string; icon: typeof CreditCard }> = {
   all: { label: "All Patients", icon: Search },
   card: { label: "Card Payment", icon: CreditCard },
-  hmo: { label: "Card", icon: ShieldCheck },
+  hmo: { label: "\u200BCard", icon: ShieldCheck },
   subscription: { label: "Subscription", icon: BadgeCheck },
   organization: { label: "Organization", icon: Building2 },
 };
