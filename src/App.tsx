@@ -35,6 +35,7 @@ const Auth = lazy(() => import("./pages/Auth.tsx"));
 const PatientLogin = lazy(() => import("./pages/PatientLogin.tsx"));
 const DashOverview = lazy(() => import("./pages/dashboard/Overview.tsx"));
 const DashUsers = lazy(() => import("./pages/dashboard/Users.tsx"));
+const DashPatients = lazy(() => import("./pages/dashboard/Patients.tsx"));
 const DashDoctors = lazy(() => import("./pages/dashboard/Doctors.tsx"));
 const DashContacts = lazy(() => import("./pages/dashboard/Contacts.tsx"));
 const DashBlog = lazy(() => import("./pages/dashboard/Blog.tsx"));
@@ -115,6 +116,7 @@ const App = () => (
               <Route path="/patient/login" element={<PatientLogin />} />
               <Route path="/dashboard" element={<AdminGuard><DashOverview /></AdminGuard>} />
               <Route path="/dashboard/users" element={<AdminGuard><DashUsers /></AdminGuard>} />
+              <Route path="/dashboard/patients" element={<AdminGuard><DashPatients /></AdminGuard>} />
               <Route path="/dashboard/doctors" element={<AdminGuard><DashDoctors /></AdminGuard>} />
               <Route path="/dashboard/contacts" element={<AdminGuard><DashContacts /></AdminGuard>} />
               <Route path="/dashboard/blog" element={<AdminGuard><DashBlog /></AdminGuard>} />
