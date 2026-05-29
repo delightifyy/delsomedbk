@@ -1026,7 +1026,7 @@ function PaymentStep({
           {paymentKey === "hmo" && (
             <>
               <div>
-                <label className="block text-xs font-semibold mb-1.5">HMO Provider</label>
+                <label className="block text-xs font-semibold mb-1.5">Card Provider</label>
                 <select
                   value={meta.hmo || ""}
                   onChange={(e) => {
