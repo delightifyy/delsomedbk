@@ -58,8 +58,7 @@ const TransactionsCard = () => (
 
 const CardView = () => (
   <>
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-      <StatCard label="Wallet Balance" value={formatNGN(patientMock.stats.balanceNGN)} icon={Wallet} />
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
       <StatCard label="Saved Cards" value="2" icon={CreditCard} accent="secondary" />
       <StatCard label="This Month" value={formatNGN(30000)} icon={CreditCard} accent="muted" />
     </div>
