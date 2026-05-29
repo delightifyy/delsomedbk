@@ -25,7 +25,7 @@ const ProgressBar = ({ pct }: { pct: number }) => (
   </div>
 );
 
-const TransactionsCard = () => (
+const TransactionsCard = ({ hideAmount = false }: { hideAmount?: boolean }) => (
   <SectionCard title="Transaction History">
     <Table>
       <TableHeader>
@@ -33,7 +33,7 @@ const TransactionsCard = () => (
           <TableHead>Date</TableHead>
           <TableHead>Description</TableHead>
           <TableHead>Method</TableHead>
-          <TableHead className="text-right">Amount</TableHead>
+          {!hideAmount && <TableHead className="text-right">Amount</TableHead>}
           <TableHead>Status</TableHead>
         </TableRow>
       </TableHeader>
@@ -43,7 +43,7 @@ const TransactionsCard = () => (
             <TableCell className="text-xs text-muted-foreground">{p.date}</TableCell>
             <TableCell className="font-medium text-sm">{p.description}</TableCell>
             <TableCell><Badge variant="outline">{p.method}</Badge></TableCell>
-            <TableCell className="text-right font-medium">{formatNGN(p.amount)}</TableCell>
+            {!hideAmount && <TableCell className="text-right font-medium">{formatNGN(p.amount)}</TableCell>}
             <TableCell>
               <Badge variant={p.status === "paid" ? "default" : "secondary"} className="capitalize">
                 {p.status}
@@ -97,10 +97,8 @@ const HmoView = () => {
   const pct = Math.round((h.usedNGN / h.annualLimitNGN) * 100);
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 gap-4 mb-6">
         <StatCard label="Card Provider" value={h.provider} icon={ShieldCheck} />
-        <StatCard label="Annual Limit" value={formatNGN(h.annualLimitNGN)} icon={Wallet} accent="secondary" />
-        <StatCard label="Used" value={formatNGN(h.usedNGN)} icon={CreditCard} accent="muted" />
       </div>
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
@@ -130,7 +128,7 @@ const HmoView = () => {
               <ProgressBar pct={pct} />
             </div>
           </SectionCard>
-          <TransactionsCard />
+          <TransactionsCard hideAmount />
         </div>
         <SectionCard title="Covered Services">
           <ul className="space-y-2 text-sm">
