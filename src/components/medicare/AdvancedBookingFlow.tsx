@@ -600,7 +600,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
                   )}
                   {hmoProvider && (
                     <>
-                      <span className="text-muted-foreground">HMO</span>
+                      <span className="text-muted-foreground">\u200BCard</span>
                       <span className="font-medium sm:text-right">
                         {HMO_PROVIDERS.find((p) => p.id === hmoProvider)?.name}
                       </span>
