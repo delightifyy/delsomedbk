@@ -184,7 +184,7 @@ const SubscriptionView = () => {
               <ProgressBar pct={pct} />
             </div>
           </SectionCard>
-          <TransactionsCard />
+          <TransactionsCard methodOverride="Subscription" />
         </div>
         <SectionCard title="Plan Perks">
           <ul className="space-y-2 text-sm">
