@@ -116,6 +116,7 @@ const App = () => (
               <Route path="/patient/login" element={<PatientLogin />} />
               <Route path="/dashboard" element={<AdminGuard><DashOverview /></AdminGuard>} />
               <Route path="/dashboard/users" element={<AdminGuard><DashUsers /></AdminGuard>} />
+              <Route path="/dashboard/patients" element={<AdminGuard><DashPatients /></AdminGuard>} />
               <Route path="/dashboard/doctors" element={<AdminGuard><DashDoctors /></AdminGuard>} />
               <Route path="/dashboard/contacts" element={<AdminGuard><DashContacts /></AdminGuard>} />
               <Route path="/dashboard/blog" element={<AdminGuard><DashBlog /></AdminGuard>} />
