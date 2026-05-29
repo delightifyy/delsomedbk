@@ -25,6 +25,24 @@ import desolmedLogo from "@/assets/desolmed-logo.png";
 
 export type PortalNavItem = { title: string; url: string; icon: LucideIcon };
 
+const PatientCategorySelector = () => {
+  const [category, setCategory] = usePatientCategory();
+  return (
+    <Select value={category} onValueChange={(v) => setCategory(v as PatientCategory)}>
+      <SelectTrigger className="h-9 w-[170px] text-xs">
+        <SelectValue placeholder="Payment category" />
+      </SelectTrigger>
+      <SelectContent>
+        {PATIENT_CATEGORY_OPTIONS.map((o) => (
+          <SelectItem key={o.value} value={o.value} className="text-xs">
+            {o.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+};
+
 interface PortalLayoutProps {
   portalName: string;
   portalAccent?: string;
