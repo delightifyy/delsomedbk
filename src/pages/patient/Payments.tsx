@@ -25,7 +25,7 @@ const ProgressBar = ({ pct }: { pct: number }) => (
   </div>
 );
 
-const TransactionsCard = ({ hideAmount = false }: { hideAmount?: boolean }) => (
+const TransactionsCard = ({ hideAmount = false, methodOverride }: { hideAmount?: boolean; methodOverride?: string }) => (
   <SectionCard title="Transaction History">
     <Table>
       <TableHeader>
@@ -42,7 +42,7 @@ const TransactionsCard = ({ hideAmount = false }: { hideAmount?: boolean }) => (
           <TableRow key={p.id}>
             <TableCell className="text-xs text-muted-foreground">{p.date}</TableCell>
             <TableCell className="font-medium text-sm">{p.description}</TableCell>
-            <TableCell><Badge variant="outline">{p.method}</Badge></TableCell>
+            <TableCell><Badge variant="outline">{methodOverride ?? p.method}</Badge></TableCell>
             {!hideAmount && <TableCell className="text-right font-medium">{formatNGN(p.amount)}</TableCell>}
             <TableCell>
               <Badge variant={p.status === "paid" ? "default" : "secondary"} className="capitalize">
@@ -128,7 +128,7 @@ const HmoView = () => {
               <ProgressBar pct={pct} />
             </div>
           </SectionCard>
-          <TransactionsCard hideAmount />
+          <TransactionsCard hideAmount methodOverride="HMO" />
         </div>
         <SectionCard title="Covered Services">
           <ul className="space-y-2 text-sm">
