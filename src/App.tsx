@@ -35,6 +35,7 @@ const Auth = lazy(() => import("./pages/Auth.tsx"));
 const PatientLogin = lazy(() => import("./pages/PatientLogin.tsx"));
 const DashOverview = lazy(() => import("./pages/dashboard/Overview.tsx"));
 const DashUsers = lazy(() => import("./pages/dashboard/Users.tsx"));
+const DashPatients = lazy(() => import("./pages/dashboard/Patients.tsx"));
 const DashDoctors = lazy(() => import("./pages/dashboard/Doctors.tsx"));
 const DashContacts = lazy(() => import("./pages/dashboard/Contacts.tsx"));
 const DashBlog = lazy(() => import("./pages/dashboard/Blog.tsx"));
