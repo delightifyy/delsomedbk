@@ -106,9 +106,9 @@ export const patientMock = {
     },
   ],
   payments: [
-    { id: "p_001", date: "2026-04-28", description: "Cardiology Consultation", amount: 18000, status: "paid" as const, method: "HMO" },
+    { id: "p_001", date: "2026-04-28", description: "Cardiology Consultation", amount: 18000, status: "paid" as const, method: "Card" },
     { id: "p_002", date: "2026-03-12", description: "Wellness Visit", amount: 12000, status: "paid" as const, method: "Card" },
-    { id: "p_003", date: "2026-05-15", description: "Upcoming consultation", amount: 15000, status: "pending" as const, method: "HMO" },
+    { id: "p_003", date: "2026-05-15", description: "Upcoming consultation", amount: 15000, status: "pending" as const, method: "Card" },
   ],
   hmo: {
     provider: "AXA Mansard HMO",
