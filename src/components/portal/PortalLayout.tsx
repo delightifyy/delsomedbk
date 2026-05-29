@@ -141,6 +141,7 @@ export const PortalLayout = ({
               ))}
             </nav>
             <div className="ml-auto flex items-center gap-2">
+              {pathname.startsWith("/patient") && <PatientCategorySelector />}
               <Button size="icon" variant="ghost" className="relative">
                 <Bell className="h-4 w-4" />
                 <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-primary" />
