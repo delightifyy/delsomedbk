@@ -25,7 +25,7 @@ const ProgressBar = ({ pct }: { pct: number }) => (
   </div>
 );
 
-const TransactionsCard = () => (
+const TransactionsCard = ({ hideAmount = false }: { hideAmount?: boolean }) => (
   <SectionCard title="Transaction History">
     <Table>
       <TableHeader>
@@ -33,7 +33,7 @@ const TransactionsCard = () => (
           <TableHead>Date</TableHead>
           <TableHead>Description</TableHead>
           <TableHead>Method</TableHead>
-          <TableHead className="text-right">Amount</TableHead>
+          {!hideAmount && <TableHead className="text-right">Amount</TableHead>}
           <TableHead>Status</TableHead>
         </TableRow>
       </TableHeader>
@@ -43,7 +43,7 @@ const TransactionsCard = () => (
             <TableCell className="text-xs text-muted-foreground">{p.date}</TableCell>
             <TableCell className="font-medium text-sm">{p.description}</TableCell>
             <TableCell><Badge variant="outline">{p.method}</Badge></TableCell>
-            <TableCell className="text-right font-medium">{formatNGN(p.amount)}</TableCell>
+            {!hideAmount && <TableCell className="text-right font-medium">{formatNGN(p.amount)}</TableCell>}
             <TableCell>
               <Badge variant={p.status === "paid" ? "default" : "secondary"} className="capitalize">
                 {p.status}
