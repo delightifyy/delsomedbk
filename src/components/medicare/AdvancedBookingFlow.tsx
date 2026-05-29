@@ -602,7 +602,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
                     <>
                       <span className="text-muted-foreground">\u200BCard</span>
                       <span className="font-medium sm:text-right">
-                        {HMO_PROVIDERS.find((p) => p.id === hmoProvider)?.name}
+                        {HMO_PROVIDERS.find((p) => p.id === hmoProvider)?.name.replace("HMO", "\u200BCard")}
                       </span>
                     </>
                   )}
