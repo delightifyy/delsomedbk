@@ -128,7 +128,7 @@ const HmoView = () => {
               <ProgressBar pct={pct} />
             </div>
           </SectionCard>
-          <TransactionsCard />
+          <TransactionsCard hideAmount />
         </div>
         <SectionCard title="Covered Services">
           <ul className="space-y-2 text-sm">
