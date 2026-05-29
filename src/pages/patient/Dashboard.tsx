@@ -15,6 +15,15 @@ const statusVariant = (s: string) =>
 const PatientDashboard = () => {
   const upcoming = patientMock.appointments.filter((a) => a.status !== "completed");
   const past = patientMock.appointments.filter((a) => a.status === "completed");
+  const [category] = usePatientCategory();
+
+  const categoryMeta = {
+    card: { icon: CreditCard, line: "Card Payment account · Pay per consultation" },
+    hmo: { icon: ShieldCheck, line: `${patientMock.hmo.provider} · ${patientMock.hmo.plan}` },
+    subscription: { icon: BadgeCheck, line: `${patientMock.subscription.plan} · Renews ${new Date(patientMock.subscription.renewsOn).toLocaleDateString()}` },
+    organization: { icon: Building2, line: `${patientMock.organization.name} · ${patientMock.organization.coverageTier}` },
+  }[category];
+  const CategoryIcon = categoryMeta.icon;
 
   return (
     <PortalLayout portalName="Patient Portal" nav={patientNav}>
