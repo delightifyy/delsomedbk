@@ -37,6 +37,22 @@ const PatientDashboard = () => {
         }
       />
 
+      <div className="mb-6 rounded-xl border border-border/60 bg-gradient-to-br from-primary/5 to-primary/0 p-4 sm:p-5 flex items-center gap-4">
+        <div className="h-11 w-11 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <CategoryIcon className="h-5 w-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Payment category</p>
+          <p className="font-medium text-sm truncate">{categoryLabel(category)}</p>
+          <p className="text-xs text-muted-foreground truncate">{categoryMeta.line}</p>
+        </div>
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/patient/payments">Manage <ArrowRight className="h-3.5 w-3.5" /></Link>
+        </Button>
+      </div>
+
+
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard label="Upcoming" value={patientMock.stats.upcoming} icon={CalendarDays} trend="Next: May 15" />
         <StatCard label="Past Visits" value={patientMock.stats.past} icon={FileText} accent="secondary" />
