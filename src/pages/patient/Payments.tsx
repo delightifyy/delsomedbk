@@ -98,13 +98,13 @@ const HmoView = () => {
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <StatCard label="HMO Provider" value={h.provider} icon={ShieldCheck} />
+        <StatCard label="Card Provider" value={h.provider} icon={ShieldCheck} />
         <StatCard label="Annual Limit" value={formatNGN(h.annualLimitNGN)} icon={Wallet} accent="secondary" />
         <StatCard label="Used" value={formatNGN(h.usedNGN)} icon={CreditCard} accent="muted" />
       </div>
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          <SectionCard title="HMO Verification" description="Your coverage is active and verified">
+          <SectionCard title="Card Verification" description="Your coverage is active and verified">
             <div className="flex items-start gap-3 p-4 rounded-lg bg-primary/5 border border-primary/20">
               <BadgeCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <div className="flex-1">
@@ -142,7 +142,7 @@ const HmoView = () => {
             ))}
           </ul>
           <Button variant="outline" className="w-full mt-5">
-            <Phone className="h-4 w-4" /> Contact HMO
+            <Phone className="h-4 w-4" /> Contact Card Provider
           </Button>
         </SectionCard>
       </div>
@@ -262,7 +262,7 @@ const Payments = () => {
   const [category] = usePatientCategory();
   const descriptions: Record<typeof category, string> = {
     card: "Track your billing and saved payment methods.",
-    hmo: "Manage your HMO verification, coverage and claims.",
+    hmo: "Manage your Card verification, coverage and claims.",
     subscription: "Review your DesolMed subscription plan and usage.",
     organization: "View consultations covered by your organization.",
   };

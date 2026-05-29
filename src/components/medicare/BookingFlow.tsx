@@ -219,7 +219,7 @@ export default function BookingFlow({ open, onClose, initialPaymentMethod }: Pro
     .every((f) => (patient[f.field_key] || "").trim().length > 0);
   const emailsMatch = !patient.email || !patient.confirm_email || patient.email === patient.confirm_email;
 
-  // Updated canNext - HMO and Organization no longer require verification
+  // Updated canNext - Card Provider and Organization no longer require verification
   const canNext = (() => {
     switch (step) {
       case 0: return !!selectedConcern && !!selectedClinician;
@@ -229,7 +229,7 @@ export default function BookingFlow({ open, onClose, initialPaymentMethod }: Pro
       case 4:
         if (!paymentKey) return false;
         if (paymentKey === "subscription") return paymentMeta.subscription_status === "active";
-        // For HMO and Organization, we just need the basic details filled
+        // For Card Provider and Organization, we just need the basic details filled
         if (paymentKey === "hmo") {
           return !!(paymentMeta.hmo && paymentMeta.hmo_id);
         }
@@ -1026,7 +1026,7 @@ function PaymentStep({
           {paymentKey === "hmo" && (
             <>
               <div>
-                <label className="block text-xs font-semibold mb-1.5">HMO Provider</label>
+                <label className="block text-xs font-semibold mb-1.5">Card Provider</label>
                 <select
                   value={meta.hmo || ""}
                   onChange={(e) => {
@@ -1040,7 +1040,7 @@ function PaymentStep({
               </div>
               <Field 
                 label="Enrollee Number" 
-                placeholder="HMO-1234567" 
+                placeholder="CARD-1234567" 
                 value={meta.hmo_id || ""} 
                 onChange={(v) => setMeta({ ...meta, hmo_id: v })} 
               />
