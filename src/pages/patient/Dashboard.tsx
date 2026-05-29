@@ -5,8 +5,9 @@ import { patientMock, formatNGN } from "@/data/portalMock";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { CalendarDays, FileText, Pill, Wallet, Video, Plus, ArrowRight, Clock } from "lucide-react";
+import { CalendarDays, FileText, Pill, Wallet, Video, Plus, ArrowRight, Clock, ShieldCheck, BadgeCheck, Building2, CreditCard } from "lucide-react";
 import { Link } from "react-router-dom";
+import { usePatientCategory, categoryLabel } from "@/hooks/usePatientCategory";
 
 const statusVariant = (s: string) =>
   s === "confirmed" ? "default" : s === "pending" ? "secondary" : "outline";
