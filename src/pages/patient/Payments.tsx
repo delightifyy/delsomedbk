@@ -97,10 +97,8 @@ const HmoView = () => {
   const pct = Math.round((h.usedNGN / h.annualLimitNGN) * 100);
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 gap-4 mb-6">
         <StatCard label="Card Provider" value={h.provider} icon={ShieldCheck} />
-        <StatCard label="Annual Limit" value={formatNGN(h.annualLimitNGN)} icon={Wallet} accent="secondary" />
-        <StatCard label="Used" value={formatNGN(h.usedNGN)} icon={CreditCard} accent="muted" />
       </div>
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
