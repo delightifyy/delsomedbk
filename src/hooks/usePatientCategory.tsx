@@ -4,7 +4,7 @@ export type PatientCategory = "card" | "hmo" | "subscription" | "organization";
 
 export const PATIENT_CATEGORY_OPTIONS: { value: PatientCategory; label: string }[] = [
   { value: "card", label: "Card Payment" },
-  { value: "hmo", label: "HMO" },
+  { value: "hmo", label: "Card" },
   { value: "subscription", label: "Subscription" },
   { value: "organization", label: "Organization" },
 ];
