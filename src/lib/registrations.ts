@@ -58,7 +58,7 @@ const appendFiles = (form: FormData, key: string, files?: File[]) => {
 };
 
 const getLookupId = async (
-  loader: () => Promise<{ data: any[] }>,
+  loader: () => Promise<{ data: unknown[] }>,
   value: unknown,
   keys: string[] = ["id", "name", "slug", "code"],
 ) => {
@@ -69,11 +69,12 @@ const getLookupId = async (
   if (!expected) return undefined;
 
   const { data } = await loader();
-  const found = data.find((item) =>
-    keys.some((key) => normalize(item?.[key]) === expected),
-  );
+  const found = data.find((item) => {
+    const record = item as Record<string, unknown>;
+    return keys.some((key) => normalize(record?.[key]) === expected);
+  });
 
-  return toNumber(found?.id);
+  return toNumber((found as Record<string, unknown> | undefined)?.id);
 };
 
 const getSubSpecialtyId = async (specialtyId: number | undefined, value: unknown) => {
@@ -88,8 +89,29 @@ const asText = (value: unknown) => {
   return text || undefined;
 };
 
+const appendDocument = (form: FormData, key: string, documents: Map<string, DocumentSlot>) => {
+  appendFile(form, key, firstFile(documents.get(key)));
+};
+
+const appendDocumentFiles = (form: FormData, key: string, documents: Map<string, DocumentSlot>, sourceField: string) => {
+  appendFiles(form, key, documents.get(sourceField)?.files);
+};
+
 const submitPatientToApi = async (payload: RegistrationPayload) => {
-  const details = payload.details as any;
+  const details = payload.details as Record<string, unknown> & {
+    first_name?: unknown;
+    last_name?: unknown;
+    gender?: unknown;
+    date_of_birth?: unknown;
+    how_heard_about_us?: unknown;
+    source?: unknown;
+    next_of_kin?: {
+      full_name?: unknown;
+      name?: unknown;
+      phone?: unknown;
+      relationship?: unknown;
+    };
+  };
   const nextOfKin = {
     full_name: details.next_of_kin?.full_name ?? details.next_of_kin?.name,
     phone: details.next_of_kin?.phone,
@@ -105,7 +127,7 @@ const submitPatientToApi = async (payload: RegistrationPayload) => {
     phone: payload.phone,
     gender: details.gender,
     date_of_birth: details.date_of_birth,
-    how_heard_about_us: details.source,
+    how_heard_about_us: details.how_heard_about_us ?? details.source,
   };
 
   if (nextOfKin.full_name || nextOfKin.phone || nextOfKin.relationship) {
@@ -117,12 +139,10 @@ const submitPatientToApi = async (payload: RegistrationPayload) => {
 
 const appendCommonApplicationFields = async (form: FormData, payload: RegistrationPayload) => {
   const zoneId = await getLookupId(api.lookups.zones, payload.details.zone_id ?? payload.zone, ["id", "name", "slug", "code"]);
-  const zoneLabel = asText(payload.details.zone_name ?? payload.zone);
   const stateId = await getLookupId(
     () => api.lookups.states(zoneId ? { zone_id: zoneId } : undefined),
     payload.details.state_id ?? payload.state,
   );
-  const stateLabel = asText(payload.details.state_name ?? payload.state);
 
   if (!zoneId) {
     throw new Error("Zone is required. Please select a valid zone.");
@@ -134,14 +154,13 @@ const appendCommonApplicationFields = async (form: FormData, payload: Registrati
 
   appendFormValue(form, "email", payload.email);
   appendFormValue(form, "phone", payload.phone);
-  appendFormValue(form, "zone", zoneLabel);
   appendFormValue(form, "zone_id", zoneId);
-  appendFormValue(form, "state", stateLabel);
   appendFormValue(form, "state_id", stateId);
   appendFormValue(form, "city", payload.city);
-  appendFormValue(form, "website", payload.details.website);
-  appendFormValue(form, "bio", payload.details.bio ?? payload.details.notes);
+  appendFormValue(form, "address", payload.details.address);
   appendFormValue(form, "consent", true);
+
+  return { zoneId, stateId };
 };
 
 const submitApplicationToApi = async (payload: RegistrationPayload) => {
@@ -155,34 +174,26 @@ const submitApplicationToApi = async (payload: RegistrationPayload) => {
 
   if (payload.applicant_type === "doctor") {
     const specialtyId = await getLookupId(api.lookups.specialties, payload.details.specialty_id ?? payload.specialty, ["id", "name", "slug"]);
-    const specialtyLabel = asText(payload.specialty ?? payload.details.specialty);
     const subSpecialtyId = await getSubSpecialtyId(specialtyId, payload.details.sub_specialty_id ?? payload.details.sub_specialty);
-    const subSpecialtyLabel = asText(payload.details.sub_specialty ?? payload.details.sub_specialty_name);
 
-    appendFormValue(form, "full_name", payload.full_name);
-    appendFormValue(form, "specialty", specialtyLabel);
+    appendFormValue(form, "name_of_organization", payload.details.name_of_organization ?? payload.organization_name);
+    appendFormValue(form, "name_of_responsible_officer", payload.details.name_of_responsible_officer ?? payload.full_name);
+    appendFormValue(form, "role", payload.details.role);
     appendFormValue(form, "specialty_id", specialtyId);
-    appendFormValue(form, "sub_specialty", subSpecialtyLabel);
     appendFormValue(form, "sub_specialty_id", subSpecialtyId);
-    appendFormValue(form, "is_specialist", Boolean(subSpecialtyId));
     appendFormValue(form, "years_experience", payload.details.years_experience);
-    appendFormValue(form, "organization_name", payload.details.organization_name ?? payload.organization_name);
-    appendFormValue(form, "applicant_role", payload.details.role);
-    appendFormValue(form, "address", payload.details.address);
-    appendFormValue(form, "services_rendered", payload.details.services);
+    appendFormValue(form, "organization_email", payload.details.organization_email ?? payload.details.email ?? payload.email);
+    appendFormValue(form, "website", payload.details.website);
+    appendFormValue(form, "services_offered", payload.details.services_offered ?? payload.details.services);
     appendFormValue(form, "review_note", payload.details.review_note);
-    appendFormValue(form, "hospital_licence_expiry", payload.details.hospital_licence_expiry);
-    appendFile(form, "documents[medical_practising_licence]", firstFile(documents.get("doc-licence")));
-    appendFile(form, "documents[government_id]", firstFile(documents.get("doc-govid")));
-    appendFile(form, "documents[indemnity]", firstFile(documents.get("doc-indemnity")));
-    appendFile(form, "documents[hospital_licence]", firstFile(documents.get("doc-hospital-licence")));
-    appendFile(form, "documents[proof_of_address]", firstFile(documents.get("doc-org-proof")));
-    appendFiles(form, "documents[other_documents][]", documents.get("doc-other")?.files);
-
-    const certFiles = documents.get("doc-certs")?.files ?? [];
-    certFiles.slice(0, 5).forEach((file) => {
-      appendFile(form, "documents[certifications][]", file);
-    });
+    appendFormValue(form, "hospital_license_expiry_date", payload.details.hospital_license_expiry_date ?? payload.details.hospital_licence_expiry);
+    appendDocumentFiles(form, "documents[hospital_licence]", documents, "doc-hospital-licence");
+    appendDocumentFiles(form, "documents[doctor_practicing_licence]", documents, "doc-licence");
+    appendDocumentFiles(form, "documents[government_id]", documents, "doc-govid");
+    appendDocumentFiles(form, "documents[proof_of_address]", documents, "doc-org-proof");
+    appendDocumentFiles(form, "documents[indemnity_of_organization]", documents, "doc-indemnity");
+    appendDocumentFiles(form, "documents[other_documents][]", documents, "doc-other");
+    appendDocumentFiles(form, "documents[certifications][]", documents, "doc-certs");
   }
 
   if (payload.applicant_type === "organization") {
@@ -191,56 +202,52 @@ const submitApplicationToApi = async (payload: RegistrationPayload) => {
       payload.details.organization_type_id ?? payload.details.org_type,
       ["id", "name", "slug"],
     );
-    const organizationTypeLabel = asText(payload.details.org_type ?? payload.details.organization_type);
-
-    appendFormValue(form, "organization_name", payload.organization_name);
-    appendFormValue(form, "organization_type", organizationTypeLabel);
+    appendFormValue(form, "name_of_organization", payload.details.name_of_organization ?? payload.organization_name);
     appendFormValue(form, "organization_type_id", organizationTypeId);
-    appendFormValue(form, "applicant_full_name", payload.full_name);
-    appendFormValue(form, "applicant_role", payload.details.role);
-    appendFormValue(form, "estimated_members", payload.details.members);
-    appendFormValue(form, "address", payload.details.address ?? payload.city);
-    appendFile(form, "documents[business_registration]", firstFile(documents.get("doc-licence")));
-    appendFile(form, "documents[tax_id]", firstFile(documents.get("doc-govid")));
-    appendFile(form, "documents[regulatory_licence]", firstFile(documents.get("doc-certs")));
-    appendFile(form, "documents[org_chart]", firstFile(documents.get("doc-org-proof")));
+    appendFormValue(form, "estimated_members", payload.details.estimated_members ?? payload.details.members);
+    appendFormValue(form, "name_of_responsible_officer", payload.details.name_of_responsible_officer ?? payload.full_name);
+    appendFormValue(form, "role", payload.details.role);
+    appendFormValue(form, "work_email", payload.details.work_email ?? payload.details.email ?? payload.email);
+    appendFormValue(form, "organization_provider", payload.details.organization_provider);
+    appendFormValue(form, "desolmed_help_needed", payload.details.desolmed_help_needed ?? payload.details.notes);
+    appendDocumentFiles(form, "documents[hmo_registration_operating_licence]", documents, "doc-licence");
+    appendDocumentFiles(form, "documents[government_id]", documents, "doc-govid");
+    appendDocumentFiles(form, "documents[certifications][]", documents, "doc-certs");
+    appendDocumentFiles(form, "documents[other_documents][]", documents, "doc-other");
   }
 
   if (payload.applicant_type === "pharmacy") {
-    appendFormValue(form, "pharmacy_name", payload.organization_name);
-    appendFormValue(form, "contact_person_name", payload.full_name);
-    appendFormValue(form, "pcn_license_number", payload.details.license_number);
-    appendFormValue(form, "address", payload.details.address);
-    appendFile(form, "documents[pcn_licence]", firstFile(documents.get("doc-licence")));
-    appendFile(form, "documents[business_registration]", firstFile(documents.get("doc-certs")) ?? firstFile(documents.get("doc-org-proof")));
-    appendFile(form, "documents[pharmacist_id]", firstFile(documents.get("doc-govid")));
-    appendFile(form, "documents[premises_photo]", firstFile(documents.get("doc-hospital-licence")));
-    appendFile(form, "documents[indemnity]", firstFile(documents.get("doc-indemnity")));
-    appendFiles(form, "documents[other_documents][]", documents.get("doc-other")?.files);
+    appendFormValue(form, "name_of_pharmacy", payload.details.name_of_pharmacy ?? payload.organization_name);
+    appendFormValue(form, "license_registration_number", payload.details.license_registration_number ?? payload.details.license_number);
+    appendFormValue(form, "year_established", payload.details.year_established);
+    appendFormValue(form, "name_of_responsible_officer", payload.details.name_of_responsible_officer ?? payload.full_name);
+    appendFormValue(form, "role", payload.details.role);
+    appendFormValue(form, "work_email", payload.details.work_email ?? payload.details.email ?? payload.email);
+    appendFormValue(form, "services_offered", payload.details.services_offered ?? payload.details.services);
+    appendDocumentFiles(form, "documents[pharmacy_operating_licence]", documents, "doc-licence");
+    appendDocumentFiles(form, "documents[government_id]", documents, "doc-govid");
+    appendDocumentFiles(form, "documents[indemnity_of_organization]", documents, "doc-indemnity");
+    appendDocumentFiles(form, "documents[business_registration_certifications][]", documents, "doc-certs");
+    appendDocumentFiles(form, "documents[other_documents][]", documents, "doc-other");
   }
 
   if (payload.applicant_type === "lab-diagnostics") {
-    appendFormValue(form, "facility_name", payload.organization_name);
-    appendFormValue(form, "contact_person_name", payload.full_name);
-    appendFormValue(form, "facility_license_number", payload.details.license_number);
-    appendFormValue(form, "services_offered", payload.details.services);
-    appendFormValue(form, "address", payload.details.address);
-    appendFile(form, "documents[facility_licence]", firstFile(documents.get("doc-licence")));
-    appendFile(form, "documents[business_registration]", firstFile(documents.get("doc-govid")));
-    appendFile(form, "documents[lab_director_credentials]", firstFile(documents.get("doc-certs")) ?? firstFile(documents.get("doc-org-proof")));
-    appendFile(form, "documents[accreditation_certificate]", firstFile(documents.get("doc-certs")));
-    appendFile(form, "documents[proof_of_address]", firstFile(documents.get("doc-org-proof")));
-    appendFile(form, "documents[indemnity]", firstFile(documents.get("doc-indemnity")));
-    appendFile(form, "documents[equipment_inventory]", firstFile(documents.get("doc-hospital-licence")));
-    appendFiles(form, "documents[certifications][]", documents.get("doc-certs")?.files);
-    appendFiles(form, "documents[other_documents][]", documents.get("doc-other")?.files);
+    appendFormValue(form, "name_of_laboratory_diagnostics", payload.details.name_of_laboratory_diagnostics ?? payload.organization_name);
+    appendFormValue(form, "license_registration_number", payload.details.license_registration_number ?? payload.details.license_number);
+    appendFormValue(form, "year_established", payload.details.year_established);
+    appendFormValue(form, "name_of_responsible_officer", payload.details.name_of_responsible_officer ?? payload.full_name);
+    appendFormValue(form, "role", payload.details.role);
+    appendFormValue(form, "work_email", payload.details.work_email ?? payload.details.email ?? payload.email);
+    appendFormValue(form, "services_offered", payload.details.services_offered ?? payload.details.services);
+    appendDocumentFiles(form, "documents[laboratory_diagnostics_operating_licence]", documents, "doc-licence");
+    appendDocumentFiles(form, "documents[government_id]", documents, "doc-govid");
+    appendDocumentFiles(form, "documents[proof_of_address]", documents, "doc-org-proof");
+    appendDocumentFiles(form, "documents[indemnity_of_organization]", documents, "doc-indemnity");
+    appendDocumentFiles(form, "documents[certifications][]", documents, "doc-certs");
+    appendDocumentFiles(form, "documents[other_documents][]", documents, "doc-other");
   }
 
-  try {
-    return await api.applications.submit(form);
-  } catch (error) {
-    throw error;
-  }
+  return api.applications.submit(form);
 };
 
 export async function submitRegistration(payload: RegistrationPayload) {

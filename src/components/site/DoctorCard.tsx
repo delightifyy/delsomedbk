@@ -60,11 +60,19 @@ export const DoctorCard = ({ doctor, featured = false }: { doctor: Doctor; featu
         </div>
       </dl>
 
-      <Button asChild variant="soft" size="sm" className="w-full mt-5">
-        <Link to={`/doctor-portal?doctor=${doctor.id}`}>
-          Doctor Website <ArrowUpRight className="h-4 w-4" />
-        </Link>
-      </Button>
+      <div className="w-full mt-5">
+        {doctor.profile_url ? (
+          <Button asChild variant="soft" size="sm" className="w-full">
+            <a href={doctor.profile_url} target="_blank" rel="noopener noreferrer">
+              Doctor Website <ArrowUpRight className="h-4 w-4" />
+            </a>
+          </Button>
+        ) : (
+          <Button variant="ghost" size="sm" className="w-full opacity-60 cursor-not-allowed" disabled>
+            website not available
+          </Button>
+        )}
+      </div>
     </article>
   );
 };

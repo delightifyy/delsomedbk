@@ -384,8 +384,20 @@ const NotificationsPageInner = () => {
     if (!active) return;
     setBusy(true);
     try {
-      if (next === "approved") await api.admin.applications.approve(active.id, reviewerNotes || undefined);
-      else await api.admin.applications.reject(active.id, reviewerNotes || "Application rejected by admin.");
+      let approvedMiniSiteUrl: string | null = null;
+      if (next === "approved") {
+        const result = await api.admin.applications.approve(active.id, reviewerNotes || undefined);
+        if (active.applicant_type === "doctor" && result.data?.user_uuid) {
+          try {
+            const miniSite = await api.admin.doctors.miniSite(result.data.user_uuid);
+            approvedMiniSiteUrl = miniSite.data.public_url;
+          } catch {
+            approvedMiniSiteUrl = null;
+          }
+        }
+      } else {
+        await api.admin.applications.reject(active.id, reviewerNotes || "Application rejected by admin.");
+      }
       setItems((prev) =>
         prev.map((item) =>
           item.id === active.id
@@ -395,7 +407,10 @@ const NotificationsPageInner = () => {
       );
       toast({
         title: next === "approved" ? "Application approved" : "Application rejected",
-        description: `${active.full_name || active.organization_name || active.email}`,
+        description:
+          next === "approved" && approvedMiniSiteUrl
+            ? `${active.full_name || active.organization_name || active.email} · Mini-site: ${approvedMiniSiteUrl}`
+            : `${active.full_name || active.organization_name || active.email}`,
       });
       setActive(null);
       setDetailLoading(false);

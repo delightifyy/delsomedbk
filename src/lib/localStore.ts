@@ -576,6 +576,51 @@ export const signInPatientWithPassword = async ({ email, password }: { email: st
   }
 };
 
+export const signInDoctorWithPassword = async ({ email, password }: { email: string; password: string }) => {
+  const store = readStore();
+  const normalizedEmail = email.trim().toLowerCase();
+
+  // Local fallback: check seeded/local users with profile.user_type === 'doctor'
+  const user = store.users.find((candidate) => candidate.email.toLowerCase() === normalizedEmail);
+  if (user && user.password === password) {
+    const profile = store.profiles.find((p) => p.id === user.id);
+    const isDoctor = profile?.user_type === "doctor";
+    if (!isDoctor) {
+      throw new Error("Please use a doctor account to access the MediCare admin.");
+    }
+    const session: LocalSession = { user: publicUser(user), roles: ["doctor"] };
+    clearStoredAuthToken();
+    writeSession(session);
+    return { data: { session } };
+  }
+
+  // Try backend patient login (some deployments treat doctors as patient-type users)
+  try {
+    const response = await api.auth.patientLogin({ email: normalizedEmail, password });
+    const backendUser = response.data.user;
+    const token = response.data.token;
+    if (!token) throw new Error("Login succeeded but no token returned.");
+
+    const roles = normalizeRoleList(backendUser?.roles);
+    const isDoctorBackend = roles.includes("doctor") || backendUser?.user_type === "doctor" || backendUser?.is_doctor;
+    if (!isDoctorBackend) throw new Error("This account is not a doctor account.");
+
+    const fullName = [backendUser?.first_name, backendUser?.last_name].filter(Boolean).join(" ").trim();
+    const session: LocalSession = {
+      user: { id: String(backendUser?.uuid ?? backendUser?.id ?? normalizedEmail), email: backendUser?.email ?? normalizedEmail, full_name: fullName || backendUser?.full_name || backendUser?.name || null, created_at: backendUser?.created_at ?? new Date().toISOString() },
+      token,
+      roles: ["doctor"],
+      token_type: response.data.token_type,
+      expires_in: response.data.expires_in,
+    };
+    setStoredAuthToken(token);
+    writeSession(session);
+    return { data: { session } };
+  } catch (err) {
+    throw err instanceof Error ? err : new Error("Unable to sign in as doctor. Please check credentials.");
+  }
+};
+
 export const signInWithPassword = async ({ email, password }: { email: string; password: string }) => {
   try {
     const response = await api.auth.adminLogin({ email, password });

@@ -14,6 +14,7 @@ export type Doctor = {
   initials: string;
   yearsExperience: number;
   photo?: string;
+  profile_url?: string;
   consultationFee: number;
   availability: TimeSlot[];
 };

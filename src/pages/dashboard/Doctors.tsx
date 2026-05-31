@@ -41,6 +41,11 @@ import { collection, userProfileFromApi } from "@/lib/backendAdapters";
 type DoctorProfile = {
   registration: LocalRegistration;
   profile: LocalProfile | null;
+  miniSite?: {
+    slug: string;
+    public_url: string;
+    admin_url: string;
+  } | null;
 };
 
 const DoctorsPageInner = () => {
@@ -78,9 +83,24 @@ const DoctorsPageInner = () => {
           reviewed_at: null,
           created_at: profile.created_at,
         };
-        return { registration, profile };
+        return { registration, profile, miniSite: null } as DoctorProfile;
       });
-      setDoctors(approvedDoctors);
+      const miniSites = await Promise.allSettled(
+        approvedDoctors.map((doctor) => api.admin.doctors.miniSite(doctor.registration.id)),
+      );
+      setDoctors(
+        approvedDoctors.map((doctor, index) => ({
+          ...doctor,
+          miniSite:
+            miniSites[index].status === "fulfilled"
+              ? {
+                  slug: miniSites[index].value.data.slug,
+                  public_url: miniSites[index].value.data.public_url,
+                  admin_url: miniSites[index].value.data.admin_url,
+                }
+              : null,
+        })),
+      );
     } catch {
       setDoctors([]);
     } finally {
@@ -229,7 +249,28 @@ const DoctorsPageInner = () => {
 
                   {/* Actions */}
                   <div className="flex flex-col gap-2 sm:flex-row">
-                    {doctor.profile?.website_url ? (
+                    {doctor.miniSite?.public_url ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(doctor.miniSite?.public_url, "_blank")}
+                          className="gap-2"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                          Open Doctor-site
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(doctor.miniSite?.admin_url, "_blank")}
+                          className="gap-2"
+                        >
+                          <Globe className="h-4 w-4" />
+                          Open Admin
+                        </Button>
+                      </>
+                    ) : doctor.profile?.website_url ? (
                       <>
                         <Button
                           variant="outline"
@@ -243,7 +284,7 @@ const DoctorsPageInner = () => {
                       </>
                     ) : (
                       <Badge variant="secondary" className="bg-muted text-muted-foreground">
-                        No website URL
+                        No mini-site yet
                       </Badge>
                     )}
                   </div>

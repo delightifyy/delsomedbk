@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AdminGuard } from "@/components/dashboard/AdminGuard";
 import { PatientGuard } from "@/components/portal/PatientGuard";
+import { DoctorGuard } from "@/components/doctor/DoctorGuard";
 
 const queryClient = new QueryClient();
 const routeFallback = <div className="min-h-screen bg-background" />;
@@ -96,13 +97,13 @@ const App = () => (
               <Route path="/health-news/:slug" element={<HealthNewsArticle />} />
               <Route path="/adverts/:id" element={<AdvertArticle />} />
               <Route path="/doctor-portal" element={<DoctorPortal />} />
-              <Route path="/doctor-portal/admin" element={<MediCareAdmin />} />
-              <Route path="/doctor-portal/admin/booking" element={<BookingAdmin />} />
+              <Route path="/doctor-portal/admin" element={<DoctorGuard><MediCareAdmin /></DoctorGuard>} />
+              <Route path="/doctor-portal/admin/booking" element={<DoctorGuard><BookingAdmin /></DoctorGuard>} />
               <Route path="/doctor-portal/services" element={<MediCareServices />} />
               <Route path="/doctor-portal/blogs" element={<MediCareBlogs />} />
               <Route path="/doctor-portal/blogs/:slug" element={<MediCareBlogArticle />} />
               <Route path="/doctor-portal/contact" element={<MediCareContact />} />
-              <Route path="/doctor-portal/admin/services" element={<MediCareServicesAdmin />} />
+              <Route path="/doctor-portal/admin/services" element={<DoctorGuard><MediCareServicesAdmin /></DoctorGuard>} />
               <Route path="/register" element={<Register />} />
               <Route path="/register/doctor" element={<Navigate to="/register?type=doctor" replace />} />
               <Route path="/register/organization" element={<Navigate to="/register?type=organization" replace />} />

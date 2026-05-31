@@ -13,11 +13,227 @@ import {
   type MediCareSettings, type LucideIconName, type Service, type Feature,
   type TestimonialItem, type Partner, type NavItem, type SocialLink, type FooterLink,
 } from "@/lib/medicareSettings";
+import { api } from "@/lib/api";
 import { MediaPicker } from "@/components/medicare-admin/MediaPicker";
 import { ImageUploader } from "@/components/medicare-admin/ImageUploader";
 import { Icon, ICON_NAMES } from "@/components/medicare-admin/icons";
 
 const uid = (p = "id") => `${p}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+
+const asRecord = (value: unknown): Record<string, unknown> => (value && typeof value === "object" ? value as Record<string, unknown> : {});
+
+const getText = (record: Record<string, unknown>, key: string) => {
+  const value = record[key];
+  return typeof value === "string" ? value : undefined;
+};
+
+const getRemoteId = (item: unknown) => {
+  const record = asRecord(item);
+  const candidate = record.id ?? record.uuid ?? record.slug ?? record.link_id ?? record.social_link_id ?? record.card_id;
+  return typeof candidate === "string" || typeof candidate === "number" ? candidate : undefined;
+};
+
+const mergeRemoteMiniSite = (current: MediCareSettings, remote: Record<string, unknown>): MediCareSettings => {
+  const hero = asRecord(remote.hero);
+  const about = asRecord(remote.about);
+  const services = asRecord(remote.services);
+  const contact = asRecord(remote.contact);
+  const footer = asRecord(remote.footer);
+  const serviceCards = Array.isArray(remote.servicesCards) ? remote.servicesCards : [];
+  const footerSocialLinks = Array.isArray(remote.footerSocialLinks) ? remote.footerSocialLinks : [];
+  const footerSpecialistLinks = Array.isArray(remote.footerSpecialistLinks) ? remote.footerSpecialistLinks : [];
+  const footerQuickLinks = Array.isArray(remote.footerQuickLinks) ? remote.footerQuickLinks : [];
+  const footerSupportLinks = Array.isArray(remote.footerSupportLinks) ? remote.footerSupportLinks : [];
+
+  return {
+    ...current,
+    hero: {
+      ...current.hero,
+      titleLead: getText(hero, "headline") ?? getText(hero, "titleLead") ?? current.hero.titleLead,
+      titleHighlight: getText(hero, "highlighted_headline") ?? getText(hero, "titleHighlight") ?? current.hero.titleHighlight,
+      subtitle: getText(hero, "body") ?? getText(hero, "subtitle") ?? current.hero.subtitle,
+      ctaLabel: getText(hero, "button_text") ?? getText(hero, "ctaLabel") ?? current.hero.ctaLabel,
+      ctaHref: getText(hero, "button_link") ?? getText(hero, "ctaHref") ?? current.hero.ctaHref,
+    },
+    about: {
+      ...current.about,
+      label: getText(about, "section_label") ?? getText(about, "label") ?? current.about.label,
+      title: getText(about, "title") ?? current.about.title,
+      body: getText(about, "description") ?? getText(about, "body") ?? current.about.body,
+      mission: {
+        ...current.about.mission,
+        title: getText(about, "mission_title") ?? current.about.mission.title,
+        body: getText(about, "mission_text") ?? current.about.mission.body,
+      },
+      vision: {
+        ...current.about.vision,
+        title: getText(about, "vision_title") ?? current.about.vision.title,
+        body: getText(about, "vision_text") ?? current.about.vision.body,
+      },
+      ctaLabel: getText(about, "cta_label") ?? current.about.ctaLabel,
+      ctaHref: getText(about, "cta_link") ?? current.about.ctaHref,
+      satisfaction: {
+        ...current.about.satisfaction,
+        value: getText(about, "satisfaction_value") ?? current.about.satisfaction.value,
+        label: getText(about, "satisfaction_label") ?? current.about.satisfaction.label,
+      },
+    },
+    services: {
+      ...current.services,
+      label: getText(services, "section_label") ?? getText(services, "label") ?? current.services.label,
+      title: getText(services, "section_title") ?? getText(services, "title") ?? current.services.title,
+      items: serviceCards.map((item, index) => {
+        const record = asRecord(item);
+        return {
+          id: String(record.id ?? record.uuid ?? index),
+          icon: (record.icon ?? "Stethoscope") as LucideIconName,
+          title: getText(record, "title") ?? "",
+          description: getText(record, "description") ?? "",
+          ctaLabel: getText(record, "button_label") ?? getText(record, "ctaLabel") ?? "",
+          ctaHref: getText(record, "button_link") ?? getText(record, "ctaHref") ?? "",
+          order: Number(record.order ?? index),
+          active: record.is_visible !== false,
+        };
+      }),
+    },
+    contact: {
+      ...current.contact,
+      email: getText(contact, "email") ?? current.contact.email,
+      phone: getText(contact, "phone") ?? current.contact.phone,
+      address: getText(contact, "address") ?? current.contact.address,
+    },
+    footer: {
+      ...current.footer,
+      description: getText(footer, "description") ?? current.footer.description,
+      copyright: getText(footer, "copyright") ?? current.footer.copyright,
+      availabilityText: getText(footer, "availability_text") ?? getText(footer, "availabilityText") ?? current.footer.availabilityText,
+      bgColor: getText(footer, "background_color") ?? getText(footer, "bgColor") ?? current.footer.bgColor,
+      socials: footerSocialLinks.map((item, index) => {
+        const record = asRecord(item);
+        return {
+          id: String(record.id ?? record.uuid ?? index),
+          platform: String(record.platform ?? "facebook") as SocialLink["platform"],
+          href: getText(record, "url") ?? getText(record, "href") ?? "",
+        };
+      }),
+      specialistLinks: footerSpecialistLinks.map((item, index) => {
+        const record = asRecord(item);
+        return {
+          id: String(record.id ?? record.uuid ?? index),
+          label: getText(record, "label") ?? "",
+          href: getText(record, "url") ?? getText(record, "href") ?? "",
+        };
+      }),
+      quickLinks: footerQuickLinks.map((item, index) => {
+        const record = asRecord(item);
+        return {
+          id: String(record.id ?? record.uuid ?? index),
+          label: getText(record, "label") ?? "",
+          href: getText(record, "url") ?? getText(record, "href") ?? "",
+        };
+      }),
+      supportLinks: footerSupportLinks.map((item, index) => {
+        const record = asRecord(item);
+        return {
+          id: String(record.id ?? record.uuid ?? index),
+          label: getText(record, "label") ?? "",
+          href: getText(record, "url") ?? getText(record, "href") ?? "",
+        };
+      }),
+    },
+  };
+};
+
+const deleteRemoteCollection = async (
+  items: unknown[],
+  deleteItem: (id: string | number) => Promise<unknown>,
+) => {
+  for (const item of items) {
+    const id = getRemoteId(item);
+    if (id !== undefined && id !== null && `${id}`.trim()) {
+      await deleteItem(id);
+    }
+  }
+};
+
+const syncFooterLinks = async (group: "specialist" | "quick" | "support", links: FooterLink[]) => {
+  const current = await api.medicare.self.footer.links.list({ group });
+  await deleteRemoteCollection(current.data ?? [], (id) => api.medicare.self.footer.links.delete(id));
+  for (const link of links) {
+    await api.medicare.self.footer.links.create({ group, label: link.label, url: link.href });
+  }
+};
+
+const syncSocialLinks = async (socials: SocialLink[]) => {
+  const current = await api.medicare.self.footer.socialLinks.list();
+  await deleteRemoteCollection(current.data ?? [], (id) => api.medicare.self.footer.socialLinks.delete(id));
+  for (const social of socials) {
+    await api.medicare.self.footer.socialLinks.create({ platform: social.platform, url: social.href });
+  }
+};
+
+const syncServiceCards = async (items: Service[]) => {
+  const current = await api.medicare.self.services.cards.list();
+  await deleteRemoteCollection(current.data ?? [], (id) => api.medicare.self.services.cards.delete(id));
+  for (const item of [...items].sort((a, b) => a.order - b.order)) {
+    await api.medicare.self.services.cards.create({
+      title: item.title,
+      icon: item.icon,
+      description: item.description,
+      button_label: item.ctaLabel ?? "",
+      button_link: item.ctaHref ?? "",
+      is_visible: item.active,
+    });
+  }
+};
+
+const syncMiniSiteToApi = async (settings: MediCareSettings) => {
+  await api.medicare.self.hero.update({
+    headline: settings.hero.titleLead,
+    highlighted_headline: settings.hero.titleHighlight,
+    body: settings.hero.subtitle,
+    button_text: settings.hero.ctaLabel,
+    button_link: settings.hero.ctaHref,
+  });
+
+  await api.medicare.self.about.update({
+    section_label: settings.about.label,
+    title: settings.about.title,
+    description: settings.about.body,
+    mission_title: settings.about.mission.title,
+    mission_text: settings.about.mission.body,
+    vision_title: settings.about.vision.title,
+    vision_text: settings.about.vision.body,
+    cta_label: settings.about.ctaLabel,
+    cta_link: settings.about.ctaHref,
+    satisfaction_value: settings.about.satisfaction.value,
+    satisfaction_label: settings.about.satisfaction.label,
+  });
+
+  await api.medicare.self.services.update({
+    section_label: settings.services.label,
+    section_title: settings.services.title,
+  });
+
+  await api.medicare.self.contact.update({
+    email: settings.contact.email,
+    phone: settings.contact.phone,
+    address: settings.contact.address,
+  });
+
+  await api.medicare.self.footer.update({
+    description: settings.footer.description,
+    copyright: settings.footer.copyright,
+    availability_text: settings.footer.availabilityText,
+    background_color: settings.footer.bgColor,
+  });
+
+  await syncServiceCards(settings.services.items);
+  await syncSocialLinks(settings.footer.socials);
+  await syncFooterLinks("specialist", settings.footer.specialistLinks);
+  await syncFooterLinks("quick", settings.footer.quickLinks);
+  await syncFooterLinks("support", settings.footer.supportLinks);
+};
 
 /* ---------- Tiny atoms ---------- */
 const inputCls = "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400";
@@ -152,12 +368,61 @@ const MediCareAdmin = () => {
     setS(loadSettings());
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    const hydrateRemote = async () => {
+      try {
+        const [bundle, servicesCards, socialLinks, specialistLinks, quickLinks, supportLinks] = await Promise.all([
+          api.medicare.self.bundle(),
+          api.medicare.self.services.cards.list(),
+          api.medicare.self.footer.socialLinks.list(),
+          api.medicare.self.footer.links.list({ group: "specialist" }),
+          api.medicare.self.footer.links.list({ group: "quick" }),
+          api.medicare.self.footer.links.list({ group: "support" }),
+        ]);
+
+        if (!active) return;
+
+        const remote = {
+          ...asRecord(bundle.data),
+          servicesCards: servicesCards.data,
+          footerSocialLinks: socialLinks.data,
+          footerSpecialistLinks: specialistLinks.data,
+          footerQuickLinks: quickLinks.data,
+          footerSupportLinks: supportLinks.data,
+        };
+
+        setS((current) => mergeRemoteMiniSite(current, remote));
+      } catch {
+        // Local settings remain in use when the API is unavailable.
+      }
+    };
+
+    void hydrateRemote();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const update = (patch: Partial<MediCareSettings>) => { setS((p) => ({ ...p, ...patch })); setDirty(true); };
   const setSettings = (updater: (s: MediCareSettings) => MediCareSettings) => { setS(updater); setDirty(true); };
 
-  const onSave = () => {
-    try { saveSettings(s); setDirty(false); toast.success("Changes saved successfully"); }
-    catch { toast.error("Save failed — storage may be full. Try smaller media."); }
+  const onSave = async () => {
+    try {
+      saveSettings(s);
+    } catch {
+      toast.error("Save failed — storage may be full. Try smaller media.");
+      return;
+    }
+    try {
+      await syncMiniSiteToApi(s);
+      toast.success("Saved locally and synced to MediCare CMS");
+      setDirty(false);
+    } catch (error) {
+      setDirty(true);
+      const message = error instanceof Error ? error.message : "Remote sync failed.";
+      toast.error(`Saved locally, but remote sync failed: ${message}`);
+    }
   };
   const onReset = () => setConfirm({
     title: "Reset everything?",

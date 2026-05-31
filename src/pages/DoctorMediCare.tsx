@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useMediCareSettings } from "@/lib/medicareSettings";
+import { api } from "@/lib/api";
+import { doctorFromApi } from "@/lib/backendAdapters";
 import {
   ArrowLeft,
   CalendarClock,
@@ -61,10 +63,40 @@ const DoctorMediCare = () => {
   const { toast } = useToast();
   const settings = useMediCareSettings();
   const { doctorId } = useParams<{ doctorId: string }>();
-  const { doctor, missingDoctor } = useMemo(() => {
-    const found = DOCTORS.find((d) => d.id === doctorId);
-    return { doctor: found ?? DOCTORS[0], missingDoctor: !found };
+  const [doctor, setDoctor] = useState<Doctor | null>(null);
+  const [loadingDoctor, setLoadingDoctor] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadDoctor = async () => {
+      setLoadingDoctor(true);
+      try {
+        if (!doctorId) {
+          if (!cancelled) setDoctor(DOCTORS[0] ?? null);
+          return;
+        }
+
+        const response = await api.doctors.detail(doctorId);
+        const mapped = doctorFromApi(response.data);
+        if (!cancelled) setDoctor(mapped);
+      } catch {
+        if (!cancelled) {
+          setDoctor(DOCTORS.find((entry) => entry.id === doctorId) ?? DOCTORS[0] ?? null);
+        }
+      } finally {
+        if (!cancelled) setLoadingDoctor(false);
+      }
+    };
+
+    void loadDoctor();
+    return () => {
+      cancelled = true;
+    };
   }, [doctorId]);
+
+  const selectedDoctor = doctor ?? DOCTORS.find((entry) => entry.id === doctorId) ?? DOCTORS[0];
+  const missingDoctor = Boolean(doctorId && !doctor && !loadingDoctor);
 
   const [bookingStep, setBookingStep] = useState<BookingStep>(0);
   const [bookingDate, setBookingDate] = useState("");
@@ -79,7 +111,7 @@ const DoctorMediCare = () => {
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const bookingRef = useRef<HTMLDivElement | null>(null);
 
-  const bookingDates = useMemo(() => buildBookingDates(doctor.availability), [doctor]);
+  const bookingDates = useMemo(() => buildBookingDates(selectedDoctor.availability), [selectedDoctor]);
   const activeBookingDate = bookingDates.find((day) => day.value === bookingDate) ?? bookingDates[0];
   const availableSlots = activeBookingDate?.slots ?? [];
 
@@ -94,8 +126,8 @@ const DoctorMediCare = () => {
   }, [availableSlots]);
 
   useEffect(() => {
-    document.title = `Book ${doctor.name} - ${settings.siteName}`;
-  }, [doctor.name, settings.siteName]);
+    document.title = selectedDoctor ? `${selectedDoctor.name}` : "Doctor Website";
+  }, [selectedDoctor]);
 
   const submitBooking = (event: FormEvent) => {
     event.preventDefault();
@@ -127,16 +159,16 @@ const DoctorMediCare = () => {
       <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur">
         <div className="container flex h-16 items-center justify-between gap-4">
           <Link
-            to={`/doctor-portal?doctor=${doctor.id}`}
+            to={`/doctor-portal?doctor=${selectedDoctor.id}`}
             className="flex items-center gap-2 font-display text-lg font-bold text-blue-700"
           >
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-white">
               <Stethoscope className="h-5 w-5" />
             </span>
-            {settings.siteName}
+            {selectedDoctor?.name ?? "Doctor Website"}
           </Link>
           <Button asChild variant="ghost" size="sm">
-            <Link to={`/doctor-portal?doctor=${doctor.id}`}>
+            <Link to={`/doctor-portal?doctor=${selectedDoctor.id}`}>
               <ArrowLeft className="h-4 w-4 mr-2" /> Back to Doctor Website
             </Link>
           </Button>
@@ -156,15 +188,15 @@ const DoctorMediCare = () => {
           <div className="flex justify-center lg:col-span-4 lg:justify-start">
             <div className="relative">
               <div className="grid h-44 w-44 place-items-center overflow-hidden rounded-3xl bg-blue-50 font-display text-6xl font-bold text-blue-700 shadow-xl shadow-blue-900/10 sm:h-56 sm:w-56 sm:text-7xl">
-                {doctor.photo ? (
+                {selectedDoctor.photo ? (
                   <img
-                    src={doctor.photo}
-                    alt={`${doctor.name} portrait`}
+                    src={selectedDoctor.photo}
+                    alt={`${selectedDoctor.name} portrait`}
                     className="h-full w-full object-cover"
                     loading="lazy"
                   />
                 ) : (
-                  doctor.initials
+                  selectedDoctor.initials
                 )}
               </div>
               <span className="absolute -bottom-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-teal-500 px-3 py-1.5 text-[11px] font-semibold tracking-wider text-white shadow-sm">
@@ -175,29 +207,29 @@ const DoctorMediCare = () => {
 
           <div className="lg:col-span-8">
             <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
-              Doctor Medicare Website
+              {selectedDoctor?.name ?? "Doctor Website"}
             </span>
-            <h1 className="mt-3 font-display text-3xl font-bold leading-tight sm:text-5xl">{doctor.name}</h1>
-            <p className="mt-2 text-lg font-medium text-teal-600">{doctor.specialty}</p>
+            <h1 className="mt-3 font-display text-3xl font-bold leading-tight sm:text-5xl">{selectedDoctor.name}</h1>
+            <p className="mt-2 text-lg font-medium text-teal-600">{selectedDoctor.specialty}</p>
             <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-              {doctor.bio} Appointment booking is handled here on the doctor's own website.
+              {selectedDoctor.bio} Appointment booking is handled here on the doctor's own website.
             </p>
 
             <div className="mt-5 flex flex-wrap gap-2">
               <Badge variant="secondary" className="bg-blue-50 text-blue-700">
                 <Stethoscope className="h-3.5 w-3.5 mr-1" />
-                {doctor.specialty}
+                {selectedDoctor.specialty}
               </Badge>
               <Badge variant="secondary" className="bg-teal-50 text-teal-700">
                 <MapPin className="h-3.5 w-3.5 mr-1" />
-                {doctor.city}, {doctor.state}
+                {selectedDoctor.city}, {selectedDoctor.state}
               </Badge>
               <Badge variant="secondary" className="bg-teal-50 text-teal-700">
                 <CalendarClock className="h-3.5 w-3.5 mr-1" />
-                {doctor.yearsExperience}+ yrs
+                {selectedDoctor.yearsExperience}+ yrs
               </Badge>
               <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                <Wallet className="h-3.5 w-3.5 mr-1" />N{doctor.consultationFee.toLocaleString()} / consult
+                <Wallet className="h-3.5 w-3.5 mr-1" />N{selectedDoctor.consultationFee.toLocaleString()} / consult
               </Badge>
             </div>
 
@@ -402,6 +434,7 @@ const DoctorMediCare = () => {
                         <p>{patient.fullName || "Your name"}</p>
                         <p>{activeBookingDate?.label ?? "Date TBD"} at {bookingTime || "Time TBD"}</p>
                         <p>{bookingMethod.replace("-", " ")}</p>
+                        <p>{selectedDoctor.name}</p>
                       </div>
                     </div>
                     <div className="flex gap-3 pt-4">
@@ -432,7 +465,7 @@ const DoctorMediCare = () => {
               <>
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                   <h3 className="font-display text-sm font-semibold tracking-wider">Consultation Fee</h3>
-                  <p className="mt-3 text-3xl font-bold">N{doctor.consultationFee.toLocaleString()}</p>
+                  <p className="mt-3 text-3xl font-bold">N{selectedDoctor.consultationFee.toLocaleString()}</p>
                   <p className="mt-1 text-xs text-slate-500">One-time consultation</p>
                 </div>
 
@@ -459,11 +492,11 @@ const DoctorMediCare = () => {
                   <dl className="mt-4 space-y-3 text-sm">
                     <div>
                       <dt className="text-xs text-slate-500">Experience</dt>
-                      <dd className="font-medium">{doctor.yearsExperience} years</dd>
+                      <dd className="font-medium">{selectedDoctor.yearsExperience} years</dd>
                     </div>
                     <div>
                       <dt className="text-xs text-slate-500">Location</dt>
-                      <dd className="font-medium">{doctor.city}, {doctor.state}</dd>
+                      <dd className="font-medium">{selectedDoctor.city}, {selectedDoctor.state}</dd>
                     </div>
                   </dl>
                 </div>

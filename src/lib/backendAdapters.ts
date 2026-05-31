@@ -158,6 +158,12 @@ export const doctorFromApi = (value: unknown, index = 0): Doctor => {
     city: pickText(source, ["city"], pickText(profile, ["city"], "")),
     bio: pickText(source, ["bio", "about", "summary", "description"], pickText(profile, ["bio", "about"], "")),
     initials: pickText(source, ["initials"], "",) || deriveInitials(name),
+    profile_url:
+      (asRecord(source.mini_site) && pickText(asRecord(source.mini_site), ["public_url", "publicUrl"])) ||
+      (asRecord(source.miniSite) && pickText(asRecord(source.miniSite), ["public_url", "publicUrl"])) ||
+      pickText(source, ["public_url", "publicUrl", "profile_url", "profileUrl"]) ||
+      pickText(profile, ["public_url", "profile_url", "profileUrl"]) ||
+      undefined,
     yearsExperience: pickNumber(source, ["years_experience", "experience_years", "yearsExperience"], 0),
     photo: pickAssetUrl(source, ["avatar_url", "photo", "photo_url", "image_url"], pickText(profile, ["avatar_url", "photo_url"], "")) || undefined,
     consultationFee: pickNumber(source, ["consultation_fee", "consultationFee", "fee"], 0),

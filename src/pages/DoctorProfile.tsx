@@ -188,11 +188,17 @@ const DoctorProfile = () => {
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <Button variant="hero" size="lg" asChild>
-                <Link to={`/doctor-portal?doctor=${doctor.id}`}>
-                  <Globe className="h-4 w-4 mr-2" /> Doctor Website
-                </Link>
-              </Button>
+              {doctor.profile_url ? (
+                <Button variant="hero" size="lg" asChild>
+                  <a href={doctor.profile_url} target="_blank" rel="noopener noreferrer">
+                    <Globe className="h-4 w-4 mr-2" /> Doctor Website
+                  </a>
+                </Button>
+              ) : (
+                <Button variant="hero" size="lg" disabled>
+                  <Globe className="h-4 w-4 mr-2" /> Doctor Website not available
+                </Button>
+              )}
               <Button variant="outline" size="lg">
                 <Mail className="h-4 w-4" /> Message
               </Button>

@@ -52,20 +52,21 @@ type RegistrationLookups = {
 
 const asLookupText = (value: unknown) => String(value ?? "").trim();
 
-const lookupItemFromApi = (entry: any, fallbackId: string): LookupItem => {
-  const id = asLookupText(entry?.id ?? entry?.uuid ?? entry?.slug ?? entry?.code ?? fallbackId);
-  const label = asLookupText(entry?.name ?? entry?.title ?? entry?.label ?? entry?.code ?? entry?.slug ?? id);
-  const subSpecialties = collection(entry?.sub_specialties ?? entry?.subSpecialties).map((item, index) =>
+const lookupItemFromApi = (entry: unknown, fallbackId: string): LookupItem => {
+  const record = entry && typeof entry === "object" && !Array.isArray(entry) ? (entry as Record<string, unknown>) : {};
+  const id = asLookupText(record.id ?? record.uuid ?? record.slug ?? record.code ?? fallbackId);
+  const label = asLookupText(record.name ?? record.title ?? record.label ?? record.code ?? record.slug ?? id);
+  const subSpecialties = collection(record.sub_specialties ?? record.subSpecialties).map((item, index) =>
     lookupItemFromApi(item, `${id}-sub-${index}`),
   );
 
   return {
     id,
     label,
-    code: asLookupText(entry?.code) || undefined,
-    slug: asLookupText(entry?.slug) || undefined,
-    zoneId: asLookupText(entry?.zone_id ?? entry?.zone?.id) || undefined,
-    specialtyId: asLookupText(entry?.specialty_id ?? entry?.specialty?.id) || undefined,
+    code: asLookupText(record.code) || undefined,
+    slug: asLookupText(record.slug) || undefined,
+    zoneId: asLookupText(record.zone_id ?? (record.zone as Record<string, unknown> | undefined)?.id) || undefined,
+    specialtyId: asLookupText(record.specialty_id ?? (record.specialty as Record<string, unknown> | undefined)?.id) || undefined,
     subSpecialties,
   };
 };
@@ -92,8 +93,13 @@ const fallbackLookups: RegistrationLookups = {
   loading: true,
 };
 
-const fulfilledData = <T,>(result: PromiseSettledResult<any>, fallback: T[]) =>
-  result.status === "fulfilled" ? collection<T>(result.value.data) : fallback;
+const fulfilledData = <T,>(result: PromiseSettledResult<unknown>, fallback: T[]) =>
+  result.status === "fulfilled"
+    ? (() => {
+        const payload = result.value as { data?: unknown };
+        return collection<T>(payload.data);
+      })()
+    : fallback;
 
 const useRegistrationLookups = () => {
   const [lookups, setLookups] = useState<RegistrationLookups>(fallbackLookups);
@@ -257,7 +263,7 @@ const Register = () => {
 
 /* ---------- Shared verification documents uploader ---------- */
 const ACCEPTED = ".pdf,.jpg,.jpeg,.png,.webp";
-const MAX_MB = 10;
+const MAX_MB = 50;
 const ACCEPTED_EXTENSIONS = new Set(ACCEPTED.split(","));
 const ACCEPTED_MIME_TYPES = new Set([
   "application/pdf",
@@ -633,13 +639,14 @@ const DoctorForm = ({ lookups }: { lookups: RegistrationLookups }) => {
           years_experience: get("years_experience"),
           website: get("website"),
           organization_name: get("organization_name"),
+          name_of_organization: get("organization_name"),
+          name_of_responsible_officer: get("full_name"),
+          organization_email: get("organization_email"),
           role: get("role"),
           address: get("address"),
-          services: get("services") || get("bio"),
+          services_offered: get("services"),
           review_note: get("review_note"),
-          notes: get("review_note"),
-          bio: get("review_note"),
-          hospital_licence_expiry: get("hospital_licence_expiry"),
+          hospital_license_expiry_date: get("hospital_licence_expiry"),
           consent_agreed: true,
           consent_agreed_at: new Date().toISOString(),
         },
@@ -654,8 +661,9 @@ const DoctorForm = ({ lookups }: { lookups: RegistrationLookups }) => {
       setSpecialty("");
       setSubSpecialty("");
       setOtherSpecialty("");
-    } catch (err: any) {
-      toast({ title: "Submission failed", description: err.message ?? "Please try again.", variant: "destructive" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Please try again.";
+      toast({ title: "Submission failed", description: message, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -725,8 +733,12 @@ const DoctorForm = ({ lookups }: { lookups: RegistrationLookups }) => {
           <Input name="phone" type="tel" required maxLength={20} placeholder="+234..." />
         </div>
         <div className="space-y-2">
+          <Label>Applicant Email</Label>
+          <Input name="email" type="email" required maxLength={255} placeholder="doctor@example.com" />
+        </div>
+        <div className="space-y-2">
           <Label>Organization Email</Label>
-          <Input name="email" type="email" required maxLength={255} placeholder="admin@hospital.com" />
+          <Input name="organization_email" type="email" required maxLength={255} placeholder="admin@hospital.com" />
         </div>
         <div className="space-y-2 sm:col-span-2">
           <Label>Address</Label>
@@ -840,13 +852,15 @@ const OrganizationForm = ({ lookups }: { lookups: RegistrationLookups }) => {
           zone_name: selectedZone?.label,
           state_id: stateId,
           state_name: selectedState?.label,
-          org_type: selectedOrganizationType?.label ?? organizationTypeId,
           organization_type_id: organizationTypeId,
-          members: get("members"),
+          name_of_organization: get("organization_name"),
+          name_of_responsible_officer: get("contact_name"),
+          estimated_members: get("members"),
           role: get("role"),
           address: get("address"),
-          notes: get("notes"),
+          work_email: get("work_email"),
           organization_provider: get("organization_provider"),
+          desolmed_help_needed: get("notes"),
           consent_agreed: true,
           consent_agreed_at: new Date().toISOString(),
         },
@@ -859,8 +873,9 @@ const OrganizationForm = ({ lookups }: { lookups: RegistrationLookups }) => {
       setZoneId("");
       setStateId("");
       setOrganizationTypeId("");
-    } catch (err: any) {
-      toast({ title: "Submission failed", description: err.message ?? "Please try again.", variant: "destructive" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Please try again.";
+      toast({ title: "Submission failed", description: message, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -898,8 +913,12 @@ const OrganizationForm = ({ lookups }: { lookups: RegistrationLookups }) => {
           <Input name="role" required maxLength={100} placeholder="e.g. Operation Manager" />
         </div>
         <div className="space-y-2">
+          <Label>Account Email</Label>
+          <Input name="email" type="email" required maxLength={255} placeholder="account@example.com" />
+        </div>
+        <div className="space-y-2">
           <Label>Work Email</Label>
-          <Input name="email" type="email" required maxLength={255} />
+          <Input name="work_email" type="email" required maxLength={255} placeholder="work@example.com" />
         </div>
         <div className="space-y-2">
           <Label>Phone</Label>
@@ -1018,11 +1037,15 @@ const PartnerForm = ({
           zone_name: selectedZone?.label,
           state_id: stateId,
           state_name: selectedState?.label,
-          license_number: get("license_number"),
+          name_of_pharmacy: type === "pharmacy" ? get("organization_name") : undefined,
+          name_of_laboratory_diagnostics: type === "lab-diagnostics" ? get("organization_name") : undefined,
+          license_registration_number: get("license_number"),
           year_established: get("year_established"),
+          name_of_responsible_officer: get("contact_name"),
           role: get("role"),
+          work_email: get("work_email"),
           address: get("address"),
-          services: get("services"),
+          services_offered: get("services"),
           consent_agreed: true,
           consent_agreed_at: new Date().toISOString(),
         },
@@ -1034,8 +1057,9 @@ const PartnerForm = ({
       setConsent(false);
       setZoneId("");
       setStateId("");
-    } catch (err: any) {
-      toast({ title: "Submission failed", description: err.message ?? "Please try again.", variant: "destructive" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Please try again.";
+      toast({ title: "Submission failed", description: message, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -1067,8 +1091,12 @@ const PartnerForm = ({
           <Input name="role" required maxLength={100} placeholder="e.g. Branch Manager" />
         </div>
         <div className="space-y-2">
+          <Label>Account Email</Label>
+          <Input name="email" type="email" required maxLength={255} placeholder="account@example.com" />
+        </div>
+        <div className="space-y-2">
           <Label>Work Email</Label>
-          <Input name="email" type="email" required maxLength={255} />
+          <Input name="work_email" type="email" required maxLength={255} placeholder="work@example.com" />
         </div>
         <div className="space-y-2">
           <Label>Phone</Label>

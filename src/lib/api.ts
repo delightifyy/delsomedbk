@@ -322,6 +322,92 @@ export const api = {
     partners: () => apiRequest<any[]>("/partners"),
   },
 
+  medicare: {
+    public: {
+      listMiniSites: () => apiRequest<any[]>("/public/mini-sites"),
+      bundle: (slug: string) => apiRequest(`/public/mini-sites/${slug}`),
+      services: (slug: string) => apiRequest(`/public/mini-sites/${slug}/services`),
+      contact: (slug: string) => apiRequest(`/public/mini-sites/${slug}/contact`),
+      posts: (slug: string, query?: QueryParams) =>
+        apiRequest<any[]>(`/public/mini-sites/${slug}/posts`, { query }),
+      post: (slug: string, postSlug: string) => apiRequest(`/public/mini-sites/${slug}/posts/${postSlug}`),
+    },
+
+    self: {
+      bundle: () => apiRequest("/me/mini-site", { auth: true }),
+      hero: {
+        show: () => apiRequest("/me/mini-site/hero", { auth: true }),
+        update: (body: Record<string, unknown>) =>
+          apiRequest("/me/mini-site/hero", { method: "PATCH", auth: true, body }),
+      },
+      about: {
+        show: () => apiRequest("/me/mini-site/about", { auth: true }),
+        update: (body: Record<string, unknown>) =>
+          apiRequest("/me/mini-site/about", { method: "PATCH", auth: true, body }),
+        uploadImage: (form: FormData) =>
+          apiRequest("/me/mini-site/about/image", { method: "POST", auth: true, body: form }),
+      },
+      services: {
+        show: () => apiRequest("/me/mini-site/services", { auth: true }),
+        update: (body: Record<string, unknown>) =>
+          apiRequest("/me/mini-site/services", { method: "PATCH", auth: true, body }),
+        cards: {
+          list: () => apiRequest<any[]>("/me/mini-site/services/cards", { auth: true }),
+          create: (body: Record<string, unknown>) =>
+            apiRequest("/me/mini-site/services/cards", { method: "POST", auth: true, body }),
+          update: (cardId: string | number, body: Record<string, unknown>) =>
+            apiRequest(`/me/mini-site/services/cards/${cardId}`, { method: "PATCH", auth: true, body }),
+          delete: (cardId: string | number) =>
+            apiRequest(`/me/mini-site/services/cards/${cardId}`, { method: "DELETE", auth: true }),
+          reorder: (ids: Array<string | number>) =>
+            apiRequest("/me/mini-site/services/cards/reorder", { method: "POST", auth: true, body: { ids } }),
+          uploadImage: (cardId: string | number, form: FormData) =>
+            apiRequest(`/me/mini-site/services/cards/${cardId}/image`, { method: "POST", auth: true, body: form }),
+        },
+      },
+      contact: {
+        show: () => apiRequest("/me/mini-site/contact", { auth: true }),
+        update: (body: Record<string, unknown>) =>
+          apiRequest("/me/mini-site/contact", { method: "PATCH", auth: true, body }),
+      },
+      footer: {
+        show: () => apiRequest("/me/mini-site/footer", { auth: true }),
+        update: (body: Record<string, unknown>) =>
+          apiRequest("/me/mini-site/footer", { method: "PATCH", auth: true, body }),
+        socialLinks: {
+          list: () => apiRequest<any[]>("/me/mini-site/footer/social-links", { auth: true }),
+          create: (body: Record<string, unknown>) =>
+            apiRequest("/me/mini-site/footer/social-links", { method: "POST", auth: true, body }),
+          update: (linkId: string | number, body: Record<string, unknown>) =>
+            apiRequest(`/me/mini-site/footer/social-links/${linkId}`, { method: "PATCH", auth: true, body }),
+          delete: (linkId: string | number) =>
+            apiRequest(`/me/mini-site/footer/social-links/${linkId}`, { method: "DELETE", auth: true }),
+        },
+        links: {
+          list: (query?: QueryParams) => apiRequest<any[]>("/me/mini-site/footer/links", { auth: true, query }),
+          create: (body: Record<string, unknown>) =>
+            apiRequest("/me/mini-site/footer/links", { method: "POST", auth: true, body }),
+          update: (linkId: string | number, body: Record<string, unknown>) =>
+            apiRequest(`/me/mini-site/footer/links/${linkId}`, { method: "PATCH", auth: true, body }),
+          delete: (linkId: string | number) =>
+            apiRequest(`/me/mini-site/footer/links/${linkId}`, { method: "DELETE", auth: true }),
+        },
+      },
+      posts: {
+        list: (query?: QueryParams) => apiRequest<any[]>("/me/mini-site/posts", { auth: true, query }),
+        create: (body: Record<string, unknown> | FormData) =>
+          apiRequest("/me/mini-site/posts", { method: "POST", auth: true, body }),
+        detail: (postId: string | number) => apiRequest(`/me/mini-site/posts/${postId}`, { auth: true }),
+        update: (postId: string | number, body: Record<string, unknown> | FormData) =>
+          apiRequest(`/me/mini-site/posts/${postId}`, { method: "PATCH", auth: true, body }),
+        delete: (postId: string | number) =>
+          apiRequest(`/me/mini-site/posts/${postId}`, { method: "DELETE", auth: true }),
+        uploadCover: (postId: string | number, form: FormData) =>
+          apiRequest(`/me/mini-site/posts/${postId}/cover`, { method: "POST", auth: true, body: form }),
+      },
+    },
+  },
+
   contact: {
     submit: (body: Record<string, unknown>) => apiRequest("/contact", { method: "POST", body }),
   },
@@ -345,7 +431,7 @@ export const api = {
       list: (query?: QueryParams) => apiRequest<any[], PaginationMeta>("/admin/applications", { auth: true, query }),
       detail: (uuid: string) => apiRequest(`/admin/applications/${uuid}`, { auth: true }),
       approve: (uuid: string, note?: string) =>
-        apiRequest(`/admin/applications/${uuid}/approve`, { method: "POST", auth: true, body: { note } }),
+        apiRequest<{ user_uuid: string }>(`/admin/applications/${uuid}/approve`, { method: "POST", auth: true, body: { note } }),
       reject: (uuid: string, reason: string) =>
         apiRequest(`/admin/applications/${uuid}/reject`, { method: "POST", auth: true, body: { reason } }),
       note: (uuid: string, note: string) =>
@@ -354,6 +440,35 @@ export const api = {
         apiFileRequest(`/admin/applications/${uuid}/documents/${documentId}/download`, { auth: true }),
       documentUrl: (uuid: string, documentId: number | string) =>
         buildApiUrl(`/admin/applications/${uuid}/documents/${documentId}/download`),
+    },
+
+    doctors: {
+      miniSite: (userUuid: string) =>
+        apiRequest<{
+          id: number;
+          slug: string;
+          public_url: string;
+          admin_url: string;
+          status: string;
+          generated_at: string;
+          generated_by?: { uuid: string; name: string } | null;
+          regenerated_from?: string | null;
+          regenerated_at?: string | null;
+          regenerated_by?: { uuid: string; name: string } | null;
+        }>(`/admin/doctors/${userUuid}/mini-site`, { auth: true }),
+      regenerateMiniSite: (userUuid: string) =>
+        apiRequest<{
+          id: number;
+          slug: string;
+          public_url: string;
+          admin_url: string;
+          status: string;
+          generated_at: string;
+          generated_by?: { uuid: string; name: string } | null;
+          regenerated_from?: string | null;
+          regenerated_at?: string | null;
+          regenerated_by?: { uuid: string; name: string } | null;
+        }>(`/admin/doctors/${userUuid}/mini-site/regenerate`, { method: "POST", auth: true }),
     },
 
     users: {
