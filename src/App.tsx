@@ -61,6 +61,7 @@ const DoctorPrescriptions = lazy(() => import("./pages/doctor/Misc.tsx").then((m
 const DoctorInvestigations = lazy(() => import("./pages/doctor/Misc.tsx").then((module) => ({ default: module.DoctorInvestigations })));
 const DoctorReferrals = lazy(() => import("./pages/doctor/Misc.tsx").then((module) => ({ default: module.DoctorReferrals })));
 const DoctorSettings = lazy(() => import("./pages/doctor/Misc.tsx").then((module) => ({ default: module.DoctorSettings })));
+const DoctorClinical = lazy(() => import("./pages/doctor/Clinical.tsx"));
 const OrgDashboard = lazy(() => import("./pages/organization/Dashboard.tsx"));
 const OrgStaff = lazy(() => import("./pages/organization/Staff.tsx"));
 const OrgUsage = lazy(() => import("./pages/organization/Usage.tsx"));
@@ -141,6 +142,7 @@ const App = () => (
               <Route path="/doctor" element={<DoctorPortalDashboard />} />
               <Route path="/doctor/schedule" element={<DoctorSchedule />} />
               <Route path="/doctor/consultations" element={<DoctorConsultations />} />
+              <Route path="/doctor/clinical" element={<DoctorClinical />} />
               <Route path="/doctor/consultations/:id" element={<DoctorConsultationRoom />} />
               <Route path="/doctor/patients" element={<DoctorPatients />} />
               <Route path="/doctor/prescriptions" element={<DoctorPrescriptions />} />
