@@ -106,11 +106,129 @@ export const DoctorReferrals = () => (
   </PortalLayout>
 );
 
-export const DoctorSettings = () => (
-  <PortalLayout portalName="Doctor EMR" nav={doctorNav}>
-    <PageHeader title="Settings" description="Manage your profile and preferences." />
-    <SectionCard title="Profile">
-      <p className="text-sm text-muted-foreground">Profile editor coming soon. Contact support to update your license details.</p>
-    </SectionCard>
-  </PortalLayout>
-);
+export const DoctorSettings = () => {
+  const { toast } = useToast();
+  const [profile, setProfile] = useState({
+    fullName: "Dr. Chinedu Okafor",
+    title: "Consultant Cardiologist",
+    specialty: "Cardiology",
+    license: "MDCN/2014/45821",
+    yearsExperience: "12",
+    hospital: "Desolmed Medical Centre",
+    email: "chinedu.okafor@desolmed.com",
+    phone: "+234 802 345 6789",
+    address: "12 Awolowo Road, Ikoyi, Lagos",
+    bio: "Board-certified cardiologist with a focus on preventive cardiology, hypertension management and echocardiography.",
+    languages: "English, Igbo, Yoruba",
+    consultationFee: "25000",
+  });
+  const [prefs, setPrefs] = useState({ emailNotif: true, smsNotif: false, autoAccept: false });
+
+  const update = (k: keyof typeof profile, v: string) => setProfile((p) => ({ ...p, [k]: v }));
+
+  const handleSave = () => {
+    toast({ title: "Profile updated", description: "Your doctor details have been saved." });
+  };
+
+  return (
+    <PortalLayout portalName="Doctor EMR" nav={doctorNav}>
+      <PageHeader title="Settings" description="Manage your profile, credentials and preferences." />
+
+      <SectionCard title="Doctor Profile" description="Personal information shown to patients and staff.">
+        <div className="mb-6 flex items-center gap-4">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-2xl font-semibold text-primary">
+            {profile.fullName.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+          </div>
+          <div>
+            <p className="text-lg font-semibold">{profile.fullName}</p>
+            <p className="text-sm text-muted-foreground">{profile.title}</p>
+            <div className="mt-1 flex flex-wrap gap-2">
+              <Badge variant="secondary">{profile.specialty}</Badge>
+              <Badge variant="outline">{profile.yearsExperience} yrs exp</Badge>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-2">
+            <Label htmlFor="fullName">Full Name</Label>
+            <Input id="fullName" value={profile.fullName} onChange={(e) => update("fullName", e.target.value)} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="title">Title</Label>
+            <Input id="title" value={profile.title} onChange={(e) => update("title", e.target.value)} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="specialty">Specialty</Label>
+            <Input id="specialty" value={profile.specialty} onChange={(e) => update("specialty", e.target.value)} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="license">Medical License No.</Label>
+            <Input id="license" value={profile.license} onChange={(e) => update("license", e.target.value)} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="years">Years of Experience</Label>
+            <Input id="years" type="number" value={profile.yearsExperience} onChange={(e) => update("yearsExperience", e.target.value)} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="hospital">Hospital / Clinic</Label>
+            <Input id="hospital" value={profile.hospital} onChange={(e) => update("hospital", e.target.value)} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="fee">Consultation Fee (₦)</Label>
+            <Input id="fee" type="number" value={profile.consultationFee} onChange={(e) => update("consultationFee", e.target.value)} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="lang">Languages</Label>
+            <Input id="lang" value={profile.languages} onChange={(e) => update("languages", e.target.value)} />
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Contact Information" description="How patients and the clinic can reach you.">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" type="email" value={profile.email} onChange={(e) => update("email", e.target.value)} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="phone">Phone</Label>
+            <Input id="phone" value={profile.phone} onChange={(e) => update("phone", e.target.value)} />
+          </div>
+          <div className="grid gap-2 md:col-span-2">
+            <Label htmlFor="address">Address</Label>
+            <Input id="address" value={profile.address} onChange={(e) => update("address", e.target.value)} />
+          </div>
+          <div className="grid gap-2 md:col-span-2">
+            <Label htmlFor="bio">Professional Bio</Label>
+            <Textarea id="bio" rows={4} value={profile.bio} onChange={(e) => update("bio", e.target.value)} />
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Preferences" description="Notification and consultation preferences.">
+        <div className="grid gap-3">
+          {[
+            { key: "emailNotif", label: "Email notifications for new appointments" },
+            { key: "smsNotif", label: "SMS notifications for urgent updates" },
+            { key: "autoAccept", label: "Auto-accept appointments from existing patients" },
+          ].map((p) => (
+            <label key={p.key} className="flex items-center justify-between rounded-lg border p-3">
+              <span className="text-sm">{p.label}</span>
+              <input
+                type="checkbox"
+                className="h-4 w-4"
+                checked={prefs[p.key as keyof typeof prefs]}
+                onChange={(e) => setPrefs((s) => ({ ...s, [p.key]: e.target.checked }))}
+              />
+            </label>
+          ))}
+        </div>
+        <div className="mt-6 flex justify-end">
+          <Button onClick={handleSave}>Save Changes</Button>
+        </div>
+      </SectionCard>
+    </PortalLayout>
+  );
+};
+
