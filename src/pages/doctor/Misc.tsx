@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { PageHeader, EmptyState } from "@/components/portal/PortalUI";
 import { doctorNav } from "./nav";
@@ -6,16 +7,45 @@ import { Button } from "@/components/ui/button";
 import { SectionCard } from "@/components/portal/PortalUI";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 
-const rxList = [
+const initialRx = [
   { id: "rx_a01", patient: "Adaobi Okeke", med: "Lisinopril 10mg", date: "2026-04-28", status: "active" },
   { id: "rx_a02", patient: "Tunde Bakare", med: "Salbutamol Inhaler", date: "2026-04-21", status: "active" },
   { id: "rx_a03", patient: "Ngozi Eze", med: "Sumatriptan 50mg", date: "2026-04-15", status: "completed" },
 ];
 
-export const DoctorPrescriptions = () => (
+export const DoctorPrescriptions = () => {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [rxList, setRxList] = useState(initialRx);
+  const [drug, setDrug] = useState("");
+  const [dosage, setDosage] = useState("");
+  const [instructions, setInstructions] = useState("");
+
+  const reset = () => { setDrug(""); setDosage(""); setInstructions(""); };
+
+  const handleSave = () => {
+    if (!drug.trim() || !dosage.trim()) {
+      toast({ title: "Missing details", description: "Drug name and dosage are required.", variant: "destructive" });
+      return;
+    }
+    setRxList((arr) => [
+      { id: `rx_${Date.now()}`, patient: "New Patient", med: `${drug} ${dosage}`.trim(), date: new Date().toISOString().slice(0, 10), status: "active" },
+      ...arr,
+    ]);
+    toast({ title: "Prescription created", description: `${drug} ${dosage}` });
+    reset();
+    setOpen(false);
+  };
+
+  return (
   <PortalLayout portalName="Doctor EMR" nav={doctorNav}>
-    <PageHeader title="Prescriptions" description="All prescriptions you've issued." action={<Button><Pill className="h-4 w-4" /> New Prescription</Button>} />
+    <PageHeader title="Prescriptions" description="All prescriptions you've issued." action={<Button onClick={() => setOpen(true)}><Pill className="h-4 w-4" /> New Prescription</Button>} />
     <SectionCard>
       <Table>
         <TableHeader><TableRow><TableHead>Patient</TableHead><TableHead>Medication</TableHead><TableHead>Date</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
