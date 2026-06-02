@@ -46,7 +46,7 @@ const DoctorClinical = () => {
 
   return (
     <PortalLayout portalName="Doctor EMR" nav={doctorNav}>
-      <PageHeader title="Clinical" description="Capture structured clinical notes for each encounter." />
+      <PageHeader title="Clinical Notes" description="Capture structured clinical notes for each encounter." />
 
       <SectionCard title="Structured Form" description="Record symptoms, diagnosis and clinical notes.">
         <div className="grid gap-4">

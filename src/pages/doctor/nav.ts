@@ -5,7 +5,7 @@ export const doctorNav: PortalNavItem[] = [
   { title: "Dashboard", url: "/doctor", icon: LayoutDashboard },
   { title: "Schedule", url: "/doctor/schedule", icon: CalendarClock },
   { title: "Consultations", url: "/doctor/consultations", icon: Stethoscope },
-  { title: "Clinical", url: "/doctor/clinical", icon: ClipboardList },
+  { title: "Clinical Notes", url: "/doctor/clinical", icon: ClipboardList },
   { title: "Patients", url: "/doctor/patients", icon: Users },
   { title: "Prescriptions", url: "/doctor/prescriptions", icon: Pill },
   { title: "Investigations", url: "/doctor/investigations", icon: FlaskConical },
