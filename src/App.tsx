@@ -61,6 +61,7 @@ const DoctorPrescriptions = lazy(() => import("./pages/doctor/Misc.tsx").then((m
 const DoctorInvestigations = lazy(() => import("./pages/doctor/Misc.tsx").then((module) => ({ default: module.DoctorInvestigations })));
 const DoctorReferrals = lazy(() => import("./pages/doctor/Misc.tsx").then((module) => ({ default: module.DoctorReferrals })));
 const DoctorSettings = lazy(() => import("./pages/doctor/Misc.tsx").then((module) => ({ default: module.DoctorSettings })));
+const DoctorClinical = lazy(() => import("./pages/doctor/Clinical.tsx"));
 const OrgDashboard = lazy(() => import("./pages/organization/Dashboard.tsx"));
 const OrgStaff = lazy(() => import("./pages/organization/Staff.tsx"));
 const OrgUsage = lazy(() => import("./pages/organization/Usage.tsx"));
