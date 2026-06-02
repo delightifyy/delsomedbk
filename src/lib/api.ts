@@ -301,6 +301,8 @@ export const api = {
   doctors: {
     list: (query?: QueryParams) => apiRequest<any[], PaginationMeta>("/doctors", { query }),
     detail: (uuid: string) => apiRequest(`/doctors/${uuid}`),
+    availability: (uuid: string, query?: QueryParams) =>
+      apiRequest(`/doctors/${uuid}/availability`, { query }),
   },
 
   posts: {
@@ -328,6 +330,8 @@ export const api = {
       bundle: (slug: string) => apiRequest(`/public/mini-sites/${slug}`),
       services: (slug: string) => apiRequest(`/public/mini-sites/${slug}/services`),
       contact: (slug: string) => apiRequest(`/public/mini-sites/${slug}/contact`),
+      availability: (slug: string, query?: QueryParams) =>
+        apiRequest(`/public/mini-sites/${slug}/availability`, { query }),
       posts: (slug: string, query?: QueryParams) =>
         apiRequest<any[]>(`/public/mini-sites/${slug}/posts`, { query }),
       post: (slug: string, postSlug: string) => apiRequest(`/public/mini-sites/${slug}/posts/${postSlug}`),
@@ -404,6 +408,34 @@ export const api = {
           apiRequest(`/me/mini-site/posts/${postId}`, { method: "DELETE", auth: true }),
         uploadCover: (postId: string | number, form: FormData) =>
           apiRequest(`/me/mini-site/posts/${postId}/cover`, { method: "POST", auth: true, body: form }),
+      },
+      availability: {
+        bundle: () => apiRequest("/me/mini-site/availability", { auth: true }),
+        settings: {
+          show: () => apiRequest("/me/mini-site/availability/settings", { auth: true }),
+          update: (body: Record<string, unknown>) =>
+            apiRequest("/me/mini-site/availability/settings", { method: "PATCH", auth: true, body }),
+        },
+        weeklyWindows: {
+          list: (query?: QueryParams) =>
+            apiRequest<any[]>("/me/mini-site/availability/weekly-windows", { auth: true, query }),
+          create: (body: Record<string, unknown>) =>
+            apiRequest("/me/mini-site/availability/weekly-windows", { method: "POST", auth: true, body }),
+          update: (windowId: string | number, body: Record<string, unknown>) =>
+            apiRequest(`/me/mini-site/availability/weekly-windows/${windowId}`, { method: "PATCH", auth: true, body }),
+          delete: (windowId: string | number) =>
+            apiRequest(`/me/mini-site/availability/weekly-windows/${windowId}`, { method: "DELETE", auth: true }),
+        },
+        exceptions: {
+          list: (query?: QueryParams) =>
+            apiRequest<any[]>("/me/mini-site/availability/exceptions", { auth: true, query }),
+          create: (body: Record<string, unknown>) =>
+            apiRequest("/me/mini-site/availability/exceptions", { method: "POST", auth: true, body }),
+          update: (exceptionId: string | number, body: Record<string, unknown>) =>
+            apiRequest(`/me/mini-site/availability/exceptions/${exceptionId}`, { method: "PATCH", auth: true, body }),
+          delete: (exceptionId: string | number) =>
+            apiRequest(`/me/mini-site/availability/exceptions/${exceptionId}`, { method: "DELETE", auth: true }),
+        },
       },
     },
   },

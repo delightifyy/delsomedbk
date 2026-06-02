@@ -263,7 +263,7 @@ const Register = () => {
 
 /* ---------- Shared verification documents uploader ---------- */
 const ACCEPTED = ".pdf,.jpg,.jpeg,.png,.webp";
-const MAX_MB = 50;
+const MAX_MB = 1;
 const ACCEPTED_EXTENSIONS = new Set(ACCEPTED.split(","));
 const ACCEPTED_MIME_TYPES = new Set([
   "application/pdf",
@@ -322,7 +322,7 @@ const FileField = ({
     if (tooLarge.length > 0) {
       toast({
         title: "File too large",
-        description: `${tooLarge.map((file) => file.name).join(", ")} ${tooLarge.length > 1 ? "are" : "is"} over the ${maxSizeMb}MB limit.`,
+        description: `Please remove ${tooLarge.map((file) => file.name).join(", ")} and upload a smaller file. Each document must be 1MB or less.`,
         variant: "destructive",
       });
     }

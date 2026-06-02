@@ -322,11 +322,17 @@ const DoctorProfile = () => {
           <div className="rounded-2xl border border-border bg-primary-soft p-5">
             <h3 className="font-display text-base font-semibold">Doctor Website</h3>
             <p className="mt-2 text-sm text-muted-foreground">DesolMed verifies and lists {doctor.name}. Open the doctor's Medicare website, then book the appointment there.</p>
-            <Button variant="hero" className="w-full mt-4" asChild>
-              <Link to={`/doctor-portal?doctor=${doctor.id}`}>
-                <Globe className="h-4 w-4 mr-2" /> Doctor Website
-              </Link>
-            </Button>
+            {doctor.profile_url ? (
+              <Button variant="hero" className="w-full mt-4" asChild>
+                <a href={doctor.profile_url} target="_blank" rel="noopener noreferrer">
+                  <Globe className="h-4 w-4 mr-2" /> Doctor Website
+                </a>
+              </Button>
+            ) : (
+              <Button variant="hero" className="w-full mt-4" disabled>
+                <Globe className="h-4 w-4 mr-2" /> Doctor Website not available
+              </Button>
+            )}
           </div>
         </aside>
       </section>

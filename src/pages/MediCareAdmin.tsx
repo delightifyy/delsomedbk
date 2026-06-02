@@ -7,13 +7,24 @@ import {
   Star, Sparkles, FileText, Layers, Megaphone, Phone as PhoneIcon, Search,
   Home, Info, Heart, Wrench, Video, MessageSquare, ChevronRight, ChevronDown, X,
   Facebook, Twitter, Instagram, Linkedin, Newspaper, Mail, MapPin,
+  CalendarClock, Loader2,
 } from "lucide-react";
 import {
   defaultSettings, loadSettings, resetSettings, saveSettings,
   type MediCareSettings, type LucideIconName, type Service, type Feature,
   type TestimonialItem, type Partner, type NavItem, type SocialLink, type FooterLink,
 } from "@/lib/medicareSettings";
-import { api } from "@/lib/api";
+import {
+  DAY_NAMES,
+  formatDateValue,
+  normalizeAvailabilityBundle,
+  type AvailabilityBundle,
+  type AvailabilityException,
+  type AvailabilityExceptionType,
+  type AvailabilitySettings,
+  type WeeklyWindow,
+} from "@/lib/miniSiteAvailability";
+import { ApiError, api as medicareApi } from "@/lib/api";
 import { MediaPicker } from "@/components/medicare-admin/MediaPicker";
 import { ImageUploader } from "@/components/medicare-admin/ImageUploader";
 import { Icon, ICON_NAMES } from "@/components/medicare-admin/icons";
@@ -157,26 +168,26 @@ const deleteRemoteCollection = async (
 };
 
 const syncFooterLinks = async (group: "specialist" | "quick" | "support", links: FooterLink[]) => {
-  const current = await api.medicare.self.footer.links.list({ group });
-  await deleteRemoteCollection(current.data ?? [], (id) => api.medicare.self.footer.links.delete(id));
+    const current = await medicareApi.medicare.self.footer.links.list({ group });
+  await deleteRemoteCollection(current.data ?? [], (id) => medicareApi.medicare.self.footer.links.delete(id));
   for (const link of links) {
-    await api.medicare.self.footer.links.create({ group, label: link.label, url: link.href });
+    await medicareApi.medicare.self.footer.links.create({ group, label: link.label, url: link.href });
   }
 };
 
 const syncSocialLinks = async (socials: SocialLink[]) => {
-  const current = await api.medicare.self.footer.socialLinks.list();
-  await deleteRemoteCollection(current.data ?? [], (id) => api.medicare.self.footer.socialLinks.delete(id));
+  const current = await medicareApi.medicare.self.footer.socialLinks.list();
+  await deleteRemoteCollection(current.data ?? [], (id) => medicareApi.medicare.self.footer.socialLinks.delete(id));
   for (const social of socials) {
-    await api.medicare.self.footer.socialLinks.create({ platform: social.platform, url: social.href });
+    await medicareApi.medicare.self.footer.socialLinks.create({ platform: social.platform, url: social.href });
   }
 };
 
 const syncServiceCards = async (items: Service[]) => {
-  const current = await api.medicare.self.services.cards.list();
-  await deleteRemoteCollection(current.data ?? [], (id) => api.medicare.self.services.cards.delete(id));
+  const current = await medicareApi.medicare.self.services.cards.list();
+  await deleteRemoteCollection(current.data ?? [], (id) => medicareApi.medicare.self.services.cards.delete(id));
   for (const item of [...items].sort((a, b) => a.order - b.order)) {
-    await api.medicare.self.services.cards.create({
+    await medicareApi.medicare.self.services.cards.create({
       title: item.title,
       icon: item.icon,
       description: item.description,
@@ -188,7 +199,7 @@ const syncServiceCards = async (items: Service[]) => {
 };
 
 const syncMiniSiteToApi = async (settings: MediCareSettings) => {
-  await api.medicare.self.hero.update({
+  await medicareApi.medicare.self.hero.update({
     headline: settings.hero.titleLead,
     highlighted_headline: settings.hero.titleHighlight,
     body: settings.hero.subtitle,
@@ -196,7 +207,7 @@ const syncMiniSiteToApi = async (settings: MediCareSettings) => {
     button_link: settings.hero.ctaHref,
   });
 
-  await api.medicare.self.about.update({
+  await medicareApi.medicare.self.about.update({
     section_label: settings.about.label,
     title: settings.about.title,
     description: settings.about.body,
@@ -210,18 +221,18 @@ const syncMiniSiteToApi = async (settings: MediCareSettings) => {
     satisfaction_label: settings.about.satisfaction.label,
   });
 
-  await api.medicare.self.services.update({
+  await medicareApi.medicare.self.services.update({
     section_label: settings.services.label,
     section_title: settings.services.title,
   });
 
-  await api.medicare.self.contact.update({
+  await medicareApi.medicare.self.contact.update({
     email: settings.contact.email,
     phone: settings.contact.phone,
     address: settings.contact.address,
   });
 
-  await api.medicare.self.footer.update({
+  await medicareApi.medicare.self.footer.update({
     description: settings.footer.description,
     copyright: settings.footer.copyright,
     availability_text: settings.footer.availabilityText,
@@ -293,7 +304,7 @@ const reorder = <T extends { order: number }>(items: T[], id: string, dir: -1 | 
 type Tab =
   | "home" | "navbar" | "hero" | "partners" | "about" | "whyChoose"
   | "services" | "media" | "seo"
-  | "branding" | "contact" | "blog" | "servicesPage";
+  | "branding" | "contact" | "blog" | "servicesPage" | "availability";
 
 type PageGroup = {
   id: string;
@@ -331,6 +342,14 @@ const PAGE_GROUPS: PageGroup[] = [
     icon: Wrench,
     sections: [
       { id: "services", label: "Services" },
+    ],
+  },
+  {
+    id: "availability",
+    label: "Availability",
+    icon: CalendarClock,
+    sections: [
+      { id: "availability", label: "Schedule" },
     ],
   },
   {
@@ -373,12 +392,12 @@ const MediCareAdmin = () => {
     const hydrateRemote = async () => {
       try {
         const [bundle, servicesCards, socialLinks, specialistLinks, quickLinks, supportLinks] = await Promise.all([
-          api.medicare.self.bundle(),
-          api.medicare.self.services.cards.list(),
-          api.medicare.self.footer.socialLinks.list(),
-          api.medicare.self.footer.links.list({ group: "specialist" }),
-          api.medicare.self.footer.links.list({ group: "quick" }),
-          api.medicare.self.footer.links.list({ group: "support" }),
+          medicareApi.medicare.self.bundle(),
+          medicareApi.medicare.self.services.cards.list(),
+          medicareApi.medicare.self.footer.socialLinks.list(),
+          medicareApi.medicare.self.footer.links.list({ group: "specialist" }),
+          medicareApi.medicare.self.footer.links.list({ group: "quick" }),
+          medicareApi.medicare.self.footer.links.list({ group: "support" }),
         ]);
 
         if (!active) return;
@@ -565,6 +584,7 @@ const MediCareAdmin = () => {
           {tab === "about"        && <AboutEditor s={s} setSettings={setSettings} />}
           {tab === "whyChoose"    && <WhyChooseEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
           {tab === "services" && <ServicesEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
+          {tab === "availability" && <AvailabilityEditor askDelete={askDelete} />}
           {tab === "media"        && <MediaLibraryEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
           {tab === "seo"          && <SeoEditor s={s} setSettings={setSettings} />}
           {tab === "contact"      && <ContactEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
@@ -594,6 +614,549 @@ export default MediCareAdmin;
 //   </div>
 // );
 
+
+/* ---------- AVAILABILITY ---------- */
+const defaultAvailabilityBundle: AvailabilityBundle = {
+  settings: {
+    slot_duration_minutes: 30,
+    booking_window_days: 60,
+    minimum_lead_time_hours: 2,
+  },
+  weekly_windows: [],
+  exceptions: [],
+};
+
+const sortWindows = (items: WeeklyWindow[]) =>
+  [...items].sort((a, b) => a.day_of_week - b.day_of_week || a.start_time.localeCompare(b.start_time));
+
+const sortExceptions = (items: AvailabilityException[]) =>
+  [...items].sort((a, b) => a.date.localeCompare(b.date) || a.type.localeCompare(b.type));
+
+const needsExceptionTime = (type: AvailabilityExceptionType) => type !== "closed_all_day";
+
+const validateTimeRange = (start: string, end: string) => {
+  if (!start || !end) {
+    toast.error("Start and end time are required.");
+    return false;
+  }
+  if (start >= end) {
+    toast.error("End time must be after start time.");
+    return false;
+  }
+  return true;
+};
+
+const AvailabilityEditor = ({ askDelete }: { askDelete: (label: string, fn: () => void) => void }) => {
+  const [bundle, setBundle] = useState<AvailabilityBundle>(defaultAvailabilityBundle);
+  const [settingsDraft, setSettingsDraft] = useState<AvailabilitySettings>(defaultAvailabilityBundle.settings);
+  const [newWindow, setNewWindow] = useState({ day_of_week: 1, start_time: "09:00", end_time: "12:00" });
+  const [newException, setNewException] = useState<{
+    date: string;
+    type: AvailabilityExceptionType;
+    start_time: string;
+    end_time: string;
+    reason: string;
+  }>({
+    date: formatDateValue(new Date()),
+    type: "closed_all_day",
+    start_time: "12:00",
+    end_time: "13:00",
+    reason: "",
+  });
+  const [loading, setLoading] = useState(true);
+  const [pending, setPending] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadAvailability = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await medicareApi.medicare.self.availability.bundle();
+      const next = normalizeAvailabilityBundle(response.data);
+      setBundle(next);
+      setSettingsDraft(next.settings);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        try {
+          const [settingsResponse, windowsResponse, exceptionsResponse] = await Promise.all([
+            medicareApi.medicare.self.availability.settings.show(),
+            medicareApi.medicare.self.availability.weeklyWindows.list(),
+            medicareApi.medicare.self.availability.exceptions.list({ from: formatDateValue(new Date()) }),
+          ]);
+
+          const next = normalizeAvailabilityBundle({
+            data: {
+              settings: settingsResponse.data,
+              weekly_windows: Array.isArray(windowsResponse.data) ? windowsResponse.data : [],
+              exceptions: Array.isArray(exceptionsResponse.data) ? exceptionsResponse.data : [],
+            },
+          });
+
+          setBundle(next);
+          setSettingsDraft(next.settings);
+          return;
+        } catch {
+          setBundle(defaultAvailabilityBundle);
+          setSettingsDraft(defaultAvailabilityBundle.settings);
+          return;
+        }
+      }
+
+      const message = err instanceof Error ? err.message : "Could not load availability.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadAvailability();
+  }, []);
+
+  const saveSettings = async () => {
+    const payload = {
+      slot_duration_minutes: Number(settingsDraft.slot_duration_minutes),
+      booking_window_days: Number(settingsDraft.booking_window_days),
+      minimum_lead_time_hours: Number(settingsDraft.minimum_lead_time_hours),
+    };
+    setPending("settings");
+    try {
+      await medicareApi.medicare.self.availability.settings.update(payload);
+      toast.success("Availability settings saved");
+      await loadAvailability();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save settings.");
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const createWindow = async () => {
+    if (!validateTimeRange(newWindow.start_time, newWindow.end_time)) return;
+    setPending("new-window");
+    try {
+      await medicareApi.medicare.self.availability.weeklyWindows.create({
+        day_of_week: Number(newWindow.day_of_week),
+        start_time: newWindow.start_time,
+        end_time: newWindow.end_time,
+      });
+      toast.success("Weekly window added");
+      await loadAvailability();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not add weekly window.");
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const updateWindow = async (window: WeeklyWindow) => {
+    if (!validateTimeRange(window.start_time, window.end_time)) return;
+    setPending(`window-${window.id}`);
+    try {
+      await medicareApi.medicare.self.availability.weeklyWindows.update(window.id, {
+        day_of_week: Number(window.day_of_week),
+        start_time: window.start_time,
+        end_time: window.end_time,
+      });
+      toast.success("Weekly window saved");
+      await loadAvailability();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save weekly window.");
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const deleteWindow = async (window: WeeklyWindow) => {
+    setPending(`window-${window.id}`);
+    try {
+      await medicareApi.medicare.self.availability.weeklyWindows.delete(window.id);
+      toast.success("Weekly window removed");
+      await loadAvailability();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not remove weekly window.");
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const updateWindowLocal = (id: string | number, patch: Partial<WeeklyWindow>) => {
+    setBundle((current) => ({
+      ...current,
+      weekly_windows: current.weekly_windows.map((window) =>
+        window.id === id ? { ...window, ...patch, day_name: DAY_NAMES[Number(patch.day_of_week ?? window.day_of_week)] ?? window.day_name } : window,
+      ),
+    }));
+  };
+
+  const createException = async () => {
+    if (!newException.date) {
+      toast.error("Date is required.");
+      return;
+    }
+    if (needsExceptionTime(newException.type) && !validateTimeRange(newException.start_time, newException.end_time)) return;
+
+    setPending("new-exception");
+    try {
+      await medicareApi.medicare.self.availability.exceptions.create({
+        date: newException.date,
+        type: newException.type,
+        start_time: needsExceptionTime(newException.type) ? newException.start_time : null,
+        end_time: needsExceptionTime(newException.type) ? newException.end_time : null,
+        reason: newException.reason || null,
+      });
+      toast.success("Exception added");
+      setNewException((current) => ({ ...current, reason: "" }));
+      await loadAvailability();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not add exception.");
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const updateException = async (exception: AvailabilityException) => {
+    if (!exception.date) {
+      toast.error("Date is required.");
+      return;
+    }
+    if (
+      needsExceptionTime(exception.type) &&
+      !validateTimeRange(exception.start_time ?? "", exception.end_time ?? "")
+    ) {
+      return;
+    }
+
+    setPending(`exception-${exception.id}`);
+    try {
+      await medicareApi.medicare.self.availability.exceptions.update(exception.id, {
+        date: exception.date,
+        type: exception.type,
+        start_time: needsExceptionTime(exception.type) ? exception.start_time : null,
+        end_time: needsExceptionTime(exception.type) ? exception.end_time : null,
+        reason: exception.reason || null,
+      });
+      toast.success("Exception saved");
+      await loadAvailability();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save exception.");
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const deleteException = async (exception: AvailabilityException) => {
+    setPending(`exception-${exception.id}`);
+    try {
+      await medicareApi.medicare.self.availability.exceptions.delete(exception.id);
+      toast.success("Exception removed");
+      await loadAvailability();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not remove exception.");
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const updateExceptionLocal = (id: string | number, patch: Partial<AvailabilityException>) => {
+    setBundle((current) => ({
+      ...current,
+      exceptions: current.exceptions.map((exception) =>
+        exception.id === id ? { ...exception, ...patch } : exception,
+      ),
+    }));
+  };
+
+  const windows = sortWindows(bundle.weekly_windows);
+  const exceptions = sortExceptions(bundle.exceptions);
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader title="Availability" desc="Weekly hours and date exceptions for the public booking form." />
+
+      {loading ? (
+        <Card className="grid min-h-48 place-items-center">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-500">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading availability
+          </div>
+        </Card>
+      ) : error ? (
+        <Card>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="font-semibold text-slate-900">Availability unavailable</h3>
+              <p className="mt-1 text-sm text-slate-500">{error}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void loadAvailability()}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50"
+            >
+              <RotateCcw className="h-4 w-4" /> Retry
+            </button>
+          </div>
+        </Card>
+      ) : (
+        <>
+          <Card>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-semibold text-slate-900">Booking Rules</h3>
+                <p className="mt-1 text-xs text-slate-500">Africa/Lagos time</p>
+              </div>
+              <button
+                type="button"
+                onClick={saveSettings}
+                disabled={pending === "settings"}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                {pending === "settings" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save
+              </button>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field label="Slot duration">
+                <select
+                  className={inputCls}
+                  value={settingsDraft.slot_duration_minutes}
+                  onChange={(event) => setSettingsDraft((current) => ({ ...current, slot_duration_minutes: Number(event.target.value) }))}
+                >
+                  {[15, 20, 30, 45, 60].map((minutes) => (
+                    <option key={minutes} value={minutes}>{minutes} minutes</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Booking window">
+                <input
+                  className={inputCls}
+                  type="number"
+                  min={1}
+                  max={180}
+                  value={settingsDraft.booking_window_days}
+                  onChange={(event) => setSettingsDraft((current) => ({ ...current, booking_window_days: Number(event.target.value) }))}
+                />
+              </Field>
+              <Field label="Lead time">
+                <input
+                  className={inputCls}
+                  type="number"
+                  min={0}
+                  max={168}
+                  value={settingsDraft.minimum_lead_time_hours}
+                  onChange={(event) => setSettingsDraft((current) => ({ ...current, minimum_lead_time_hours: Number(event.target.value) }))}
+                />
+              </Field>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="font-semibold text-slate-900">Weekly Windows</h3>
+                <p className="mt-1 text-xs text-slate-500">{windows.length} active window{windows.length === 1 ? "" : "s"}</p>
+              </div>
+              <button
+                type="button"
+                onClick={createWindow}
+                disabled={pending === "new-window"}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                {pending === "new-window" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                Add Window
+              </button>
+            </div>
+            <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-12">
+              <select
+                className={`${inputCls} sm:col-span-4`}
+                value={newWindow.day_of_week}
+                onChange={(event) => setNewWindow((current) => ({ ...current, day_of_week: Number(event.target.value) }))}
+              >
+                {DAY_NAMES.map((day, index) => <option key={day} value={index}>{day}</option>)}
+              </select>
+              <input
+                className={`${inputCls} sm:col-span-4`}
+                type="time"
+                value={newWindow.start_time}
+                onChange={(event) => setNewWindow((current) => ({ ...current, start_time: event.target.value }))}
+              />
+              <input
+                className={`${inputCls} sm:col-span-4`}
+                type="time"
+                value={newWindow.end_time}
+                onChange={(event) => setNewWindow((current) => ({ ...current, end_time: event.target.value }))}
+              />
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {windows.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500">
+                  No weekly windows yet.
+                </div>
+              ) : windows.map((window) => (
+                <div key={window.id} className="grid gap-2 rounded-xl border border-slate-200 bg-white p-3 sm:grid-cols-12 sm:items-center">
+                  <select
+                    className={`${inputCls} sm:col-span-3`}
+                    value={window.day_of_week}
+                    onChange={(event) => updateWindowLocal(window.id, { day_of_week: Number(event.target.value) })}
+                  >
+                    {DAY_NAMES.map((day, index) => <option key={day} value={index}>{day}</option>)}
+                  </select>
+                  <input
+                    className={`${inputCls} sm:col-span-3`}
+                    type="time"
+                    value={window.start_time}
+                    onChange={(event) => updateWindowLocal(window.id, { start_time: event.target.value })}
+                  />
+                  <input
+                    className={`${inputCls} sm:col-span-3`}
+                    type="time"
+                    value={window.end_time}
+                    onChange={(event) => updateWindowLocal(window.id, { end_time: event.target.value })}
+                  />
+                  <div className="flex justify-end gap-2 sm:col-span-3">
+                    <button
+                      type="button"
+                      onClick={() => void updateWindow(window)}
+                      disabled={pending === `window-${window.id}`}
+                      className="inline-flex h-10 items-center justify-center rounded-lg bg-slate-900 px-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+                    >
+                      {pending === `window-${window.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => askDelete(`${window.day_name} window`, () => void deleteWindow(window))}
+                      className="inline-flex h-10 items-center justify-center rounded-lg px-3 text-rose-600 hover:bg-rose-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card>
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="font-semibold text-slate-900">Date Exceptions</h3>
+                <p className="mt-1 text-xs text-slate-500">{exceptions.length} future exception{exceptions.length === 1 ? "" : "s"}</p>
+              </div>
+              <button
+                type="button"
+                onClick={createException}
+                disabled={pending === "new-exception"}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+              >
+                {pending === "new-exception" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                Add Exception
+              </button>
+            </div>
+            <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-12">
+              <input
+                className={`${inputCls} sm:col-span-3`}
+                type="date"
+                value={newException.date}
+                onChange={(event) => setNewException((current) => ({ ...current, date: event.target.value }))}
+              />
+              <select
+                className={`${inputCls} sm:col-span-3`}
+                value={newException.type}
+                onChange={(event) => setNewException((current) => ({ ...current, type: event.target.value as AvailabilityExceptionType }))}
+              >
+                <option value="closed_all_day">Closed all day</option>
+                <option value="closed_partial">Closed partial</option>
+                <option value="extra_hours">Extra hours</option>
+              </select>
+              <input
+                className={`${inputCls} sm:col-span-2`}
+                type="time"
+                value={newException.start_time}
+                disabled={!needsExceptionTime(newException.type)}
+                onChange={(event) => setNewException((current) => ({ ...current, start_time: event.target.value }))}
+              />
+              <input
+                className={`${inputCls} sm:col-span-2`}
+                type="time"
+                value={newException.end_time}
+                disabled={!needsExceptionTime(newException.type)}
+                onChange={(event) => setNewException((current) => ({ ...current, end_time: event.target.value }))}
+              />
+              <input
+                className={`${inputCls} sm:col-span-2`}
+                value={newException.reason}
+                placeholder="Reason"
+                onChange={(event) => setNewException((current) => ({ ...current, reason: event.target.value }))}
+              />
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {exceptions.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500">
+                  No future exceptions.
+                </div>
+              ) : exceptions.map((exception) => (
+                <div key={exception.id} className="grid gap-2 rounded-xl border border-slate-200 bg-white p-3 sm:grid-cols-12 sm:items-center">
+                  <input
+                    className={`${inputCls} sm:col-span-2`}
+                    type="date"
+                    value={exception.date}
+                    onChange={(event) => updateExceptionLocal(exception.id, { date: event.target.value })}
+                  />
+                  <select
+                    className={`${inputCls} sm:col-span-3`}
+                    value={exception.type}
+                    onChange={(event) => updateExceptionLocal(exception.id, { type: event.target.value as AvailabilityExceptionType })}
+                  >
+                    <option value="closed_all_day">Closed all day</option>
+                    <option value="closed_partial">Closed partial</option>
+                    <option value="extra_hours">Extra hours</option>
+                  </select>
+                  <input
+                    className={`${inputCls} sm:col-span-2`}
+                    type="time"
+                    value={exception.start_time ?? ""}
+                    disabled={!needsExceptionTime(exception.type)}
+                    onChange={(event) => updateExceptionLocal(exception.id, { start_time: event.target.value })}
+                  />
+                  <input
+                    className={`${inputCls} sm:col-span-2`}
+                    type="time"
+                    value={exception.end_time ?? ""}
+                    disabled={!needsExceptionTime(exception.type)}
+                    onChange={(event) => updateExceptionLocal(exception.id, { end_time: event.target.value })}
+                  />
+                  <div className="flex justify-end gap-2 sm:col-span-3">
+                    <button
+                      type="button"
+                      onClick={() => void updateException(exception)}
+                      disabled={pending === `exception-${exception.id}`}
+                      className="inline-flex h-10 items-center justify-center rounded-lg bg-slate-900 px-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+                    >
+                      {pending === `exception-${exception.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => askDelete(`${exception.date} exception`, () => void deleteException(exception))}
+                      className="inline-flex h-10 items-center justify-center rounded-lg px-3 text-rose-600 hover:bg-rose-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <input
+                    className={`${inputCls} sm:col-span-12`}
+                    value={exception.reason ?? ""}
+                    placeholder="Reason"
+                    onChange={(event) => updateExceptionLocal(exception.id, { reason: event.target.value })}
+                  />
+                </div>
+              ))}
+            </div>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+};
 
 
 /* ---------- CONTACT ---------- */

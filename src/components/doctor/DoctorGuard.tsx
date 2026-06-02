@@ -54,8 +54,8 @@ export const DoctorGuard = ({ children }: { children: ReactNode }) => {
               <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/30">
                 <Lock className="h-5 w-5" />
               </div>
-              <h1 className="text-2xl font-bold">MediCare Admin Login</h1>
-              <p className="mt-2 text-sm text-slate-500">Doctors can use doctor credentials, and super admins can use their own admin login.</p>
+              <h1 className="text-2xl font-bold">Admin</h1>
+              <p className="mt-2 text-sm text-slate-500">Sign In using your credentials</p>
             </div>
 
             <form onSubmit={onSubmit} className="space-y-4">
@@ -93,7 +93,7 @@ export const DoctorGuard = ({ children }: { children: ReactNode }) => {
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
               >
                 {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-                {busy ? "Signing in..." : "Sign in to MediCare Admin"}
+                {busy ? "Signing in..." : "Sign in"}
               </button>
             </form>
           </div>

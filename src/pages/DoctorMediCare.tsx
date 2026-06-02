@@ -1,20 +1,27 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
-import { DOCTORS } from "@/data/doctors";
+import { DOCTORS, type Doctor } from "@/data/doctors";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useMediCareSettings } from "@/lib/medicareSettings";
 import { api } from "@/lib/api";
 import { doctorFromApi } from "@/lib/backendAdapters";
+import {
+  addDays,
+  buildFallbackPublicAvailability,
+  formatDateValue,
+  normalizePublicAvailability,
+  type PublicAvailabilityDate,
+} from "@/lib/miniSiteAvailability";
 import {
   ArrowLeft,
   CalendarClock,
   CheckCircle,
   Clock,
+  Loader2,
   Mail,
   MapPin,
   ShieldCheck,
@@ -27,41 +34,23 @@ type BookingMethod = "pay-now" | "hmo" | "subscription";
 
 const BOOKING_STEPS = ["Select date", "Select time", "Patient details", "Payment"];
 
-const formatDateValue = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-const formatDateLabel = (date: Date) =>
-  date.toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-
-const buildBookingDates = (availability: { day: string; slots: string[] }[]) => {
-  const byDay = new Map(availability.map((day) => [day.day, day.slots]));
-  const dates: Array<{ value: string; label: string; day: string; slots: string[] }> = [];
-  const today = new Date();
-
-  for (let offset = 0; offset < 21; offset += 1) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + offset);
-    const dayName = date.toLocaleDateString(undefined, { weekday: "long" });
-    const slots = byDay.get(dayName) ?? [];
-    if (slots.length > 0) {
-      dates.push({ value: formatDateValue(date), label: formatDateLabel(date), day: dayName, slots });
+const extractMiniSiteSlug = (profileUrl?: string | null) => {
+  if (!profileUrl) return "";
+  try {
+    const url = new URL(profileUrl);
+    const [firstHostPart] = url.hostname.split(".");
+    if (firstHostPart && !["www", "delsomed", "desolmed"].includes(firstHostPart.toLowerCase())) {
+      return firstHostPart;
     }
+    const parts = url.pathname.split("/").filter(Boolean);
+    return parts[0] === "mini-sites" ? parts[1] ?? "" : "";
+  } catch {
+    return "";
   }
-
-  return dates;
 };
 
 const DoctorMediCare = () => {
   const { toast } = useToast();
-  const settings = useMediCareSettings();
   const { doctorId } = useParams<{ doctorId: string }>();
   const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [loadingDoctor, setLoadingDoctor] = useState(true);
@@ -97,6 +86,11 @@ const DoctorMediCare = () => {
 
   const selectedDoctor = doctor ?? DOCTORS.find((entry) => entry.id === doctorId) ?? DOCTORS[0];
   const missingDoctor = Boolean(doctorId && !doctor && !loadingDoctor);
+  const routeParamLooksLikeSlug = Boolean(missingDoctor && doctorId && selectedDoctor.id !== doctorId);
+  const miniSiteSlug = useMemo(
+    () => extractMiniSiteSlug(selectedDoctor.profile_url) || (routeParamLooksLikeSlug ? doctorId ?? "" : ""),
+    [doctorId, routeParamLooksLikeSlug, selectedDoctor.profile_url],
+  );
 
   const [bookingStep, setBookingStep] = useState<BookingStep>(0);
   const [bookingDate, setBookingDate] = useState("");
@@ -109,19 +103,71 @@ const DoctorMediCare = () => {
     reason: "",
   });
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [bookingDates, setBookingDates] = useState<PublicAvailabilityDate[]>([]);
+  const [loadingAvailability, setLoadingAvailability] = useState(true);
+  const [availabilityError, setAvailabilityError] = useState<string | null>(null);
   const bookingRef = useRef<HTMLDivElement | null>(null);
 
-  const bookingDates = useMemo(() => buildBookingDates(selectedDoctor.availability), [selectedDoctor]);
-  const activeBookingDate = bookingDates.find((day) => day.value === bookingDate) ?? bookingDates[0];
+  useEffect(() => {
+    if (loadingDoctor) return;
+    let cancelled = false;
+
+    const loadAvailability = async () => {
+      setLoadingAvailability(true);
+      setAvailabilityError(null);
+      const today = new Date();
+      const query = {
+        from: formatDateValue(today),
+        to: formatDateValue(addDays(today, 20)),
+      };
+
+      try {
+        const response = miniSiteSlug
+          ? await api.medicare.public.availability(miniSiteSlug, query)
+          : doctorId
+            ? await api.doctors.availability(doctorId, query)
+            : null;
+
+        if (!response) throw new Error("Doctor identifier is missing.");
+        const normalized = normalizePublicAvailability(response.data);
+        if (!cancelled) setBookingDates(normalized.dates);
+      } catch {
+        if (!cancelled) {
+          setAvailabilityError("Live availability is temporarily unavailable. Showing sample slots.");
+          setBookingDates(buildFallbackPublicAvailability(selectedDoctor.availability));
+        }
+      } finally {
+        if (!cancelled) setLoadingAvailability(false);
+      }
+    };
+
+    void loadAvailability();
+    return () => {
+      cancelled = true;
+    };
+  }, [doctorId, loadingDoctor, miniSiteSlug, selectedDoctor.availability]);
+
+  const firstBookableDate = bookingDates.find((day) => day.slots.length > 0);
+  const activeBookingDate = bookingDates.find((day) => day.value === bookingDate) ?? firstBookableDate ?? bookingDates[0];
   const availableSlots = activeBookingDate?.slots ?? [];
+  const hasBookableDates = bookingDates.some((day) => day.slots.length > 0);
 
   useEffect(() => {
-    if (!bookingDates.length) return;
-    setBookingDate((current) => (bookingDates.some((day) => day.value === current) ? current : bookingDates[0].value));
+    if (!bookingDates.length) {
+      setBookingDate("");
+      return;
+    }
+    setBookingDate((current) => {
+      const currentDate = bookingDates.find((day) => day.value === current && day.slots.length > 0);
+      return currentDate?.value ?? bookingDates.find((day) => day.slots.length > 0)?.value ?? "";
+    });
   }, [bookingDates]);
 
   useEffect(() => {
-    if (!availableSlots.length) return;
+    if (!availableSlots.length) {
+      setBookingTime("");
+      return;
+    }
     setBookingTime((current) => (availableSlots.includes(current) ? current : availableSlots[0]));
   }, [availableSlots]);
 
@@ -274,27 +320,57 @@ const DoctorMediCare = () => {
                       <h3 className="font-display text-xl font-semibold">Select a date</h3>
                       <p className="mt-1 text-sm text-slate-500">Pick a date with available slots.</p>
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {bookingDates.map((day) => (
-                        <button
-                          key={day.value}
-                          type="button"
-                          onClick={() => {
-                            setBookingDate(day.value);
-                            setBookingStep(1);
-                          }}
-                          className={`rounded-xl border p-4 text-left transition-all ${
-                            day.value === bookingDate
-                              ? "border-blue-600 bg-blue-50"
-                              : "border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/50"
-                          }`}
-                        >
-                          <p className="font-semibold">{day.label}</p>
-                          <p className="mt-1 text-xs text-slate-500">{day.day}</p>
-                          <p className="mt-2 text-xs font-medium text-blue-700">{day.slots.length} slots available</p>
-                        </button>
-                      ))}
-                    </div>
+                    {loadingAvailability ? (
+                      <div className="grid min-h-40 place-items-center rounded-xl border border-dashed border-slate-200 bg-slate-50 text-sm font-medium text-slate-500">
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" /> Loading available dates
+                        </span>
+                      </div>
+                    ) : (
+                      <>
+                        {availabilityError && (
+                          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                            {availabilityError}
+                          </div>
+                        )}
+                        {!bookingDates.length || !hasBookableDates ? (
+                          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
+                            <p className="font-semibold text-slate-700">No available slots yet</p>
+                            <p className="mt-2 text-sm text-slate-500">Please check back later or contact the practice directly.</p>
+                          </div>
+                        ) : (
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            {bookingDates.map((day) => {
+                              const disabled = day.slots.length === 0;
+                              return (
+                                <button
+                                  key={day.value}
+                                  type="button"
+                                  disabled={disabled}
+                                  onClick={() => {
+                                    setBookingDate(day.value);
+                                    setBookingStep(1);
+                                  }}
+                                  className={`rounded-xl border p-4 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60 ${
+                                    day.value === bookingDate
+                                      ? "border-blue-600 bg-blue-50"
+                                      : disabled
+                                        ? "border-slate-200 bg-slate-50"
+                                        : "border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/50"
+                                  }`}
+                                >
+                                  <p className="font-semibold">{day.label}</p>
+                                  <p className="mt-1 text-xs text-slate-500">{day.day}</p>
+                                  <p className={`mt-2 text-xs font-medium ${disabled ? "text-slate-400" : "text-blue-700"}`}>
+                                    {disabled ? "No slots" : `${day.slots.length} slots available`}
+                                  </p>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -304,31 +380,38 @@ const DoctorMediCare = () => {
                       <h3 className="font-display text-xl font-semibold">Select a time</h3>
                       <p className="mt-1 text-sm text-slate-500">Available for {activeBookingDate?.label}</p>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {availableSlots.map((slot) => (
-                        <button
-                          key={slot}
-                          type="button"
-                          onClick={() => {
-                            setBookingTime(slot);
-                            setBookingStep(2);
-                          }}
-                          className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition-all ${
-                            bookingTime === slot
-                              ? "border-blue-600 bg-blue-600 text-white"
-                              : "border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50"
-                          }`}
-                        >
-                          {slot}
-                        </button>
-                      ))}
-                    </div>
+                    {availableSlots.length ? (
+                      <div className="flex flex-wrap gap-2">
+                        {availableSlots.map((slot) => (
+                          <button
+                            key={slot}
+                            type="button"
+                            onClick={() => {
+                              setBookingTime(slot);
+                              setBookingStep(2);
+                            }}
+                            className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition-all ${
+                              bookingTime === slot
+                                ? "border-blue-600 bg-blue-600 text-white"
+                                : "border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50"
+                            }`}
+                          >
+                            {slot}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
+                        No slots are available for this date.
+                      </div>
+                    )}
                     <div className="flex gap-3 pt-4">
                       <Button type="button" variant="outline" onClick={() => setBookingStep(0)}>
                         Back
                       </Button>
                       <Button
                         type="button"
+                        disabled={!bookingTime}
                         className="flex-1 bg-blue-600 text-white hover:bg-blue-700"
                         onClick={() => setBookingStep(2)}
                       >

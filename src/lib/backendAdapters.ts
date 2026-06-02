@@ -272,8 +272,30 @@ export const registrationFromApi = (value: unknown): LocalRegistration => {
   const id = pickText(source, ["uuid", "id"], crypto.randomUUID());
   const organizationName = pickText(
     source,
-    ["applicant_organization", "applicant_organization_name", "organization_name", "business_name", "company_name"],
-    pickText(payload, ["applicant_organization", "applicant_organization_name", "organization_name", "business_name", "company_name"], ""),
+    [
+      "applicant_organization",
+      "applicant_organization_name",
+      "organization_name",
+      "name_of_organization",
+      "name_of_pharmacy",
+      "name_of_laboratory_diagnostics",
+      "business_name",
+      "company_name",
+    ],
+    pickText(
+      payload,
+      [
+        "applicant_organization",
+        "applicant_organization_name",
+        "organization_name",
+        "name_of_organization",
+        "name_of_pharmacy",
+        "name_of_laboratory_diagnostics",
+        "business_name",
+        "company_name",
+      ],
+      "",
+    ),
   );
   const fullName = pickText(
     source,
