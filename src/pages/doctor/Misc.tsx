@@ -61,8 +61,36 @@ export const DoctorPrescriptions = () => {
         </TableBody>
       </Table>
     </SectionCard>
+
+    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>New Prescription</DialogTitle>
+          <DialogDescription>Enter the medication details below.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="drug">Drug name</Label>
+            <Input id="drug" value={drug} onChange={(e) => setDrug(e.target.value)} placeholder="e.g. Amoxicillin" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="dosage">Dosage</Label>
+            <Input id="dosage" value={dosage} onChange={(e) => setDosage(e.target.value)} placeholder="e.g. 500mg twice daily" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="instructions">Instructions</Label>
+            <Textarea id="instructions" rows={3} value={instructions} onChange={(e) => setInstructions(e.target.value)} placeholder="e.g. Take after meals for 7 days" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={handleSave}>Save Prescription</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </PortalLayout>
-);
+  );
+};
 
 export const DoctorInvestigations = () => (
   <PortalLayout portalName="Doctor EMR" nav={doctorNav}>
