@@ -153,7 +153,7 @@ const Adverts = () => {
               />
               <div className="absolute top-5 left-5">
                 <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold tracking-[0.18em] px-3 py-1.5 rounded-full bg-background/95 backdrop-blur text-foreground border border-border">
-                  \n · {featured.category}
+                  {"\n"} · {featured.category}
                 </span>
               </div>
             </div>

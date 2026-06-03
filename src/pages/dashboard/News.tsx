@@ -278,7 +278,7 @@ const NewsPage = () => {
               </div>
               <div className="flex items-center gap-3 rounded-lg border border-border px-4 py-3">
                 <Switch checked={form.featured} onCheckedChange={(value) => setForm({ ...form, featured: value })} />
-                <Label>Featured</Label>
+                <Label>{"\n"}</Label>
               </div>
             </div>
           </div>
