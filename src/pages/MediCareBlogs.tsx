@@ -168,7 +168,7 @@ const MediCareBlogs = () => {
                   className="h-full w-full object-cover group-hover:scale-[1.03] transition-transform duration-500" />
               </div>
               <div className="p-8 md:p-12 flex flex-col justify-center">
-                <span className="mb-chip mb-3 w-fit">Featured · {featured.category}</span>
+                <span className="mb-chip mb-3 w-fit">{"\n"} · {featured.category}</span>
                 <h2 className="text-2xl sm:text-3xl leading-snug mb-3">{featured.title}</h2>
                 <p className="text-[hsl(var(--mc-muted))] leading-relaxed mb-5">{featured.excerpt}</p>
                 <div className="flex items-center gap-4 text-xs text-[hsl(var(--mc-muted))]">
