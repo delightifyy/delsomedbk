@@ -427,10 +427,10 @@ const BlogPage = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 rounded-lg border border-border px-4 py-3">
-                <Switch checked={form.featured} onCheckedChange={(value) => setForm({ ...form, featured: value })} />
-                <Label>Featured</Label>
-              </div>
+                <div className="flex items-center gap-3 rounded-lg border border-border px-4 py-3">
+                  <Switch checked={form.featured} onCheckedChange={(value) => setForm({ ...form, featured: value })} />
+                  <Label>{"\n"}</Label>
+                </div>
             </div>
           </div>
           <DialogFooter className="border-t border-border px-6 py-4">
