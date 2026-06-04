@@ -18,10 +18,30 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
+import { usePatientCategory, PATIENT_CATEGORY_OPTIONS, PatientCategory } from "@/hooks/usePatientCategory";
 import desolmedLogo from "@/assets/desolmed-logo.png";
 
 export type PortalNavItem = { title: string; url: string; icon: LucideIcon };
+
+const PatientCategorySelector = () => {
+  const [category, setCategory] = usePatientCategory();
+  return (
+    <Select value={category} onValueChange={(v) => setCategory(v as PatientCategory)}>
+      <SelectTrigger className="h-9 w-[170px] text-xs">
+        <SelectValue placeholder="Payment category" />
+      </SelectTrigger>
+      <SelectContent>
+        {PATIENT_CATEGORY_OPTIONS.map((o) => (
+          <SelectItem key={o.value} value={o.value} className="text-xs">
+            {o.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+};
 
 interface PortalLayoutProps {
   portalName: string;
@@ -139,6 +159,7 @@ export const PortalLayout = ({
               ))}
             </nav>
             <div className="ml-auto flex items-center gap-2">
+              {pathname.startsWith("/patient") && <PatientCategorySelector />}
               <Button size="icon" variant="ghost" className="relative">
                 <Bell className="h-4 w-4" />
                 <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-primary" />

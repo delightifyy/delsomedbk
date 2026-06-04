@@ -36,6 +36,7 @@ const Auth = lazy(() => import("./pages/Auth.tsx"));
 const PatientLogin = lazy(() => import("./pages/PatientLogin.tsx"));
 const DashOverview = lazy(() => import("./pages/dashboard/Overview.tsx"));
 const DashUsers = lazy(() => import("./pages/dashboard/Users.tsx"));
+const DashPatients = lazy(() => import("./pages/dashboard/Patients.tsx"));
 const DashDoctors = lazy(() => import("./pages/dashboard/Doctors.tsx"));
 const DashContacts = lazy(() => import("./pages/dashboard/Contacts.tsx"));
 const DashBlog = lazy(() => import("./pages/dashboard/Blog.tsx"));
@@ -61,6 +62,7 @@ const DoctorPrescriptions = lazy(() => import("./pages/doctor/Misc.tsx").then((m
 const DoctorInvestigations = lazy(() => import("./pages/doctor/Misc.tsx").then((module) => ({ default: module.DoctorInvestigations })));
 const DoctorReferrals = lazy(() => import("./pages/doctor/Misc.tsx").then((module) => ({ default: module.DoctorReferrals })));
 const DoctorSettings = lazy(() => import("./pages/doctor/Misc.tsx").then((module) => ({ default: module.DoctorSettings })));
+const DoctorClinical = lazy(() => import("./pages/doctor/Clinical.tsx"));
 const OrgDashboard = lazy(() => import("./pages/organization/Dashboard.tsx"));
 const OrgStaff = lazy(() => import("./pages/organization/Staff.tsx"));
 const OrgUsage = lazy(() => import("./pages/organization/Usage.tsx"));
@@ -116,6 +118,7 @@ const App = () => (
               <Route path="/patient/login" element={<PatientLogin />} />
               <Route path="/dashboard" element={<AdminGuard><DashOverview /></AdminGuard>} />
               <Route path="/dashboard/users" element={<AdminGuard><DashUsers /></AdminGuard>} />
+              <Route path="/dashboard/patients" element={<AdminGuard><DashPatients /></AdminGuard>} />
               <Route path="/dashboard/doctors" element={<AdminGuard><DashDoctors /></AdminGuard>} />
               <Route path="/dashboard/contacts" element={<AdminGuard><DashContacts /></AdminGuard>} />
               <Route path="/dashboard/blog" element={<AdminGuard><DashBlog /></AdminGuard>} />
@@ -140,6 +143,7 @@ const App = () => (
               <Route path="/doctor" element={<DoctorPortalDashboard />} />
               <Route path="/doctor/schedule" element={<DoctorSchedule />} />
               <Route path="/doctor/consultations" element={<DoctorConsultations />} />
+              <Route path="/doctor/clinical" element={<DoctorClinical />} />
               <Route path="/doctor/consultations/:id" element={<DoctorConsultationRoom />} />
               <Route path="/doctor/patients" element={<DoctorPatients />} />
               <Route path="/doctor/prescriptions" element={<DoctorPrescriptions />} />

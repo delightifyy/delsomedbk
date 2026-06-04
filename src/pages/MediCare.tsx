@@ -494,7 +494,7 @@ const AppointmentPopup = ({
                   <div className="mt-3 grid gap-2 sm:grid-cols-3">
                     {[
                       { value: "pay-now", label: "Pay now" },
-                      { value: "hmo", label: "HMO" },
+                      { value: "hmo", label: "Card" },
                       { value: "subscription", label: "Plan" },
                     ].map((method) => (
                       <button

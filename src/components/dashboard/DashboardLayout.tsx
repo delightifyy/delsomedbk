@@ -17,6 +17,7 @@ import {
   MailCheck,
   Activity,
   Tags,
+  HeartPulse,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,6 +31,7 @@ const items = [
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard, end: true },
   { to: "/dashboard/notifications", label: "New Registrations", icon: Bell },
   { to: "/dashboard/users", label: "Users", icon: Users },
+  { to: "/dashboard/patients", label: "Patients", icon: HeartPulse },
   { to: "/dashboard/doctors", label: "Doctors", icon: Stethoscope },
   { to: "/dashboard/contacts", label: "Contact Messages", icon: MessageSquare },
   { to: "/dashboard/blog", label: "Health Adverts", icon: Megaphone },

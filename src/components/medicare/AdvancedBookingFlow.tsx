@@ -369,7 +369,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
             {method === "hmo" && (
               <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-4">
                 <div className="space-y-2">
-                  <Label htmlFor="hmo-provider">HMO Provider</Label>
+                  <Label htmlFor="hmo-provider">Card Provider</Label>
                   <select
                     id="hmo-provider"
                     value={hmoProvider}
@@ -379,22 +379,22 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
                     }}
                     className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   >
-                    <option value="">Choose your HMO provider</option>
+                    <option value="">Choose your Card provider</option>
                     {HMO_PROVIDERS.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.name} — {p.covered.length} services covered
+                        {p.name}
                       </option>
                     ))}
                   </select>
                   {hmoProvider && (
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <ShieldCheck className="h-3 w-3 text-primary" />
-                      {HMO_PROVIDERS.find((p) => p.id === hmoProvider)?.name} selected
+                      {HMO_PROVIDERS.find((p) => p.id === hmoProvider)?.name.replace("HMO", "Card")} selected
                     </p>
                   )}
                 </div>
                 {!hmoProvider && (
-                  <p className="text-sm text-muted-foreground">Choose your HMO provider first so we can show the covered services.</p>
+                  <p className="text-sm text-muted-foreground">Choose your Card provider first so we can show the covered services.</p>
                 )}
               </div>
             )}
@@ -413,7 +413,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="font-semibold leading-tight">{s.name}</div>
-                        <div className="font-display font-bold text-primary whitespace-nowrap">{fmtNGN(s.price)}</div>
+                        {method === "card" && <div className="font-display font-bold text-primary whitespace-nowrap">{fmtNGN(s.price)}</div>}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">{s.description}</div>
                       <div className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
@@ -462,7 +462,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
 
         {currentLabel === "Verify" && (
           <div className="space-y-3 max-w-md">
-            <h3 className="font-display text-xl font-semibold">Verify your HMO policy</h3>
+            <h3 className="font-display text-xl font-semibold">Verify your Card policy</h3>
             <div className="space-y-2">
               <Label>Policy Number</Label>
               <Input
@@ -476,21 +476,6 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
               <Label>Member details (optional)</Label>
               <Input value={memberDetails} onChange={(e) => setMemberDetails(e.target.value)} placeholder="Full name / DOB" />
             </div>
-            {hmoStatus === "pending" && (
-              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-amber-700 text-sm flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" /> Verifying with HMO provider…
-              </div>
-            )}
-            {hmoStatus === "approved" && (
-              <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-emerald-700 text-sm flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" /> Approved. You can continue to scheduling.
-              </div>
-            )}
-            {hmoStatus === "rejected" && (
-              <div className="rounded-lg bg-rose-50 border border-rose-200 p-3 text-rose-700 text-sm flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" /> {hmoReason || "Verification failed"}
-              </div>
-            )}
           </div>
         )}
 
@@ -615,15 +600,15 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
                   )}
                   {hmoProvider && (
                     <>
-                      <span className="text-muted-foreground">HMO</span>
+                      <span className="text-muted-foreground">Card</span>
                       <span className="font-medium sm:text-right">
-                        {HMO_PROVIDERS.find((p) => p.id === hmoProvider)?.name}
+                        {HMO_PROVIDERS.find((p) => p.id === hmoProvider)?.name.replace("HMO", "Card")}
                       </span>
                     </>
                   )}
                   <span className="text-muted-foreground">Access</span>
                   <span className="font-medium sm:text-right capitalize">{method}</span>
-                  {service && (
+                  {service && method === "card" && (
                     <>
                       <span className="text-muted-foreground">Amount</span>
                       <span className="font-display font-bold text-primary sm:text-right">{fmtNGN(service.price)}</span>

@@ -137,10 +137,10 @@ const MediCareServicesAdmin = () => {
             </div>
           ) : (
             <>
-              {/* All service admin editors on a single page (no sidebar/tabs) */}
               <PageEditor page={page} reload={reload} />
               <CategoriesEditor categories={categories} reload={reload} services={services} />
               <ServicesEditor services={services} categories={categories} reload={reload} />
+              <FaqsEditor faqs={faqs} services={services} reload={reload} />
             </>
           )}
         </main>
@@ -419,23 +419,12 @@ const ServicesEditor = ({
   const [addDraft, setAddDraft] = useState<Partial<Service>>({
     title: "",
     slug: "",
-    category_id: categories[0]?.id || null,
     icon: "Stethoscope",
-    summary: "",
     description: "",
-    tags: [],
-    search_keywords: "",
     price_amount: null,
     price_currency: "GBP",
     price_label: "",
-    duration_minutes: null,
-    recommended_clinicians: [],
-    whats_included: [],
-    preparation: "",
-    featured: false,
-    visible: true,
     sort_order: services.length,
-    
   });
 
   useEffect(() => {
@@ -443,50 +432,29 @@ const ServicesEditor = ({
     setAddDraft({
       title: "",
       slug: "",
-      category_id: categories[0]?.id || null,
       icon: "Stethoscope",
-      summary: "",
       description: "",
-      tags: [],
-      search_keywords: "",
       price_amount: null,
       price_currency: "GBP",
       price_label: "",
-      duration_minutes: null,
-      recommended_clinicians: [],
-      whats_included: [],
-      preparation: "",
-      featured: false,
-      visible: true,
       sort_order: services.length,
-      
     });
-  }, [addOpen, categories, services.length]);
+  }, [addOpen, services.length]);
 
   const saveNewService = async () => {
     const title = (addDraft.title ?? "").trim();
     if (!title) return toast.error("Service title is required");
     try {
       await upsertService({
-        ...addDraft,
         title,
         slug: slugify(addDraft.slug?.trim() || title),
-        category_id: addDraft.category_id || null,
-        summary: addDraft.summary ?? null,
+        icon: addDraft.icon || "Stethoscope",
         description: addDraft.description ?? null,
-        search_keywords: addDraft.search_keywords ?? null,
         price_amount: addDraft.price_amount ?? null,
         price_currency: addDraft.price_currency || "GBP",
         price_label: addDraft.price_label ?? null,
-        duration_minutes: addDraft.duration_minutes ?? null,
-        preparation: addDraft.preparation ?? null,
-        
-        tags: addDraft.tags || [],
-        recommended_clinicians: addDraft.recommended_clinicians || [],
-        whats_included: addDraft.whats_included || [],
-        featured: addDraft.featured ?? false,
-        visible: addDraft.visible ?? true,
         sort_order: addDraft.sort_order ?? services.length,
+        visible: true,
       });
       toast.success("Service added");
       setAddOpen(false);
@@ -500,33 +468,6 @@ const ServicesEditor = ({
     if (!filter) return services;
     return services.filter((s) => s.category_id === filter);
   }, [services, filter]);
-
-  const add = async () => {
-    const title = `New service ${services.length + 1}`;
-    try {
-      await upsertService({
-        title, slug: slugify(title) + "-" + Math.random().toString(36).slice(2, 6),
-        icon: "Stethoscope", sort_order: services.length, visible: true, featured: false,
-        category_id: categories[0]?.id || null,
-      });
-      toast.success("Service added"); reload();
-    } catch (e: any) { toast.error(e.message); }
-  };
-
-  const move = async (s: Service, dir: -1 | 1) => {
-    const sorted = [...services].sort((a, b) => a.sort_order - b.sort_order);
-    const idx = sorted.findIndex((x) => x.id === s.id);
-    const swap = idx + dir;
-    if (swap < 0 || swap >= sorted.length) return;
-    const a = sorted[idx], b = sorted[swap];
-    try {
-      await Promise.all([
-        upsertService({ id: a.id, sort_order: b.sort_order } as any),
-        upsertService({ id: b.id, sort_order: a.sort_order } as any),
-      ]);
-      reload();
-    } catch (e: any) { toast.error(e.message); }
-  };
 
   return (
     <div className="space-y-4">
@@ -543,7 +484,7 @@ const ServicesEditor = ({
       />
       {filtered.length === 0 && <Card><p className="text-sm text-slate-500">No services yet.</p></Card>}
       {filtered.map((s) => (
-        <ServiceRow key={s.id} svc={s} categories={categories} reload={reload} move={move} />
+        <ServiceRow key={s.id} svc={s} categories={categories} reload={reload} />
       ))}
 
       <ModalShell
@@ -563,26 +504,11 @@ const ServicesEditor = ({
           <Field label="Title">
             <input className={inputCls} value={addDraft.title ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, title: e.target.value, slug: d.slug?.trim() ? d.slug : slugify(e.target.value) }))} />
           </Field>
-          <Field label="Slug">
-            <input className={inputCls} value={addDraft.slug ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, slug: slugify(e.target.value) }))} />
-          </Field>
-          <Field label="Category">
-            <select className={inputCls} value={addDraft.category_id || ""} onChange={(e) => setAddDraft((d) => ({ ...d, category_id: e.target.value || null }))}>
-              <option value="">Uncategorised</option>
-              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </Field>
           <Field label="Icon">
             <IconPicker value={(addDraft.icon as string) || "Stethoscope"} onChange={(v) => setAddDraft((d) => ({ ...d, icon: v as any }))} />
           </Field>
-          <Field label="Summary" hint="Short line under the title">
-            <input className={inputCls} value={addDraft.summary ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, summary: e.target.value }))} />
-          </Field>
-          <Field label="Long description">
+          <Field label="Description">
             <textarea className={textareaCls} value={addDraft.description ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, description: e.target.value }))} />
-          </Field>
-          <Field label="Preparation notes">
-            <textarea className={textareaCls} value={addDraft.preparation ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, preparation: e.target.value }))} />
           </Field>
           <Field label="Price amount">
             <input type="number" step="0.01" className={inputCls} value={addDraft.price_amount ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, price_amount: e.target.value ? Number(e.target.value) : null }))} />
@@ -592,31 +518,9 @@ const ServicesEditor = ({
               {["GBP", "USD", "EUR", "NGN"].map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </Field>
-          <Field label="Price label override"><input className={inputCls} value={addDraft.price_label ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, price_label: e.target.value }))} placeholder="From £95" /></Field>
-          <Field label="Duration (mins)"><input type="number" className={inputCls} value={addDraft.duration_minutes ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, duration_minutes: e.target.value ? Number(e.target.value) : null }))} /></Field>
-          <Field label="Tags / chips" hint="Comma-separated">
-            <input className={inputCls} value={(addDraft.tags || []).join(", ")} onChange={(e) => setAddDraft((d) => ({ ...d, tags: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) }))} />
+          <Field label="Price label override">
+            <input className={inputCls} value={addDraft.price_label ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, price_label: e.target.value }))} placeholder="From £95" />
           </Field>
-          <Field label="Recommended clinicians" hint="Comma-separated">
-            <input className={inputCls} value={(addDraft.recommended_clinicians || []).join(", ")} onChange={(e) => setAddDraft((d) => ({ ...d, recommended_clinicians: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) }))} />
-          </Field>
-          <Field label="What's included" hint="One per line">
-            <textarea className={textareaCls} value={(addDraft.whats_included || []).join("\n")} onChange={(e) => setAddDraft((d) => ({ ...d, whats_included: e.target.value.split("\n").map((x) => x.trim()).filter(Boolean) }))} />
-          </Field>
-          <Field label="Search keywords">
-            <input className={inputCls} value={addDraft.search_keywords ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, search_keywords: e.target.value }))} />
-          </Field>
-          <Field label="CTA label"><input className={inputCls} value={addDraft.cta_label ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, cta_label: e.target.value }))} placeholder="Book consultation" /></Field>
-          <Field label="CTA link"><input className={inputCls} value={addDraft.cta_href ?? ""} onChange={(e) => setAddDraft((d) => ({ ...d, cta_href: e.target.value }))} placeholder="/doctor-portal#cta" /></Field>
-          <Field label="Sort order"><input type="number" className={inputCls} value={addDraft.sort_order ?? services.length} onChange={(e) => setAddDraft((d) => ({ ...d, sort_order: Number(e.target.value) }))} /></Field>
-          <label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 sm:col-span-2">
-            <input type="checkbox" checked={addDraft.featured ?? false} onChange={(e) => setAddDraft((d) => ({ ...d, featured: e.target.checked }))} />
-            Featured
-          </label>
-          <label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 sm:col-span-2">
-            <input type="checkbox" checked={addDraft.visible ?? true} onChange={(e) => setAddDraft((d) => ({ ...d, visible: e.target.checked }))} />
-            Visible
-          </label>
         </div>
       </ModalShell>
     </div>
@@ -624,8 +528,8 @@ const ServicesEditor = ({
 };
 
 const ServiceRow = ({
-  svc, categories, reload, move,
-}: { svc: Service; categories: ServiceCategory[]; reload: () => void; move: (s: Service, d: -1 | 1) => void }) => {
+  svc, categories, reload,
+}: { svc: Service; categories: ServiceCategory[]; reload: () => void }) => {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(svc);
   const [saving, setSaving] = useState(false);
@@ -634,9 +538,25 @@ const ServiceRow = ({
   const set = (p: Partial<Service>) => setDraft((d) => ({ ...d, ...p }));
   const save = async () => {
     setSaving(true);
-    try { await upsertService(draft as any); toast.success("Saved"); reload(); }
-    catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
+    try {
+      await upsertService({
+        id: svc.id,
+        title: draft.title,
+        slug: draft.slug,
+        icon: draft.icon,
+        description: draft.description ?? null,
+        price_amount: draft.price_amount ?? null,
+        price_currency: draft.price_currency || "GBP",
+        price_label: draft.price_label ?? null,
+        sort_order: draft.sort_order ?? svc.sort_order,
+        visible: draft.visible ?? svc.visible,
+        featured: draft.featured ?? svc.featured,
+        category_id: draft.category_id ?? svc.category_id,
+      } as any);
+      toast.success("Saved"); reload();
+    } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
   };
+
   const del = async () => {
     if (!confirm(`Delete "${svc.title}"?`)) return;
     try { await deleteService(svc.id); toast.success("Deleted"); reload(); }
@@ -648,7 +568,7 @@ const ServiceRow = ({
   };
 
   const cat = categories.find((c) => c.id === svc.category_id);
-  const displayPrice = svc.price_label || (svc.price_amount != null ? `$${Number(svc.price_amount).toLocaleString("en-US")}` : "Set price");
+  const displayPrice = svc.price_label || (svc.price_amount != null ? `${svc.price_currency || "GBP"} ${Number(svc.price_amount).toLocaleString("en-US")}` : "Set price");
 
   return (
     <Card>
@@ -664,7 +584,17 @@ const ServiceRow = ({
             </div>
             <span className="rounded-full bg-blue-50 text-blue-700 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">{displayPrice}</span>
           </div>
-          <div className="text-xs text-slate-500 truncate">{cat?.name || "Uncategorised"} · {svc.duration_minutes ?? "—"}min</div>
+          <div className="text-xs text-slate-500 truncate">
+            <select 
+              value={svc.category_id || ""} 
+              onChange={(e) => toggle({ category_id: e.target.value || null })}
+              className="text-xs bg-transparent border-none p-0 focus:ring-0 font-medium"
+            >
+              <option value="">Uncategorised</option>
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            {" · "}{svc.duration_minutes ?? "—"}min
+          </div>
         </div>
         <button onClick={() => toggle({ featured: !svc.featured })} className="p-2 rounded-lg hover:bg-slate-50" title="Featured">
           {svc.featured ? <Star className="h-4 w-4 text-amber-500 fill-current" /> : <StarOff className="h-4 w-4 text-slate-400" />}
@@ -672,8 +602,6 @@ const ServiceRow = ({
         <button onClick={() => toggle({ visible: !svc.visible })} className="p-2 rounded-lg hover:bg-slate-50">
           {svc.visible ? <Eye className="h-4 w-4 text-emerald-600" /> : <EyeOff className="h-4 w-4 text-slate-400" />}
         </button>
-        <button onClick={() => move(svc, -1)} className="p-2 rounded-lg hover:bg-slate-50"><ArrowUp className="h-4 w-4" /></button>
-        <button onClick={() => move(svc, 1)} className="p-2 rounded-lg hover:bg-slate-50"><ArrowDown className="h-4 w-4" /></button>
         <button onClick={() => setOpen((o) => !o)} className="p-2 rounded-lg hover:bg-slate-50"><ChevronRight className={`h-4 w-4 transition ${open ? "rotate-90" : ""}`} /></button>
         <button onClick={del} className="p-2 rounded-lg hover:bg-rose-50 text-rose-600"><Trash2 className="h-4 w-4" /></button>
       </div>
@@ -682,23 +610,16 @@ const ServiceRow = ({
         <div className="mt-5 grid sm:grid-cols-2 gap-4">
           <Field label="Title"><input className={inputCls} value={draft.title} onChange={(e) => set({ title: e.target.value })} /></Field>
           <Field label="Slug"><input className={inputCls} value={draft.slug} onChange={(e) => set({ slug: slugify(e.target.value) })} /></Field>
+          <Field label="Icon"><IconPicker value={draft.icon || ""} onChange={(v) => set({ icon: v })} /></Field>
           <Field label="Category">
             <select className={inputCls} value={draft.category_id || ""} onChange={(e) => set({ category_id: e.target.value || null })}>
               <option value="">Uncategorised</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </Field>
-          <Field label="Icon"><IconPicker value={draft.icon || ""} onChange={(v) => set({ icon: v })} /></Field>
-          <Field label="Summary" hint="Short line under the title">
-            <input className={inputCls} value={draft.summary || ""} onChange={(e) => set({ summary: e.target.value })} />
-          </Field>
-          <Field label="Long description">
+          <Field label="Description">
             <textarea className={textareaCls} value={draft.description || ""} onChange={(e) => set({ description: e.target.value })} />
           </Field>
-          <Field label="Preparation notes">
-            <textarea className={textareaCls} value={draft.preparation || ""} onChange={(e) => set({ preparation: e.target.value })} />
-          </Field>
-
           <Field label="Price amount">
             <input type="number" step="0.01" className={inputCls} value={draft.price_amount ?? ""} onChange={(e) => set({ price_amount: e.target.value ? Number(e.target.value) : null })} />
           </Field>
@@ -707,31 +628,18 @@ const ServiceRow = ({
               {["GBP","USD","EUR","NGN"].map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </Field>
-          <Field label="Price label override" hint="Overrides amount/currency display"><input className={inputCls} value={draft.price_label || ""} onChange={(e) => set({ price_label: e.target.value })} placeholder="From £95" /></Field>
-          <Field label="Consultation duration (mins)">
-            <input type="number" className={inputCls} value={draft.duration_minutes ?? ""} onChange={(e) => set({ duration_minutes: e.target.value ? Number(e.target.value) : null })} />
+          <Field label="Price label">
+            <input className={inputCls} value={draft.price_label || ""} onChange={(e) => set({ price_label: e.target.value })} placeholder="From £95" />
           </Field>
-
-          <Field label="Tags / chips" hint="Comma-separated">
-            <input className={inputCls} value={(draft.tags || []).join(", ")} onChange={(e) => set({ tags: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) })} />
-          </Field>
-          <Field label="Recommended clinicians" hint="Comma-separated">
-            <input className={inputCls} value={(draft.recommended_clinicians || []).join(", ")} onChange={(e) => set({ recommended_clinicians: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) })} />
-          </Field>
-          <Field label="What's included" hint="One per line">
-            <textarea className={textareaCls} value={(draft.whats_included || []).join("\n")} onChange={(e) => set({ whats_included: e.target.value.split("\n").map((x) => x.trim()).filter(Boolean) })} />
-          </Field>
-          <Field label="Search keywords">
-            <input className={inputCls} value={draft.search_keywords || ""} onChange={(e) => set({ search_keywords: e.target.value })} />
-          </Field>
-
-          <Field label="CTA label"><input className={inputCls} value={draft.cta_label || ""} onChange={(e) => set({ cta_label: e.target.value })} placeholder="Book consultation" /></Field>
-          <Field label="CTA link"><input className={inputCls} value={draft.cta_href || ""} onChange={(e) => set({ cta_href: e.target.value })} placeholder="/doctor-portal#cta" /></Field>
 
           <div className="sm:col-span-2 flex items-center justify-between border-t border-slate-100 pt-4">
-            <div className="flex items-center gap-4 text-sm">
-              <label className="inline-flex items-center gap-2"><input type="checkbox" checked={draft.featured} onChange={(e) => set({ featured: e.target.checked })} /> Featured</label>
-              <label className="inline-flex items-center gap-2"><input type="checkbox" checked={draft.visible} onChange={(e) => set({ visible: e.target.checked })} /> Visible</label>
+            <div className="flex items-center gap-4">
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={draft.visible} onChange={(e) => set({ visible: e.target.checked })} /> Visible
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={draft.featured} onChange={(e) => set({ featured: e.target.checked })} /> Featured
+              </label>
             </div>
             <button onClick={save} disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700 disabled:opacity-60">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save service

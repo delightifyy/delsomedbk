@@ -100,8 +100,9 @@ const mergeRemoteMiniSite = (current: MediCareSettings, remote: Record<string, u
           icon: (record.icon ?? "Stethoscope") as LucideIconName,
           title: getText(record, "title") ?? "",
           description: getText(record, "description") ?? "",
-          ctaLabel: getText(record, "button_label") ?? getText(record, "ctaLabel") ?? "",
-          ctaHref: getText(record, "button_link") ?? getText(record, "ctaHref") ?? "",
+          price_amount: record.price_amount != null ? Number(record.price_amount) : null,
+          price_currency: getText(record, "price_currency") ?? "GBP",
+          price_label: getText(record, "price_label") ?? "",
           order: Number(record.order ?? index),
           active: record.is_visible !== false,
         };
@@ -191,8 +192,9 @@ const syncServiceCards = async (items: Service[]) => {
       title: item.title,
       icon: item.icon,
       description: item.description,
-      button_label: item.ctaLabel ?? "",
-      button_link: item.ctaHref ?? "",
+      price_amount: item.price_amount ?? null,
+      price_currency: item.price_currency ?? "GBP",
+      price_label: item.price_label ?? null,
       is_visible: item.active,
     });
   }
@@ -1480,7 +1482,7 @@ const BrandingEditor = ({ s, update, setSettings }: EProps & { update: (p: Parti
         </div>
       </div>
       <div className="mt-5">
-        <MediaPicker label="Logo" value={s.logoDataUrl} onChange={(url) => update({ logoDataUrl: url })} settings={s} setSettings={setSettings} accept="image" />
+        <MediaPicker label="Logo" value={s.logoDataUrl} onChange={(url) => update({ logoDataUrl: url })} />
       </div>
     </Card>
   </div>
@@ -1592,8 +1594,7 @@ const PartnersEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => {
               <input className={inputCls + " col-span-6"} value={p.name}
                 onChange={(e) => set((arr) => arr.map((x) => x.id === p.id ? { ...x, name: e.target.value } : x))} />
               <div className="col-span-4">
-                <MediaPicker value={p.logoDataUrl} onChange={(url) => set((arr) => arr.map((x) => x.id === p.id ? { ...x, logoDataUrl: url } : x))}
-                  settings={s} setSettings={setSettings} accept="image" />
+                <MediaPicker value={p.logoDataUrl} onChange={(url) => set((arr) => arr.map((x) => x.id === p.id ? { ...x, logoDataUrl: url } : x))} />
               </div>
               <div className="col-span-2 flex justify-end gap-1">
                 <button onClick={() => set((arr) => { const j = arr.findIndex((x) => x.id === p.id); if (j <= 0) return arr; const c = [...arr]; [c[j-1], c[j]] = [c[j], c[j-1]]; return c; })}
@@ -1626,7 +1627,7 @@ const AboutEditor = ({ s, setSettings }: EProps) => {
             <Field label="Title"><input className={inputCls} value={s.about.title} onChange={(e) => set({ title: e.target.value })} /></Field>
           </div>
           <Field label="Description"><textarea className={textareaCls} value={s.about.body} onChange={(e) => set({ body: e.target.value })} /></Field>
-          <MediaPicker label="Image" value={s.about.image} onChange={(v) => set({ image: v ?? "" })} settings={s} setSettings={setSettings} accept="image" />
+          <MediaPicker label="Image" value={s.about.image} onChange={(v) => set({ image: v ?? "" })} />
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Mission title"><input className={inputCls} value={s.about.mission.title} onChange={(e) => set({ mission: { ...s.about.mission, title: e.target.value } })} /></Field>
             <Field label="Mission text"><textarea className={textareaCls} value={s.about.mission.body} onChange={(e) => set({ mission: { ...s.about.mission, body: e.target.value } })} /></Field>
@@ -1665,7 +1666,7 @@ const WhyChooseEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => {
             <Field label="Title"><input className={inputCls} value={s.whyChoose.title} onChange={(e) => set({ title: e.target.value })} /></Field>
           </div>
           <Field label="Description"><textarea className={textareaCls} value={s.whyChoose.description} onChange={(e) => set({ description: e.target.value })} /></Field>
-          <MediaPicker label="Main image" value={s.whyChoose.image} onChange={(v) => set({ image: v ?? "" })} settings={s} setSettings={setSettings} accept="image" />
+          <MediaPicker label="Main image" value={s.whyChoose.image} onChange={(v) => set({ image: v ?? "" })} />
         </div>
       </Card>
 
@@ -1725,7 +1726,7 @@ const ServicesEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => {
       <Card>
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-slate-900">Service cards</h3>
-          <button onClick={() => setI((arr) => [...arr, { id: uid("s"), icon: "Stethoscope", title: "New service", description: "", order: arr.length, active: true, price_amount: null, price_currency: "GBP", price_label: "" }])}
+          <button onClick={() => setI((arr) => [...arr, { id: uid("s"), icon: "Stethoscope", title: "New service", description: "", price_amount: null, price_currency: "GBP", price_label: "", order: arr.length, active: true }])}
             className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-blue-700">
             <Plus className="h-3.5 w-3.5" /> Add service
           </button>
@@ -1740,11 +1741,38 @@ const ServicesEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => {
               </div>
               <Field label="Description"><textarea className={textareaCls} value={it.description}
                 onChange={(e) => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, description: e.target.value } : x))} /></Field>
+              
+              {/* Price fields - replacing image and button fields */}
               <div className="mt-3 grid sm:grid-cols-3 gap-3">
-                <Field label="Price amount"><input type="number" step="0.01" className={inputCls} value={it.price_amount ?? ""} onChange={(e) => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, price_amount: e.target.value ? Number(e.target.value) : null } : x))} /></Field>
-                <Field label="Currency"><select className={inputCls} value={it.price_currency || "GBP"} onChange={(e) => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, price_currency: e.target.value } : x))}>{["GBP","USD","EUR","NGN"].map((c) => <option key={c} value={c}>{c}</option>)}</select></Field>
-                <Field label="Price label"><input className={inputCls} value={it.price_label ?? ""} onChange={(e) => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, price_label: e.target.value } : x))} placeholder="From £95" /></Field>
+                <Field label="Price amount">
+                  <input 
+                    type="number" 
+                    step="0.01" 
+                    className={inputCls} 
+                    value={it.price_amount ?? ""} 
+                    onChange={(e) => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, price_amount: e.target.value ? Number(e.target.value) : null } : x))} 
+                    placeholder="99.99"
+                  />
+                </Field>
+                <Field label="Currency">
+                  <select 
+                    className={inputCls} 
+                    value={it.price_currency || "GBP"} 
+                    onChange={(e) => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, price_currency: e.target.value } : x))}
+                  >
+                    {["GBP", "USD", "EUR", "NGN"].map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </Field>
+                <Field label="Price label">
+                  <input 
+                    className={inputCls} 
+                    value={it.price_label || ""} 
+                    onChange={(e) => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, price_label: e.target.value } : x))} 
+                    placeholder="From £95"
+                  />
+                </Field>
               </div>
+              
               <div className="mt-3 flex items-center justify-end gap-1 border-t border-slate-200 pt-3">
                 <button onClick={() => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, active: !x.active } : x))}
                   className={`grid place-items-center h-8 w-8 rounded ${it.active ? "text-emerald-600 hover:bg-emerald-50" : "text-slate-400 hover:bg-slate-100"}`}>
@@ -1779,7 +1807,7 @@ const VirtualCareEditor = ({ s, setSettings }: EProps) => {
             <Field label="CTA label"><input className={inputCls} value={s.virtualCare.ctaLabel} onChange={(e) => set({ ctaLabel: e.target.value })} /></Field>
             <Field label="CTA link"><input className={inputCls} value={s.virtualCare.ctaHref} onChange={(e) => set({ ctaHref: e.target.value })} /></Field>
           </div>
-          <MediaPicker label="Phone mockup image" value={s.virtualCare.mockupImage} onChange={(v) => set({ mockupImage: v ?? "" })} settings={s} setSettings={setSettings} accept="image" />
+          <MediaPicker label="Phone mockup image" value={s.virtualCare.mockupImage} onChange={(v) => set({ mockupImage: v ?? "" })} />
         </div>
       </Card>
 
@@ -1870,7 +1898,7 @@ const TestimonialsEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => 
                   </select>
                 </Field>
               </div>
-              <div className="mt-3"><MediaPicker label="Patient image" value={t.imageDataUrl} onChange={(v) => setI((arr) => arr.map((x) => x.id === t.id ? { ...x, imageDataUrl: v } : x))} settings={s} setSettings={setSettings} accept="image" /></div>
+              <div className="mt-3"><MediaPicker label="Patient image" value={t.imageDataUrl} onChange={(v) => setI((arr) => arr.map((x) => x.id === t.id ? { ...x, imageDataUrl: v } : x))} /></div>
               <div className="mt-3 flex justify-end gap-1 border-t border-slate-200 pt-3">
                 <button onClick={() => setI((arr) => reorder(arr, t.id, -1))} className="grid place-items-center h-8 w-8 rounded text-slate-500 hover:bg-slate-100"><ArrowUp className="h-4 w-4" /></button>
                 <button onClick={() => setI((arr) => reorder(arr, t.id, 1))} className="grid place-items-center h-8 w-8 rounded text-slate-500 hover:bg-slate-100"><ArrowDown className="h-4 w-4" /></button>
@@ -1898,8 +1926,8 @@ const CtaBannerEditor = ({ s, setSettings }: EProps) => {
           <Field label="Title"><input className={inputCls} value={s.ctaBanner.title} onChange={(e) => set({ title: e.target.value })} /></Field>
           <Field label="Description"><textarea className={textareaCls} value={s.ctaBanner.description} onChange={(e) => set({ description: e.target.value })} /></Field>
           <div className="grid sm:grid-cols-2 gap-4">
-            <MediaPicker label="Background video" value={s.ctaBanner.bgVideo} onChange={(v) => set({ bgVideo: v ?? "" })} settings={s} setSettings={setSettings} accept="video" />
-            <MediaPicker label="Background image (poster)" value={s.ctaBanner.bgImage} onChange={(v) => set({ bgImage: v ?? "" })} settings={s} setSettings={setSettings} accept="image" />
+            <MediaPicker label="Background video" value={s.ctaBanner.bgVideo} onChange={(v) => set({ bgVideo: v ?? "" })} />
+            <MediaPicker label="Background image (poster)" value={s.ctaBanner.bgImage} onChange={(v) => set({ bgImage: v ?? "" })} />
           </div>
           <Field label={`Overlay darkness: ${Math.round(s.ctaBanner.overlayOpacity * 100)}%`}>
             <input type="range" min={0} max={100} value={Math.round(s.ctaBanner.overlayOpacity * 100)}
@@ -2010,7 +2038,7 @@ const MediaLibraryEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => 
     <div className="space-y-6">
       <SectionHeader title="Media Library" desc="All uploaded images and videos." />
       <Card>
-        <MediaPicker label="" value={null} onChange={() => { /* picker is for adding only */ }} settings={s} setSettings={setSettings} accept="any" />
+        <MediaPicker label="" value={null} onChange={() => { /* picker is for adding only */ }} />
         <p className="text-xs text-slate-400 mt-3">Tip: media added here is reusable across every section.</p>
       </Card>
       <Card>
@@ -2045,8 +2073,8 @@ const SeoEditor = ({ s, setSettings }: EProps) => {
           <Field label="Page title" hint="Recommended < 60 characters"><input className={inputCls} value={s.seo.pageTitle} onChange={(e) => set({ pageTitle: e.target.value })} /></Field>
           <Field label="Meta description" hint="Recommended < 160 characters"><textarea className={textareaCls} value={s.seo.metaDescription} onChange={(e) => set({ metaDescription: e.target.value })} /></Field>
           <Field label="Keywords" hint="Comma-separated"><input className={inputCls} value={s.seo.keywords} onChange={(e) => set({ keywords: e.target.value })} /></Field>
-          <MediaPicker label="Open Graph image (1200x630)" value={s.seo.ogImage} onChange={(v) => set({ ogImage: v ?? "" })} settings={s} setSettings={setSettings} accept="image" />
-          <MediaPicker label="Favicon" value={s.seo.favicon} onChange={(v) => set({ favicon: v ?? "" })} settings={s} setSettings={setSettings} accept="image" />
+          <MediaPicker label="Open Graph image (1200x630)" value={s.seo.ogImage} onChange={(v) => set({ ogImage: v ?? "" })} />
+          <MediaPicker label="Favicon" value={s.seo.favicon} onChange={(v) => set({ favicon: v ?? "" })} />
         </div>
       </Card>
     </div>

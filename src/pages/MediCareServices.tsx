@@ -83,9 +83,9 @@ const MediCareServices = () => {
   const priceByTitle = useMemo(() => {
     const map = new Map<string, string>();
     const format = (service: Service) => {
-      if (service.price_label) return service.price_label.replace(/£/g, "₦");
+      if (service.price_label) return service.price_label;
       if (service.price_amount == null) return "";
-      return `$${Number(service.price_amount).toLocaleString("en-US")}`;
+      return `${service.price_currency || "GBP"} ${Number(service.price_amount).toLocaleString("en-US")}`;
     };
 
     priceServices.forEach((service) => {
@@ -97,21 +97,6 @@ const MediCareServices = () => {
     return map;
   }, [priceServices]);
 
-  const serviceDetailsByTitle = useMemo(() => {
-    const map = new Map<string, Service>();
-
-    priceServices.forEach((service) => {
-      map.set(service.title.trim().toLowerCase(), service);
-    });
-
-    return map;
-  }, [priceServices]);
-
-  const getPrice = (title: string) => {
-    if (pricesLoading) return "$30";
-    return priceByTitle.get(title.trim().toLowerCase()) || "$30";
-  };
-
   return (
     <div className="medicare-services min-h-screen" style={themeStyle}>
       <style>{tokenStyles}</style>
@@ -119,9 +104,6 @@ const MediCareServices = () => {
       <MedicareSimpleHeader settings={settings} activeHref="/doctor-portal/services" />
 
       <section className="mx-auto max-w-7xl px-4 sm:px-6 pt-14 pb-8">
-        {/* <Link to="/doctor-portal" className="inline-flex items-center gap-2 text-xs font-semibold text-[hsl(var(--mc-muted))] mb-5 hover:text-[hsl(var(--mc-sage))]">
-          <ArrowLeft className="h-3.5 w-3.5" /> Back to home
-        </Link> */}
         <h1 className="text-4xl sm:text-5xl lg:text-6xl text-[hsl(var(--mc-ink))]">
           {settings.services.title || "Our Services"}
         </h1>
@@ -136,40 +118,30 @@ const MediCareServices = () => {
             <p className="text-[hsl(var(--mc-muted))]">No services are available yet.</p>
           </div>
         ) : (
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {services.map((svc) => (
-              (() => {
-                const richService = serviceDetailsByTitle.get(svc.title.trim().toLowerCase());
-
-                return (
               <article
                 key={svc.id}
-                className="group relative overflow-hidden rounded-3xl border border-[hsl(var(--mc-border))] bg-[hsl(var(--mc-card))] p-7 shadow-[0_14px_32px_-20px_rgba(15,23,42,0.28)] transition-all duration-300 hover:-translate-y-1"
+                className="group bg-[hsl(var(--mc-card))] rounded-3xl overflow-hidden border border-[hsl(var(--mc-border))] mc-shadow-card mc-card-hover p-7"
               >
-                <div className="absolute right-5 top-5 rounded-full bg-[hsl(var(--mc-primary))] px-3 py-1.5 text-xs font-semibold text-white shadow-sm">
-                  {getPrice(svc.title)}
-                </div>
-
                 <span className="inline-grid place-items-center h-12 w-12 rounded-2xl mc-grad-primary text-white mc-shadow-glow mb-4">
                   <McIcon name={svc.icon} className="h-5 w-5" />
                 </span>
-
-                <h3 className="pr-24 font-display text-xl font-bold text-[hsl(var(--mc-ink))]">
-                  {svc.title}
-                </h3>
-
+                <h3 className="font-display text-xl font-bold">{svc.title}</h3>
                 <p className="mt-2 text-sm text-[hsl(var(--mc-muted))] leading-relaxed">
-                  {richService?.summary || svc.description}
+                  {svc.description}
                 </p>
-
+                <p className="mt-4 text-sm font-semibold text-[hsl(var(--mc-ink))]">
+                  {pricesLoading
+                    ? "Loading..."
+                    : priceByTitle.get(svc.title.trim().toLowerCase()) || "Contact us"}
+                </p>
                 {svc.ctaLabel && svc.ctaHref && (
                   <a href={svc.ctaHref} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[hsl(var(--mc-primary))]">
                     {svc.ctaLabel} <ArrowRight className="h-4 w-4" />
                   </a>
                 )}
               </article>
-                );
-              })()
             ))}
           </div>
         )}

@@ -5,8 +5,9 @@ import { patientMock, formatNGN } from "@/data/portalMock";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { CalendarDays, FileText, Pill, Wallet, Video, Plus, ArrowRight, Clock } from "lucide-react";
+import { CalendarDays, FileText, Pill, Wallet, Video, Plus, ArrowRight, Clock, ShieldCheck, BadgeCheck, Building2, CreditCard } from "lucide-react";
 import { Link } from "react-router-dom";
+import { usePatientCategory, categoryLabel } from "@/hooks/usePatientCategory";
 
 const statusVariant = (s: string) =>
   s === "confirmed" ? "default" : s === "pending" ? "secondary" : "outline";
@@ -14,6 +15,15 @@ const statusVariant = (s: string) =>
 const PatientDashboard = () => {
   const upcoming = patientMock.appointments.filter((a) => a.status !== "completed");
   const past = patientMock.appointments.filter((a) => a.status === "completed");
+  const [category] = usePatientCategory();
+
+  const categoryMeta = {
+    card: { icon: CreditCard, line: "Card Payment account · Pay per consultation" },
+    hmo: { icon: ShieldCheck, line: `${patientMock.hmo.provider} · ${patientMock.hmo.plan}` },
+    subscription: { icon: BadgeCheck, line: `${patientMock.subscription.plan} · Renews ${new Date(patientMock.subscription.renewsOn).toLocaleDateString()}` },
+    organization: { icon: Building2, line: `${patientMock.organization.name} · ${patientMock.organization.coverageTier}` },
+  }[category];
+  const CategoryIcon = categoryMeta.icon;
 
   return (
     <PortalLayout portalName="Patient Portal" nav={patientNav}>
@@ -26,6 +36,22 @@ const PatientDashboard = () => {
           </Button>
         }
       />
+
+      <div className="mb-6 rounded-xl border border-border/60 bg-gradient-to-br from-primary/5 to-primary/0 p-4 sm:p-5 flex items-center gap-4">
+        <div className="h-11 w-11 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <CategoryIcon className="h-5 w-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Payment category</p>
+          <p className="font-medium text-sm truncate">{categoryLabel(category)}</p>
+          <p className="text-xs text-muted-foreground truncate">{categoryMeta.line}</p>
+        </div>
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/patient/payments">Manage <ArrowRight className="h-3.5 w-3.5" /></Link>
+        </Button>
+      </div>
+
+
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard label="Upcoming" value={patientMock.stats.upcoming} icon={CalendarDays} trend="Next: May 15" />

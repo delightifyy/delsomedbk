@@ -83,7 +83,7 @@ const Index = () => {
               Access <span className="text-primary">Trusted Doctors</span> Anytime, <span className="italic text-secondary">Anywhere</span>.
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground max-w-xl leading-relaxed">
-              DesolMed connects patients with verified, licensed doctors across and outside Nigeria to gives healthcare professionals a beautiful place to grow their practice online.
+              DesolMed connects patients with verified, licensed doctors across and outside Nigeria to give healthcare professionals a beautiful place to grow their practice online.
             </p>
 
             {/* Inline search */}
