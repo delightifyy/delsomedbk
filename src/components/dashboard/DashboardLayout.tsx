@@ -18,6 +18,7 @@ import {
   Activity,
   Tags,
   HeartPulse,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,6 +39,7 @@ const items = [
   { to: "/dashboard/news", label: "News", icon: Newspaper },
   // { to: "/dashboard/newsletter", label: "Newsletter", icon: MailCheck },
   { to: "/dashboard/lookups", label: "Lookups", icon: Tags },
+  { to: "/dashboard/subscribers", label: "Subscribers List", icon: CreditCard },
   
   { to: "/dashboard/faqs", label: "FAQs", icon: CircleHelp },
   { to: "/dashboard/testimonials", label: "Testimonials", icon: MessageCircleHeart },
