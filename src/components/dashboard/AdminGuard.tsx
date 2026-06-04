@@ -9,10 +9,11 @@ export const AdminGuard = ({ children }: { children: ReactNode }) => {
   const hasBackendToken = API_FALLBACK_TO_LOCAL || Boolean(getStoredAuthToken());
 
   useEffect(() => {
-    if (!loading && user && isAdmin && !hasBackendToken) {
+    if (!loading && user && !hasBackendToken) {
+      // Stale local session without a backend token — clear it so the user can sign in fresh.
       signOut();
     }
-  }, [hasBackendToken, isAdmin, loading, signOut, user]);
+  }, [hasBackendToken, loading, signOut, user]);
 
   if (loading) {
     return (
@@ -21,14 +22,7 @@ export const AdminGuard = ({ children }: { children: ReactNode }) => {
       </div>
     );
   }
-  if (!user) return <Navigate to="/auth" replace />;
-  if (!hasBackendToken) {
-    return (
-      <div className="min-h-screen grid place-items-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  if (!user || !hasBackendToken) return <Navigate to="/auth" replace />;
   if (!isAdmin) {
     return (
       <div className="min-h-screen grid place-items-center px-6 text-center">
