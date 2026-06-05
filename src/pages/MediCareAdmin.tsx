@@ -13,6 +13,7 @@ import {
   defaultSettings, loadSettings, resetSettings, saveSettings,
   type MediCareSettings, type LucideIconName, type Service, type Feature,
   type TestimonialItem, type Partner, type NavItem, type SocialLink, type FooterLink,
+  type HospitalLocation,
 } from "@/lib/medicareSettings";
 import {
   DAY_NAMES,
