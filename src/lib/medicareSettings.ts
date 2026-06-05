@@ -24,6 +24,8 @@ export type Service = {
   id: string; image?: string | null; icon: LucideIconName;
   title: string; description: string;
   ctaLabel?: string; ctaHref?: string;
+  price_amount?: number | null;
+  price_label?: string | null;
   order: number; active: boolean;
 };
 export type TestimonialItem = {
