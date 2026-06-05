@@ -389,6 +389,8 @@ export const defaultSettings: MediCareSettings = {
     address: "10, Abeokuta Street, Ebute Metta, Yaba, Lagos, Nigeria",
   },
 
+  hospitalLocations: [],
+
   footerTagline: "Modern telemedicine for everyday people. Trusted, secure, available 24/7.",
   faqs: [
     { id: "faq-1", q: "What is MediCare?", a: "MediCare is a modern telemedicine platform connecting patients with licensed doctors for fast, secure and affordable virtual care." },
