@@ -33,6 +33,16 @@ export type TestimonialItem = {
 export type SocialLink = { id: string; platform: SocialPlatform; href: string };
 export type FooterLink = { id: string; label: string; href: string };
 export type MediaItem = { id: string; name: string; type: "image" | "video"; dataUrl: string; uploadedAt: number };
+export type HospitalLocation = {
+  id: string;
+  name: string;
+  street: string;
+  city: string;
+  state: string;
+  phone: string;
+  active: boolean;
+  order: number;
+};
 
 export type Faq = { id: string; q: string; a: string };
 export type Testimonial = { id: string; quote: string; name: string; role: string };
