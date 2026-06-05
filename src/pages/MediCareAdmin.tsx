@@ -6,7 +6,7 @@ import {
   Eye, EyeOff, ExternalLink, Image as ImageIcon, Settings, Menu as MenuIcon,
   Star, Sparkles, FileText, Layers, Megaphone, Phone as PhoneIcon, Search,
   Home, Info, Heart, Wrench, Video, MessageSquare, ChevronRight, ChevronDown, X,
-  Facebook, Twitter, Instagram, Linkedin, Newspaper, Mail, MapPin,
+  Facebook, Twitter, Instagram, Linkedin, Newspaper, Mail, MapPin, Building2,
   CalendarClock, Loader2,
 } from "lucide-react";
 import {
