@@ -101,7 +101,7 @@ const mergeRemoteMiniSite = (current: MediCareSettings, remote: Record<string, u
           title: getText(record, "title") ?? "",
           description: getText(record, "description") ?? "",
           price_amount: record.price_amount != null ? Number(record.price_amount) : null,
-          price_currency: getText(record, "price_currency") ?? "GBP",
+          price_currency: "NGN",
           price_label: getText(record, "price_label") ?? "",
           order: Number(record.order ?? index),
           active: record.is_visible !== false,
@@ -193,7 +193,7 @@ const syncServiceCards = async (items: Service[]) => {
       icon: item.icon,
       description: item.description,
       price_amount: item.price_amount ?? null,
-      price_currency: item.price_currency ?? "GBP",
+      price_currency: "NGN",
       price_label: item.price_label ?? null,
       is_visible: item.active,
     });
@@ -1488,64 +1488,6 @@ const BrandingEditor = ({ s, update, setSettings }: EProps & { update: (p: Parti
   </div>
 );
 
-/* ---------- NAVBAR ----------
-const NavbarEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => {
-  const items = [...s.nav.items].sort((a, b) => a.order - b.order);
-  const setItems = (mut: (arr: NavItem[]) => NavItem[]) =>
-    setSettings((st) => ({ ...st, nav: { ...st.nav, items: mut(st.nav.items) } }));
-
-  return (
-    <div className="space-y-6">
-      <SectionHeader title="Navbar" desc="Manage menu links, order, and visibility." />
-      <Card>
-        <div className="flex items-center justify-between gap-3 mb-4">
-          <h3 className="font-semibold text-slate-900">Menu links</h3>
-          <button
-            onClick={() => setItems((arr) => [...arr, { id: uid("nav"), label: "New link", href: "/doctor-portal", enabled: true, order: arr.length }])}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-blue-700"
-          >
-            <Plus className="h-3.5 w-3.5" /> Add link
-          </button>
-        </div>
-        <div className="space-y-3">
-          {items.map((item) => (
-            <div key={item.id} className="grid grid-cols-12 gap-2 items-center rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <button
-                onClick={() => setItems((arr) => arr.map((x) => x.id === item.id ? { ...x, enabled: !x.enabled } : x))}
-                className={`col-span-1 grid h-9 place-items-center rounded ${item.enabled ? "text-emerald-600 hover:bg-emerald-50" : "text-slate-400 hover:bg-slate-100"}`}
-                title={item.enabled ? "Visible" : "Hidden"}
-              >
-                {item.enabled ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-              </button>
-              <input
-                className={inputCls + " col-span-4"}
-                value={item.label}
-                placeholder="Label"
-                onChange={(e) => setItems((arr) => arr.map((x) => x.id === item.id ? { ...x, label: e.target.value } : x))}
-              />
-              <input
-                className={inputCls + " col-span-5"}
-                value={item.href}
-                placeholder="/doctor-portal/contact"
-                onChange={(e) => setItems((arr) => arr.map((x) => x.id === item.id ? { ...x, href: e.target.value } : x))}
-              />
-              <div className="col-span-2 flex justify-end gap-1">
-                <button onClick={() => setItems((arr) => reorder(arr, item.id, -1))} className="grid h-8 w-8 place-items-center rounded text-slate-500 hover:bg-slate-100"><ArrowUp className="h-4 w-4" /></button>
-                <button onClick={() => setItems((arr) => reorder(arr, item.id, 1))} className="grid h-8 w-8 place-items-center rounded text-slate-500 hover:bg-slate-100"><ArrowDown className="h-4 w-4" /></button>
-                <button onClick={() => askDelete(`nav link "${item.label}"`, () => setItems((arr) => arr.filter((x) => x.id !== item.id)))}
-                  className="grid h-8 w-8 place-items-center rounded text-rose-600 hover:bg-rose-50"><Trash2 className="h-4 w-4" /></button>
-              </div>
-            </div>
-          ))}
-          {items.length === 0 && <p className="py-8 text-center text-sm text-slate-500">No menu links yet.</p>}
-        </div>
-      </Card>
-
-    </div>
-  );
-};
-*/
-
 /* ---------- HERO ---------- */
 const HeroEditor = ({ s, setSettings }: EProps) => {
   const set = (patch: Partial<MediCareSettings["hero"]>) =>
@@ -1726,7 +1668,7 @@ const ServicesEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => {
       <Card>
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-slate-900">Service cards</h3>
-          <button onClick={() => setI((arr) => [...arr, { id: uid("s"), icon: "Stethoscope", title: "New service", description: "", price_amount: null, price_currency: "GBP", price_label: "", order: arr.length, active: true }])}
+          <button onClick={() => setI((arr) => [...arr, { id: uid("s"), icon: "Stethoscope", title: "New service", description: "", price_amount: null, price_currency: "NGN", price_label: "", order: arr.length, active: true }])}
             className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-blue-700">
             <Plus className="h-3.5 w-3.5" /> Add service
           </button>
@@ -1742,35 +1684,28 @@ const ServicesEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => {
               <Field label="Description"><textarea className={textareaCls} value={it.description}
                 onChange={(e) => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, description: e.target.value } : x))} /></Field>
               
-              {/* Price fields - replacing image and button fields */}
+              {/* Price fields - NGN currency, no dropdown */}
               <div className="mt-3 grid sm:grid-cols-3 gap-3">
-                <Field label="Price amount">
+                <Field label="Price amount (NGN)">
                   <input 
                     type="number" 
                     step="0.01" 
                     className={inputCls} 
                     value={it.price_amount ?? ""} 
                     onChange={(e) => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, price_amount: e.target.value ? Number(e.target.value) : null } : x))} 
-                    placeholder="99.99"
+                    placeholder="₦99.99"
                   />
                 </Field>
-                <Field label="Currency">
-                  <select 
-                    className={inputCls} 
-                    value={it.price_currency || "GBP"} 
-                    onChange={(e) => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, price_currency: e.target.value } : x))}
-                  >
-                    {["GBP", "USD", "EUR", "NGN"].map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </Field>
-                <Field label="Price label">
-                  <input 
-                    className={inputCls} 
-                    value={it.price_label || ""} 
-                    onChange={(e) => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, price_label: e.target.value } : x))} 
-                    placeholder="From £95"
-                  />
-                </Field>
+                <div className="col-span-2">
+                  <Field label="Price label">
+                    <input 
+                      className={inputCls} 
+                      value={it.price_label || ""} 
+                      onChange={(e) => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, price_label: e.target.value } : x))} 
+                      placeholder="From ₦95"
+                    />
+                  </Field>
+                </div>
               </div>
               
               <div className="mt-3 flex items-center justify-end gap-1 border-t border-slate-200 pt-3">
