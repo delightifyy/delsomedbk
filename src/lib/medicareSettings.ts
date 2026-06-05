@@ -173,6 +173,9 @@ export type MediCareSettings = {
   /* Contact (still used by booking modal) */
   contact: { email: string; phone: string; address: string };
 
+  /* Hospital Locations */
+  hospitalLocations: HospitalLocation[];
+
   /* Legacy slots still consumed elsewhere */
   footerTagline: string;
   faqs: Faq[];
