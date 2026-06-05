@@ -6,13 +6,14 @@ import {
   Eye, EyeOff, ExternalLink, Image as ImageIcon, Settings, Menu as MenuIcon,
   Star, Sparkles, FileText, Layers, Megaphone, Phone as PhoneIcon, Search,
   Home, Info, Heart, Wrench, Video, MessageSquare, ChevronRight, ChevronDown, X,
-  Facebook, Twitter, Instagram, Linkedin, Newspaper, Mail, MapPin,
+  Facebook, Twitter, Instagram, Linkedin, Newspaper, Mail, MapPin, Building2,
   CalendarClock, Loader2,
 } from "lucide-react";
 import {
   defaultSettings, loadSettings, resetSettings, saveSettings,
   type MediCareSettings, type LucideIconName, type Service, type Feature,
   type TestimonialItem, type Partner, type NavItem, type SocialLink, type FooterLink,
+  type HospitalLocation,
 } from "@/lib/medicareSettings";
 import {
   DAY_NAMES,
@@ -306,7 +307,7 @@ const reorder = <T extends { order: number }>(items: T[], id: string, dir: -1 | 
 type Tab =
   | "home" | "navbar" | "hero" | "partners" | "about" | "whyChoose"
   | "services" | "media" | "seo"
-  | "branding" | "contact" | "blog" | "servicesPage" | "availability";
+  | "branding" | "contact" | "blog" | "servicesPage" | "availability" | "hospital";
 
 type PageGroup = {
   id: string;
@@ -368,6 +369,14 @@ const PAGE_GROUPS: PageGroup[] = [
     icon: PhoneIcon,
     sections: [
       { id: "contact", label: "Contact Info + Footer" },
+    ],
+  },
+  {
+    id: "hospital",
+    label: "Hospital",
+    icon: Building2,
+    sections: [
+      { id: "hospital", label: "Hospital Locations" },
     ],
   },
 ];
@@ -591,6 +600,7 @@ const MediCareAdmin = () => {
           {tab === "seo"          && <SeoEditor s={s} setSettings={setSettings} />}
           {tab === "contact"      && <ContactEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
           {tab === "blog"         && <BlogEditor />}
+          {tab === "hospital"     && <HospitalLocationsEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
         </main>
       </div>
 
@@ -2011,6 +2021,98 @@ const SeoEditor = ({ s, setSettings }: EProps) => {
           <MediaPicker label="Open Graph image (1200x630)" value={s.seo.ogImage} onChange={(v) => set({ ogImage: v ?? "" })} />
           <MediaPicker label="Favicon" value={s.seo.favicon} onChange={(v) => set({ favicon: v ?? "" })} />
         </div>
+      </Card>
+    </div>
+  );
+};
+/* ---------- HOSPITAL LOCATIONS ---------- */
+const HospitalLocationsEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => {
+  const set = (mut: (arr: HospitalLocation[]) => HospitalLocation[]) =>
+    setSettings((st) => ({ ...st, hospitalLocations: mut(st.hospitalLocations) }));
+
+  const emptyLocation = (): HospitalLocation => ({
+    id: uid("loc"),
+    name: "",
+    street: "",
+    city: "",
+    state: "",
+    phone: "",
+    active: true,
+    order: s.hospitalLocations.length,
+  });
+
+  const [draft, setDraft] = useState<HospitalLocation>(emptyLocation());
+
+  const addLocation = () => {
+    if (!draft.name.trim() || !draft.street.trim()) {
+      toast.error("Name and street address are required.");
+      return;
+    }
+    set((arr) => [...arr, { ...draft, order: arr.length }]);
+    setDraft(emptyLocation());
+    toast.success("Location added");
+  };
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader title="Hospital Locations" desc="Manage clinic and hospital addresses shown on the site." />
+
+      <Card>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Location name"><input className={inputCls} placeholder="e.g. Main Hospital" value={draft.name} onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} /></Field>
+          <Field label="Phone"><input className={inputCls} placeholder="+234 ..." value={draft.phone} onChange={(e) => setDraft((d) => ({ ...d, phone: e.target.value }))} /></Field>
+          <Field label="Street address"><input className={inputCls} placeholder="Street address" value={draft.street} onChange={(e) => setDraft((d) => ({ ...d, street: e.target.value }))} /></Field>
+          <Field label="City"><input className={inputCls} placeholder="City" value={draft.city} onChange={(e) => setDraft((d) => ({ ...d, city: e.target.value }))} /></Field>
+          <Field label="State"><input className={inputCls} placeholder="State" value={draft.state} onChange={(e) => setDraft((d) => ({ ...d, state: e.target.value }))} /></Field>
+          <div className="flex items-end">
+            <button onClick={addLocation} className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 text-white px-3 py-2 text-sm font-semibold hover:bg-blue-700">
+              <Plus className="h-4 w-4" /> Add location
+            </button>
+          </div>
+        </div>
+      </Card>
+
+      <Card>
+        {s.hospitalLocations.length === 0 ? (
+          <p className="text-sm text-slate-500">No locations added yet. Use the form above to add one.</p>
+        ) : (
+          <div className="space-y-3">
+            {s.hospitalLocations.map((loc, i) => (
+              <div key={loc.id} className="grid gap-2 sm:grid-cols-12 items-start bg-slate-50 rounded-lg p-3 border border-slate-200">
+                <div className="sm:col-span-3">
+                  <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Name</span>
+                  <input className={inputCls} value={loc.name} onChange={(e) => set((arr) => arr.map((x) => x.id === loc.id ? { ...x, name: e.target.value } : x))} />
+                </div>
+                <div className="sm:col-span-3">
+                  <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Street</span>
+                  <input className={inputCls} value={loc.street} onChange={(e) => set((arr) => arr.map((x) => x.id === loc.id ? { ...x, street: e.target.value } : x))} />
+                </div>
+                <div className="sm:col-span-2">
+                  <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">City</span>
+                  <input className={inputCls} value={loc.city} onChange={(e) => set((arr) => arr.map((x) => x.id === loc.id ? { ...x, city: e.target.value } : x))} />
+                </div>
+                <div className="sm:col-span-2">
+                  <span className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">State</span>
+                  <input className={inputCls} value={loc.state} onChange={(e) => set((arr) => arr.map((x) => x.id === loc.id ? { ...x, state: e.target.value } : x))} />
+                </div>
+                <div className="sm:col-span-2 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <input id={`active-${loc.id}`} type="checkbox" checked={loc.active} onChange={(e) => set((arr) => arr.map((x) => x.id === loc.id ? { ...x, active: e.target.checked } : x))} className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                    <label htmlFor={`active-${loc.id}`} className="text-xs text-slate-600">Active</label>
+                  </div>
+                  <div className="flex gap-1">
+                    <button onClick={() => set((arr) => { const j = arr.findIndex((x) => x.id === loc.id); if (j <= 0) return arr; const c = [...arr]; [c[j-1], c[j]] = [c[j], c[j-1]]; return c; })}
+                      className="grid place-items-center h-8 w-8 rounded text-slate-500 hover:bg-slate-100"><ArrowUp className="h-4 w-4" /></button>
+                    <button onClick={() => set((arr) => { const j = arr.findIndex((x) => x.id === loc.id); if (j < 0 || j >= arr.length - 1) return arr; const c = [...arr]; [c[j+1], c[j]] = [c[j], c[j+1]]; return c; })}
+                      className="grid place-items-center h-8 w-8 rounded text-slate-500 hover:bg-slate-100"><ArrowDown className="h-4 w-4" /></button>
+                    <button onClick={() => askDelete(`location "${loc.name}"`, () => set((arr) => arr.filter((x) => x.id !== loc.id)))}
+                      className="grid place-items-center h-8 w-8 rounded text-rose-600 hover:bg-rose-50"><Trash2 className="h-4 w-4" /></button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </Card>
     </div>
   );

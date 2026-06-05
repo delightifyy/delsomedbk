@@ -24,6 +24,8 @@ export type Service = {
   id: string; image?: string | null; icon: LucideIconName;
   title: string; description: string;
   ctaLabel?: string; ctaHref?: string;
+  price_amount?: number | null;
+  price_label?: string | null;
   order: number; active: boolean;
 };
 export type TestimonialItem = {
@@ -33,6 +35,16 @@ export type TestimonialItem = {
 export type SocialLink = { id: string; platform: SocialPlatform; href: string };
 export type FooterLink = { id: string; label: string; href: string };
 export type MediaItem = { id: string; name: string; type: "image" | "video"; dataUrl: string; uploadedAt: number };
+export type HospitalLocation = {
+  id: string;
+  name: string;
+  street: string;
+  city: string;
+  state: string;
+  phone: string;
+  active: boolean;
+  order: number;
+};
 
 export type Faq = { id: string; q: string; a: string };
 export type Testimonial = { id: string; quote: string; name: string; role: string };
@@ -160,6 +172,9 @@ export type MediCareSettings = {
 
   /* Contact (still used by booking modal) */
   contact: { email: string; phone: string; address: string };
+
+  /* Hospital Locations */
+  hospitalLocations: HospitalLocation[];
 
   /* Legacy slots still consumed elsewhere */
   footerTagline: string;
@@ -373,6 +388,8 @@ export const defaultSettings: MediCareSettings = {
     phone: "+234 818 689 9594",
     address: "10, Abeokuta Street, Ebute Metta, Yaba, Lagos, Nigeria",
   },
+
+  hospitalLocations: [],
 
   footerTagline: "Modern telemedicine for everyday people. Trusted, secure, available 24/7.",
   faqs: [
