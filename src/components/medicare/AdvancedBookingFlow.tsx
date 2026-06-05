@@ -416,10 +416,11 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
                         {method === "card" && <div className="font-display font-bold text-primary whitespace-nowrap">{fmtNGN(s.price)}</div>}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">{s.description}</div>
-                      <div className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                        <Clock className="h-3 w-3" /> {s.duration}
-                        {disabled && <span className="ml-2 text-rose-600 font-medium">Appointment not available</span>}
-                      </div>
+                      {disabled && (
+                        <div className="text-xs text-rose-600 font-medium mt-2">
+                          Appointment not available
+                        </div>
+                      )}
                       <div className="mt-3">
                         <span className={`inline-flex text-xs font-semibold px-2 py-1 rounded ${active ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
                           {active ? "Selected" : "Select"}
