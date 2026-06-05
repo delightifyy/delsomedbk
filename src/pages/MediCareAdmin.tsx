@@ -600,6 +600,7 @@ const MediCareAdmin = () => {
           {tab === "seo"          && <SeoEditor s={s} setSettings={setSettings} />}
           {tab === "contact"      && <ContactEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
           {tab === "blog"         && <BlogEditor />}
+          {tab === "hospital"     && <HospitalLocationsEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
         </main>
       </div>
 
