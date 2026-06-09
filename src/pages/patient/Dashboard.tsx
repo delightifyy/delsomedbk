@@ -1,7 +1,7 @@
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { PageHeader, StatCard, SectionCard } from "@/components/portal/PortalUI";
 import { patientNav } from "./nav";
-import { patientMock, formatNGN } from "@/data/portalMock";
+import { patientMock } from "@/data/portalMock";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
