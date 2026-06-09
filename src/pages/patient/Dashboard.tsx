@@ -53,11 +53,10 @@ const PatientDashboard = () => {
 
 
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <StatCard label="Upcoming" value={patientMock.stats.upcoming} icon={CalendarDays} trend="Next: May 15" />
         <StatCard label="Past Visits" value={patientMock.stats.past} icon={FileText} accent="secondary" />
         <StatCard label="Active Rx" value={patientMock.stats.prescriptions} icon={Pill} />
-        <StatCard label="Wallet" value={formatNGN(patientMock.stats.balanceNGN)} icon={Wallet} accent="muted" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
