@@ -547,22 +547,83 @@ export const signInPatientWithPassword = async ({ email, password }: { email: st
   }
 };
 
+// FIXED: Doctor login with admin endpoint support
 export const signInDoctorWithPassword = async ({ email, password }: { email: string; password: string }) => {
   const normalizedEmail = email.trim().toLowerCase();
+  let response = null;
+  let userRole = "doctor";
 
   try {
-    const response = await api.auth.patientLogin({ email: normalizedEmail, password });
+    // FIRST: Try to login as SUPER ADMIN (using admin endpoint)
+    try {
+      console.log("Attempting super admin login...");
+      const adminResponse = await api.auth.adminLogin({ email: normalizedEmail, password });
+      if (adminResponse.data?.token) {
+        response = adminResponse;
+        userRole = "super_admin";
+        console.log("✅ Super admin login successful");
+      }
+    } catch (adminError) {
+      console.log("Not a super admin, trying doctor login...");
+    }
+
+    // SECOND: If not super admin, try DOCTOR login (using patient endpoint with doctor role)
+    if (!response) {
+      try {
+        console.log("Attempting doctor login...");
+        const doctorResponse = await api.auth.patientLogin({ email: normalizedEmail, password });
+        const backendUser = doctorResponse.data?.user;
+        const roles = normalizeRoleList(backendUser?.roles);
+        
+        // Check if this user has doctor role
+        const isDoctor = roles.includes("doctor") || 
+                         roles.includes("provider") || 
+                         backendUser?.user_type === "doctor" || 
+                         backendUser?.is_doctor === true;
+        
+        if (isDoctor && doctorResponse.data?.token) {
+          response = doctorResponse;
+          userRole = "doctor";
+          console.log("✅ Doctor login successful");
+        } else if (doctorResponse.data?.token) {
+          // User exists but doesn't have doctor role
+          throw new Error("This account exists but does not have doctor privileges. Please use a doctor account.");
+        }
+      } catch (doctorError) {
+        console.log("Doctor login failed:", doctorError);
+      }
+    }
+
+    // If no valid response after both attempts
+    if (!response || !response.data?.token) {
+      throw new Error("Invalid credentials. Please check your email and password.");
+    }
+
     const backendUser = response.data.user;
     const token = response.data.token;
-    
-    if (!token) throw new Error("Login succeeded but no token returned.");
-
     const roles = normalizeRoleList(backendUser?.roles);
-    const isDoctorBackend = roles.includes("doctor") || backendUser?.user_type === "doctor" || backendUser?.is_doctor;
     
-    if (!isDoctorBackend) throw new Error("This account is not a doctor account.");
+    // Check if user has access (super admin OR doctor)
+    const hasAccess = userRole === "super_admin" || 
+                      roles.includes("doctor") || 
+                      roles.includes("provider") || 
+                      backendUser?.user_type === "doctor" || 
+                      backendUser?.is_doctor === true;
+    
+    if (!hasAccess) {
+      throw new Error("This account does not have access to the doctor portal.");
+    }
 
     const fullName = [backendUser?.first_name, backendUser?.last_name].filter(Boolean).join(" ").trim();
+    
+    // Build roles array based on user type
+    let finalRoles = roles;
+    if (userRole === "super_admin") {
+      finalRoles = ["super_admin", "admin"];
+    } else if (!finalRoles.includes("doctor")) {
+      finalRoles = [...finalRoles, "doctor"];
+    }
+    
     const session: LocalSession = {
       user: { 
         id: String(backendUser?.uuid ?? backendUser?.id ?? normalizedEmail), 
@@ -571,17 +632,25 @@ export const signInDoctorWithPassword = async ({ email, password }: { email: str
         created_at: backendUser?.created_at ?? new Date().toISOString() 
       },
       token,
-      roles: ["doctor"],
+      roles: finalRoles,
       token_type: response.data.token_type,
       expires_in: response.data.expires_in,
     };
     
     setStoredAuthToken(token);
     writeSession(session);
+    
+    console.log(`✅ Login successful as: ${userRole}`);
     return { data: { session } };
   } catch (err) {
-    console.error("Doctor login error:", err);
-    throw err instanceof Error ? err : new Error("Unable to sign in as doctor. Please check credentials.");
+    console.error("Doctor portal login error:", err);
+    if (err instanceof ApiError) {
+      if (err.status === 401) {
+        throw new Error("Invalid email or password. Please try again.");
+      }
+      throw err;
+    }
+    throw err instanceof Error ? err : new Error("Unable to sign in. Please check credentials.");
   }
 };
 

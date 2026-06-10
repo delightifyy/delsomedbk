@@ -2,32 +2,33 @@ import { FormEvent, ReactNode, useEffect, useState } from "react";
 import { Loader2, Lock, Mail } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { signInDoctorWithPassword, signInWithPassword } from "@/lib/localStore";
+import { signInDoctorWithPassword } from "@/lib/localStore";
 
 export const DoctorGuard = ({ children }: { children: ReactNode }) => {
-  const { session, isAdmin, loading } = useAuth();
+  const { user, session, isAdmin, loading, refetchUser } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const isDoctor = Boolean(session?.roles?.includes("doctor"));
-  const hasAccess = isDoctor || isAdmin;
+  
+  // Check if user has doctor or admin access
+  const hasDoctorRole = session?.roles?.includes("doctor") || user?.roles?.includes("doctor");
+  const hasAdminRole = isAdmin || session?.roles?.includes("admin") || session?.roles?.includes("super_admin") || user?.roles?.includes("admin") || user?.roles?.includes("super_admin");
+  const hasAccess = hasDoctorRole || hasAdminRole;
 
   useEffect(() => {
-    if (!hasAccess) {
+    if (!hasAccess && !loading) {
       setPassword("");
     }
-  }, [hasAccess]);
+  }, [hasAccess, loading]);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setBusy(true);
     try {
-      try {
-        await signInDoctorWithPassword({ email, password });
-      } catch {
-        await signInWithPassword({ email, password });
-      }
+      await signInDoctorWithPassword({ email, password });
+      await refetchUser();
+      toast({ title: "Success", description: "Welcome to Doctor Portal" });
     } catch (error: unknown) {
       const description = error instanceof Error ? error.message : "Unable to sign in. Please try again.";
       toast({ title: "Doctor sign in failed", description, variant: "destructive" });
@@ -54,8 +55,8 @@ export const DoctorGuard = ({ children }: { children: ReactNode }) => {
               <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/30">
                 <Lock className="h-5 w-5" />
               </div>
-              <h1 className="text-2xl font-bold">Admin</h1>
-              <p className="mt-2 text-sm text-slate-500">Sign In using your credentials</p>
+              <h1 className="text-2xl font-bold">Doctor Portal</h1>
+              <p className="mt-2 text-sm text-slate-500">Sign in using your doctor credentials</p>
             </div>
 
             <form onSubmit={onSubmit} className="space-y-4">
