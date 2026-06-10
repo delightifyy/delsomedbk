@@ -1,57 +1,88 @@
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Button } from "@/components/ui/button";
-import { Check, Heart, Users, Star, Calendar, ShieldCheck, Stethoscope, Sparkles, Loader2, LockKeyhole } from "lucide-react";
+import { Check, Heart, Users, Star, Calendar, ShieldCheck, Stethoscope, Loader2, LockKeyhole, AlertCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { signInPatientWithPassword } from "@/lib/localStore";
+import { publicApi, ApiError } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Plan = {
   id: string;
   name: string;
   price: string;
+  price_kobo: number;
   period: string;
+  billing_period: "monthly" | "quarterly" | "yearly";
   description: string;
-  icon: typeof Heart;
   features: string[];
+  consultations_included: number;
+  is_active: boolean;
+  type: "individual" | "family" | "corporate" | "custom";
   popular?: boolean;
 };
 
-const PLANS: Plan[] = [
-  {
-    id: "individual",
-    name: "Individual Package",
-    price: "₦50,000",
-    period: "Yearly",
-    description: "Personal healthcare designed for everyday wellness.",
-    icon: Heart,
-    features: [
-      "8 Consultations per year",
-      "Access to healthcare support",
-      "Personal healthcare management",
-      "Online appointment booking",
-    ],
-  },
-  {
-    id: "family",
-    name: "Family Package",
-    price: "₦100,000",
-    period: "Yearly",
-    description: "Comprehensive coverage for the whole family.",
-    icon: Users,
-    popular: true,
-    features: [
-      "20 Consultations per year",
-      "Family healthcare management",
-      "Multiple member access",
-      "Online appointment booking",
-      "Priority healthcare support",
-    ],
-  },
-];
+const formatPrice = (priceKobo: number): string => {
+  const naira = priceKobo / 100;
+  return `₦${naira.toLocaleString()}`;
+};
+
+const getBillingText = (period: string): string => {
+  switch (period) {
+    case "monthly":
+      return "Monthly";
+    case "quarterly":
+      return "Quarterly";
+    case "yearly":
+      return "Yearly";
+    default:
+      return period;
+  }
+};
+
+const getIconByType = (type: string) => {
+  switch (type) {
+    case "family":
+      return Users;
+    case "corporate":
+      return ShieldCheck;
+    default:
+      return Heart;
+  }
+};
+
+// Skeleton Loading Component
+const PlanSkeleton = () => {
+  return (
+    <div className="relative flex flex-col rounded-2xl border border-border bg-card p-7 sm:p-8">
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-12 w-12 rounded-xl" />
+        <div className="flex-1">
+          <Skeleton className="h-6 w-32 mb-2" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+      </div>
+      <Skeleton className="h-4 w-full mt-4" />
+      <Skeleton className="h-4 w-3/4 mt-1" />
+      <div className="mt-5">
+        <Skeleton className="h-10 w-36" />
+      </div>
+      <div className="mt-6 space-y-3">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="flex items-start gap-2.5">
+            <Skeleton className="h-5 w-5 rounded-full" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+        ))}
+      </div>
+      <Skeleton className="h-11 w-full mt-8 rounded-lg" />
+    </div>
+  );
+};
 
 const Subscription = () => {
   const navigate = useNavigate();
@@ -60,15 +91,105 @@ const Subscription = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch subscription packages from API
+  useEffect(() => {
+    const fetchPackages = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await publicApi.subscriptionPackages({ 
+          is_active: true 
+        });
+        
+        if (!response.data || !Array.isArray(response.data)) {
+          throw new Error("Invalid response from server");
+        }
+        
+        if (response.data.length === 0) {
+          setError("No subscription packages available at the moment.");
+          setPlans([]);
+          return;
+        }
+        
+        // Transform API response to component format
+        const transformedPlans: Plan[] = response.data.map((pkg: any, index: number) => {
+          // Mark the family package or second package as popular
+          const isPopular = pkg.type === "family" || (pkg.type === "individual" && index === 1);
+          
+          return {
+            id: pkg.id,
+            name: pkg.name,
+            price: formatPrice(pkg.price_kobo),
+            price_kobo: pkg.price_kobo,
+            period: getBillingText(pkg.billing_period),
+            billing_period: pkg.billing_period,
+            description: pkg.description,
+            features: pkg.features || [
+              `${pkg.consultations_included} Consultations per year`,
+              "Access to healthcare support",
+              "Online appointment booking",
+            ],
+            consultations_included: pkg.consultations_included,
+            is_active: pkg.is_active,
+            type: pkg.type,
+            popular: isPopular,
+          };
+        });
+        
+        setPlans(transformedPlans);
+      } catch (error) {
+        console.error("Error fetching subscription packages:", error);
+        if (error instanceof ApiError) {
+          setError(error.message);
+          toast({
+            title: "Unable to load plans",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else {
+          const errorMessage = error instanceof Error ? error.message : "Failed to load subscription packages";
+          setError(errorMessage);
+          toast({
+            title: "Unable to load plans",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        }
+        setPlans([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPackages();
+  }, [toast]);
+
+  const handleSubscribe = (plan: Plan) => {
+    // Store selected plan in session storage for checkout
+    sessionStorage.setItem("selected_subscription_plan", JSON.stringify({
+      id: plan.id,
+      name: plan.name,
+      price_kobo: plan.price_kobo,
+      billing_period: plan.billing_period,
+      consultations_included: plan.consultations_included,
+      type: plan.type,
+    }));
+    setLoginOpen(true);
+  };
 
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setBusy(true);
     try {
       await signInPatientWithPassword({ email, password });
-      toast({ title: "Welcome back", description: "Redirecting to your patient portal." });
+      toast({ title: "Welcome back", description: "Redirecting to checkout..." });
       setLoginOpen(false);
-      navigate("/patient");
+      // Navigate to checkout with subscription
+      navigate("/patient/subscription/checkout");
     } catch (error) {
       toast({
         title: "Login failed",
@@ -79,6 +200,86 @@ const Subscription = () => {
       setBusy(false);
     }
   };
+
+  // Skeleton Loading State
+  if (loading) {
+    return (
+      <SiteLayout>
+        {/* Hero Skeleton */}
+        <section className="relative overflow-hidden bg-gradient-to-b from-primary-soft/40 via-background to-background">
+          <div className="container py-20 sm:py-28 text-center max-w-3xl">
+            <Skeleton className="h-8 w-48 mx-auto rounded-full" />
+            <Skeleton className="h-16 w-full max-w-2xl mx-auto mt-6" />
+            <Skeleton className="h-12 w-full max-w-xl mx-auto mt-5" />
+          </div>
+        </section>
+
+        {/* Plans Skeleton */}
+        <section className="container py-16 sm:py-24">
+          <div className="grid gap-6 md:gap-8 md:grid-cols-2 max-w-4xl mx-auto items-stretch">
+            <PlanSkeleton />
+            <PlanSkeleton />
+          </div>
+
+          {/* Trust strip Skeleton */}
+          <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="rounded-xl border border-border bg-card p-5 flex gap-3">
+                <Skeleton className="h-10 w-10 rounded-lg" />
+                <div className="flex-1">
+                  <Skeleton className="h-5 w-24 mb-2" />
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-3/4 mt-1" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </SiteLayout>
+    );
+  }
+
+  // Error State
+  if (error) {
+    return (
+      <SiteLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center max-w-md">
+            <div className="mx-auto w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
+              <AlertCircle className="h-8 w-8 text-red-600" />
+            </div>
+            <h2 className="font-display text-2xl font-bold mb-2">Unable to Load Plans</h2>
+            <p className="text-muted-foreground mb-6">{error}</p>
+            <Button onClick={() => window.location.reload()} variant="outline">
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </SiteLayout>
+    );
+  }
+
+  // Empty State
+  if (plans.length === 0) {
+    return (
+      <SiteLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center max-w-md">
+            <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+              <Heart className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h2 className="font-display text-2xl font-bold mb-2">No Plans Available</h2>
+            <p className="text-muted-foreground mb-6">
+              There are no subscription plans available at the moment. Please check back later.
+            </p>
+            <Button onClick={() => window.location.reload()} variant="outline">
+              Refresh
+            </Button>
+          </div>
+        </div>
+      </SiteLayout>
+    );
+  }
 
   return (
     <SiteLayout>
@@ -104,13 +305,9 @@ const Subscription = () => {
 
       {/* Plans */}
       <section id="plans" className="container py-16 sm:py-24">
-        <div className="mb-12">
-          {/* Section header removed as requested */}
-        </div>
-
         <div className="grid gap-6 md:gap-8 md:grid-cols-2 max-w-4xl mx-auto items-stretch">
-          {PLANS.map((plan) => {
-            const Icon = plan.icon;
+          {plans.map((plan) => {
+            const Icon = getIconByType(plan.type);
             return (
               <div
                 key={plan.id}
@@ -142,16 +339,16 @@ const Subscription = () => {
 
                 <div className="mt-5 flex items-baseline gap-1">
                   <span className="font-display text-4xl font-black text-foreground">{plan.price}</span>
-                  <span className="text-sm text-muted-foreground">/ year</span>
+                  <span className="text-sm text-muted-foreground">/ {plan.period.toLowerCase()}</span>
                 </div>
 
                 <ul className="mt-6 space-y-3 flex-1">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-sm">
+                  {plan.features.map((feature, idx) => (
+                    <li key={idx} className="flex items-start gap-2.5 text-sm">
                       <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full ${plan.popular ? "bg-primary text-primary-foreground" : "bg-primary-soft text-primary"}`}>
                         <Check className="h-3 w-3" strokeWidth={3} />
                       </span>
-                      <span className="text-foreground/80">{f}</span>
+                      <span className="text-foreground/80">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -161,9 +358,9 @@ const Subscription = () => {
                   size="lg"
                   variant={plan.popular ? "hero" : "outline"}
                   className="mt-8 w-full"
-                  onClick={() => setLoginOpen(true)}
+                  onClick={() => handleSubscribe(plan)}
                 >
-                  Subscribe
+                  Subscribe Now
                 </Button>
               </div>
             );
@@ -189,8 +386,6 @@ const Subscription = () => {
           ))}
         </div>
       </section>
-
-
 
       <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
         <DialogContent className="sm:max-w-md">
@@ -227,7 +422,7 @@ const Subscription = () => {
             </div>
             <Button type="submit" variant="hero" className="w-full" disabled={busy}>
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <LockKeyhole className="h-4 w-4" />}
-              Login
+              Login & Continue
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               Don't have an account?{" "}
@@ -245,6 +440,5 @@ const Subscription = () => {
     </SiteLayout>
   );
 };
-
 
 export default Subscription;

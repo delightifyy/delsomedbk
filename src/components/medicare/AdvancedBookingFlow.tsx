@@ -62,10 +62,10 @@ const HMO_PROVIDERS = [
 ];
 
 const CONSENTS = [
-  { key: "treatment", label: "I consent to receive medical treatment from the assigned clinician." },
-  { key: "privacy", label: "I have read and accept the Privacy Policy." },
-  { key: "terms", label: "I agree to the Terms & Conditions of service." },
-  { key: "disclaimer", label: "I understand this service is not for medical emergencies." },
+  { key: "treatment", label: "I consent to receive medical treatment from the assigned clinician.", api_key: "treatment" },
+  { key: "privacy", label: "I have read and accept the Privacy Policy.", api_key: "privacy_policy" },
+  { key: "terms", label: "I agree to the Terms & Conditions of service.", api_key: "terms_conditions" },
+  { key: "disclaimer", label: "I understand this service is not for medical emergencies.", api_key: "not_emergency" },
 ];
 
 type Props = {
@@ -117,21 +117,24 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
   const [bookingRef, setBookingRef] = useState<string | null>(null);
 
   // subscription
-  const [enrolleeId, setEnrolleeId] = useState("");
+  const [subscriptionId, setSubscriptionId] = useState("");
 
   // HMO
-  const [hmoProvider, setHmoProvider] = useState<string>("");
+  const [hmoProviderId, setHmoProviderId] = useState<string>("");
+  const [hmoProviderName, setHmoProviderName] = useState<string>("");
   const [policyNumber, setPolicyNumber] = useState("");
-  const [memberDetails, setMemberDetails] = useState("");
+  const [memberName, setMemberName] = useState("");
+  const [memberDob, setMemberDob] = useState("");
   const [hmoStatus, setHmoStatus] = useState<"idle" | "pending" | "approved" | "rejected">("idle");
   const [hmoReason, setHmoReason] = useState("");
 
   // Organization
-  const [orgId, setOrgId] = useState("");
+  const [organizationId, setOrganizationId] = useState("");
   const [employeeId, setEmployeeId] = useState("");
   const [authFile, setAuthFile] = useState<File | null>(null);
   const [orgStatus, setOrgStatus] = useState<"idle" | "pending" | "approved" | "rejected">("idle");
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadedFileUrl, setUploadedFileUrl] = useState<string>("");
 
   // payment (card)
   const [cardNumber, setCardNumber] = useState("");
@@ -160,13 +163,13 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
 
   const availableServices = useMemo(() => {
     if (method === "hmo") {
-      if (!hmoProvider) return [];
-      const p = HMO_PROVIDERS.find((x) => x.id === hmoProvider);
+      if (!hmoProviderId) return [];
+      const p = HMO_PROVIDERS.find((x) => x.id === hmoProviderId);
       if (!p) return [];
       return SERVICES.filter((s) => p.covered.includes(s.id));
     }
     return SERVICES;
-  }, [method, hmoProvider]);
+  }, [method, hmoProviderId]);
 
   // Fetch clinic locations from API when modal opens or when doctor/slug changes
   useEffect(() => {
@@ -222,8 +225,8 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
     
     if (method === "card") return [...baseSteps, "Payment"];
     if (method === "subscription") return [...baseSteps, "Subscription"];
-    if (method === "hmo") return [...baseSteps, "Verify"];
-    if (method === "organization") return [...baseSteps, "Details"];
+    if (method === "hmo") return [...baseSteps, "HMO Details", "Verify"];
+    if (method === "organization") return [...baseSteps, "Organization Details"];
     return [...baseSteps, "Payment"];
   }, [method]);
 
@@ -242,16 +245,19 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
       setTime("");
       setAgreed({});
       setBookingRef(null);
-      setEnrolleeId("");
-      setHmoProvider("");
+      setSubscriptionId("");
+      setHmoProviderId("");
+      setHmoProviderName("");
       setPolicyNumber("");
-      setMemberDetails("");
+      setMemberName("");
+      setMemberDob("");
       setHmoStatus("idle");
       setHmoReason("");
-      setOrgId("");
+      setOrganizationId("");
       setEmployeeId("");
       setAuthFile(null);
       setOrgStatus("idle");
+      setUploadedFileUrl("");
       setCardNumber("");
       setCardExp("");
       setCardCvc("");
@@ -260,48 +266,66 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
 
   if (!open || !method) return null;
 
-  async function verifyHmo() {
-    if (!policyNumber.trim()) return;
-    setHmoStatus("pending");
-    setHmoReason("");
-    await new Promise((r) => setTimeout(r, 1200));
-    if (/^POL-/i.test(policyNumber.trim())) {
-      setHmoStatus("approved");
-      toast.success("HMO policy approved");
-    } else {
-      setHmoStatus("rejected");
-      setHmoReason("Invalid policy number");
+  // Upload authorization letter for organization
+  async function uploadAuthorizationLetter(file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append("Letter", file);
+    
+    try {
+      const response = await api.me.appointments.uploadLetter(formData);
+      return response.data.url || response.data.file_url;
+    } catch (error) {
+      console.error("Upload error:", error);
+      throw new Error("Failed to upload authorization letter");
     }
   }
 
-  async function uploadAuthFile(file: File): Promise<string> {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("type", "authorization_letter");
+  async function verifyHmo() {
+    if (!policyNumber.trim() || !hmoProviderId) {
+      toast.error("Please fill in all HMO details");
+      return;
+    }
     
-    const response = await api.me.uploads.file(formData);
-    return response.data.url;
+    setHmoStatus("pending");
+    setHmoReason("");
+    
+    // Simulate API verification - replace with actual API call
+    await new Promise((r) => setTimeout(r, 1200));
+    
+    // Mock verification logic - replace with actual HMO verification endpoint
+    if (policyNumber.trim().length > 5) {
+      setHmoStatus("approved");
+      toast.success("HMO policy verified successfully");
+    } else {
+      setHmoStatus("rejected");
+      setHmoReason("Invalid policy number. Please check and try again.");
+      toast.error("HMO verification failed");
+    }
   }
 
-  async function verifyOrg() {
-    if (!orgId || !employeeId || !authFile) return;
+  async function verifyOrganization() {
+    if (!organizationId || !employeeId || !authFile) {
+      toast.error("Please fill in all organization details and upload the authorization letter");
+      return;
+    }
     
     setOrgStatus("pending");
     setUploadingFile(true);
     
     try {
-      // Upload the file first
-      const fileUrl = await uploadAuthFile(authFile);
+      // Upload the file first using the correct endpoint
+      const fileUrl = await uploadAuthorizationLetter(authFile);
+      setUploadedFileUrl(fileUrl);
       
-      // Here you would typically verify with your backend
+      // Simulate organization verification - replace with actual API call
       await new Promise((r) => setTimeout(r, 800));
       
       setOrgStatus("approved");
-      toast.success("Organization request approved");
+      toast.success("Organization verified successfully");
     } catch (error) {
       console.error("Upload error:", error);
       setOrgStatus("rejected");
-      toast.error("Failed to upload authorization file");
+      toast.error("Failed to upload authorization letter. Please try again.");
     } finally {
       setUploadingFile(false);
     }
@@ -352,13 +376,11 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
       }
       
       // Map consents to API expected format
-      const apiConsents = [];
-      if (agreed.treatment) apiConsents.push("treatment");
-      if (agreed.privacy) apiConsents.push("privacy_policy");
-      if (agreed.terms) apiConsents.push("terms_conditions");
-      if (agreed.disclaimer) apiConsents.push("not_emergency");
+      const apiConsents = CONSENTS
+        .filter(c => agreed[c.key])
+        .map(c => c.api_key);
       
-      // Build the request body
+      // Build the request body according to API spec
       const requestBody: any = {
         service_card_id: service.service_card_id || service.id,
         slot_date: date,
@@ -371,7 +393,7 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
       if (subMode === "physical" && location) {
         requestBody.location_id = location;
         requestBody.appointment_type = "physical";
-      } else {
+      } else if (subMode === "online") {
         requestBody.appointment_type = "online";
       }
       
@@ -383,30 +405,35 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
         requestBody.mini_site_slug = miniSiteSlug;
       }
       
-      // Add method-specific fields
+      // Add method-specific payloads according to API spec
       if (method === "subscription") {
-        requestBody.enrollee_id = enrolleeId;
+        requestBody.access_method_payload = {
+          subscription_id: subscriptionId
+        };
       }
       
-      if (method === "hmo") {
-        requestBody.hmo_policy_number = policyNumber;
-        requestBody.hmo_provider = hmoProvider;
+      if (method === "hmo" && hmoStatus === "approved") {
+        requestBody.access_method_payload = {
+          hmo_provider_id: hmoProviderId,
+          policy_number: policyNumber,
+          member_name: memberName,
+          member_dob: memberDob
+        };
       }
       
-      if (method === "organization") {
-        requestBody.organization_id = orgId;
-        requestBody.employee_id = employeeId;
-        if (authFile) {
-          const fileUrl = await uploadAuthFile(authFile);
-          requestBody.auth_file_url = fileUrl;
-        }
+      if (method === "organization" && orgStatus === "approved") {
+        requestBody.access_method_payload = {
+          organization_id: organizationId,
+          employee_id: employeeId,
+          authorization_letter_url: uploadedFileUrl
+        };
       }
       
       // Make the API call
       const response = await api.me.appointments.create(requestBody);
       
       if (response.data) {
-        setBookingRef(response.data.reference);
+        setBookingRef(response.data.reference || response.data.booking_reference);
         toast.success("Appointment booked successfully!");
       } else {
         throw new Error("No response data");
@@ -417,6 +444,8 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
         toast.error("Session expired. Please login again.");
         setIsAuthenticated(false);
         setStep(0);
+      } else if (error.status === 422) {
+        toast.error("Validation error. Please check all fields.");
       } else {
         toast.error(error.message || "Failed to book appointment. Please try again.");
       }
@@ -441,7 +470,7 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
       case "Login": return isAuthenticated;
       case "Service": 
         if (method === "hmo") {
-          return !!hmoProvider && !!service && service.available !== false;
+          return !!hmoProviderId && !!service && service.available !== false;
         }
         return !!service && service.available !== false;
       case "Mode": 
@@ -450,9 +479,10 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
       case "Schedule": return !!date && !!time;
       case "Consent": return CONSENTS.every((c) => agreed[c.key]);
       case "Payment": return cardNumber.length >= 12 && cardExp.length >= 4 && cardCvc.length >= 3;
-      case "Subscription": return !!enrolleeId.trim();
+      case "Subscription": return !!subscriptionId.trim();
+      case "HMO Details": return !!hmoProviderId && !!policyNumber && !!memberName && !!memberDob;
       case "Verify": return hmoStatus === "approved";
-      case "Details": return !!orgId && !!employeeId && !!authFile && orgStatus === "approved";
+      case "Organization Details": return !!organizationId && !!employeeId && !!authFile && orgStatus === "approved";
       default: return true;
     }
   })();
@@ -556,9 +586,12 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
                   <Label htmlFor="hmo-provider">HMO Provider</Label>
                   <select
                     id="hmo-provider"
-                    value={hmoProvider}
+                    value={hmoProviderId}
                     onChange={(e) => {
-                      setHmoProvider(e.target.value);
+                      const selectedId = e.target.value;
+                      const provider = HMO_PROVIDERS.find(p => p.id === selectedId);
+                      setHmoProviderId(selectedId);
+                      setHmoProviderName(provider?.name || "");
                       setService(null);
                     }}
                     className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
@@ -571,12 +604,12 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
                     ))}
                   </select>
                 </div>
-                {!hmoProvider && (
+                {!hmoProviderId && (
                   <p className="text-sm text-muted-foreground">Choose your HMO provider first so we can show the covered services.</p>
                 )}
               </div>
             )}
-            {method !== "hmo" || hmoProvider ? (
+            {(method !== "hmo" || hmoProviderId) && (
               <div className="grid sm:grid-cols-2 gap-3 max-h-[55vh] overflow-y-auto pr-1">
                 {availableServices.map((s) => {
                   const active = service?.id === s.id;
@@ -607,7 +640,7 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
                   );
                 })}
               </div>
-            ) : null}
+            )}
           </div>
         )}
 
@@ -697,8 +730,8 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
             <div className="space-y-2">
               <Label>Subscription ID</Label>
               <Input 
-                value={enrolleeId} 
-                onChange={(e) => setEnrolleeId(e.target.value)} 
+                value={subscriptionId} 
+                onChange={(e) => setSubscriptionId(e.target.value)} 
                 placeholder="e.g. DSM-123456" 
               />
               <p className="text-xs text-muted-foreground">
@@ -709,29 +742,71 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
           </div>
         )}
 
-        {/* HMO VERIFY STEP */}
-        {currentLabel === "Verify" && (
+        {/* HMO DETAILS STEP */}
+        {currentLabel === "HMO Details" && (
           <div className="space-y-3 max-w-md">
-            <h3 className="font-display text-xl font-semibold">Verify your HMO policy</h3>
+            <h3 className="font-display text-xl font-semibold">HMO Member Details</h3>
             <div className="space-y-2">
-              <Label>Policy Number</Label>
+              <Label>HMO Provider</Label>
+              <Input value={hmoProviderName} disabled className="bg-muted" />
+            </div>
+            <div className="space-y-2">
+              <Label>Policy Number *</Label>
               <Input
                 value={policyNumber}
                 onChange={(e) => setPolicyNumber(e.target.value)}
-                onBlur={() => { if (policyNumber.trim() && hmoStatus !== "approved") verifyHmo(); }}
                 placeholder="e.g. POL-998877"
               />
             </div>
             <div className="space-y-2">
-              <Label>Member details (optional)</Label>
-              <Input value={memberDetails} onChange={(e) => setMemberDetails(e.target.value)} placeholder="Full name / DOB" />
+              <Label>Member Full Name *</Label>
+              <Input 
+                value={memberName} 
+                onChange={(e) => setMemberName(e.target.value)} 
+                placeholder="Jane Patient" 
+              />
             </div>
-            {hmoStatus === "pending" && <p className="text-sm text-amber-700">Verifying...</p>}
-            {hmoStatus === "approved" && (
-              <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-emerald-700 text-sm flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" /> HMO policy verified.
+            <div className="space-y-2">
+              <Label>Member Date of Birth *</Label>
+              <Input 
+                type="date"
+                value={memberDob} 
+                onChange={(e) => setMemberDob(e.target.value)} 
+              />
+            </div>
+          </div>
+        )}
+
+        {/* HMO VERIFY STEP */}
+        {currentLabel === "Verify" && (
+          <div className="space-y-3 max-w-md">
+            <h3 className="font-display text-xl font-semibold">Verify your HMO policy</h3>
+            <div className="rounded-lg bg-muted/30 p-4 space-y-1 text-sm">
+              <p><strong>Provider:</strong> {hmoProviderName}</p>
+              <p><strong>Policy Number:</strong> {policyNumber}</p>
+              <p><strong>Member:</strong> {memberName}</p>
+              <p><strong>DOB:</strong> {memberDob}</p>
+            </div>
+            
+            {hmoStatus === "idle" && (
+              <Button onClick={verifyHmo} className="w-full">
+                Verify HMO Policy
+              </Button>
+            )}
+            
+            {hmoStatus === "pending" && (
+              <div className="flex items-center justify-center gap-2 text-amber-700">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <p className="text-sm">Verifying...</p>
               </div>
             )}
+            
+            {hmoStatus === "approved" && (
+              <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-emerald-700 text-sm flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" /> HMO policy verified successfully.
+              </div>
+            )}
+            
             {hmoStatus === "rejected" && (
               <div className="rounded-lg bg-rose-50 border border-rose-200 p-3 text-rose-700 text-sm flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4" /> {hmoReason}
@@ -741,19 +816,27 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
         )}
 
         {/* ORGANIZATION DETAILS STEP */}
-        {currentLabel === "Details" && (
+        {currentLabel === "Organization Details" && (
           <div className="space-y-3 max-w-md">
-            <h3 className="font-display text-xl font-semibold">Organization details</h3>
+            <h3 className="font-display text-xl font-semibold">Organization Details</h3>
             <div className="space-y-2">
-              <Label>Organization Subscription ID</Label>
-              <Input value={orgId} onChange={(e) => setOrgId(e.target.value)} placeholder="e.g. ORG-12345" />
+              <Label>Organization ID *</Label>
+              <Input 
+                value={organizationId} 
+                onChange={(e) => setOrganizationId(e.target.value)} 
+                placeholder="e.g. ORG-12345" 
+              />
             </div>
             <div className="space-y-2">
-              <Label>Employee / Member Number</Label>
-              <Input value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} placeholder="e.g. EMP-9988" />
+              <Label>Employee / Member Number *</Label>
+              <Input 
+                value={employeeId} 
+                onChange={(e) => setEmployeeId(e.target.value)} 
+                placeholder="e.g. EMP-9988" 
+              />
             </div>
             <div className="space-y-2">
-              <Label>Letter of Authorization</Label>
+              <Label>Letter of Authorization *</Label>
               <label className="flex items-center gap-2 rounded-lg border border-dashed border-border p-3 cursor-pointer hover:bg-muted/30">
                 <Upload className="h-4 w-4 text-primary" />
                 <span className="text-sm">{authFile ? authFile.name : "Upload PDF, DOC or image (max 5MB)"}</span>
@@ -769,16 +852,37 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
                       return;
                     }
                     setAuthFile(f);
+                    setOrgStatus("idle"); // Reset status when new file is selected
                   }}
                 />
               </label>
+              <p className="text-xs text-muted-foreground">
+                Please upload a valid authorization letter from your organization
+              </p>
             </div>
-            <Button onClick={verifyOrg} disabled={!orgId || !employeeId || !authFile || orgStatus === "pending" || uploadingFile}>
-              {uploadingFile || orgStatus === "pending" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit for verification"}
-            </Button>
+            
+            {orgStatus === "idle" && authFile && (
+              <Button onClick={verifyOrganization} disabled={uploadingFile} className="w-full">
+                {uploadingFile ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit for Verification"}
+              </Button>
+            )}
+            
+            {orgStatus === "pending" && (
+              <div className="flex items-center justify-center gap-2 text-amber-700">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <p className="text-sm">Verifying organization details...</p>
+              </div>
+            )}
+            
             {orgStatus === "approved" && (
               <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-emerald-700 text-sm flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" /> Approved. Continue to scheduling.
+                <CheckCircle2 className="h-4 w-4" /> Organization verified. You can now proceed.
+              </div>
+            )}
+            
+            {orgStatus === "rejected" && (
+              <div className="rounded-lg bg-rose-50 border border-rose-200 p-3 text-rose-700 text-sm flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" /> Verification failed. Please check your details and try again.
               </div>
             )}
           </div>
@@ -855,16 +959,28 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
             </div>
             <div className="space-y-2">
               <Label>Card number</Label>
-              <Input value={cardNumber} onChange={(e) => setCardNumber(e.target.value.replace(/[^\d ]/g, ""))} placeholder="4242 4242 4242 4242" />
+              <Input 
+                value={cardNumber} 
+                onChange={(e) => setCardNumber(e.target.value.replace(/[^\d ]/g, ""))} 
+                placeholder="4242 4242 4242 4242" 
+              />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-2">
                 <Label>Expiry</Label>
-                <Input value={cardExp} onChange={(e) => setCardExp(e.target.value)} placeholder="MM/YY" />
+                <Input 
+                  value={cardExp} 
+                  onChange={(e) => setCardExp(e.target.value)} 
+                  placeholder="MM/YY" 
+                />
               </div>
               <div className="space-y-2">
                 <Label>CVC</Label>
-                <Input value={cardCvc} onChange={(e) => setCardCvc(e.target.value)} placeholder="123" />
+                <Input 
+                  value={cardCvc} 
+                  onChange={(e) => setCardCvc(e.target.value)} 
+                  placeholder="123" 
+                />
               </div>
             </div>
             <div className="text-xs text-muted-foreground flex items-center gap-1">

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Users as UsersIcon,
   HeartPulse,
@@ -238,6 +239,37 @@ const statusTone = (status?: string) => {
 
 const isActiveStatus = (status?: string) => String(status || "active").toLowerCase() === "active";
 
+// Skeleton components
+const UserCardSkeleton = () => (
+  <li className="p-4 flex flex-col lg:flex-row lg:items-center gap-4">
+    <div className="flex items-start gap-4 min-w-0 flex-1">
+      <Skeleton className="h-11 w-11 rounded-full flex-shrink-0" />
+      <div className="flex-1 min-w-0 space-y-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="h-5 w-16 rounded-full" />
+          <Skeleton className="h-5 w-20 rounded-full" />
+        </div>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="h-3 w-28" />
+        </div>
+      </div>
+    </div>
+    <div className="flex items-center justify-between lg:justify-end gap-2 lg:ml-auto w-full lg:w-auto">
+      <Skeleton className="h-8 w-8 rounded-md" />
+    </div>
+  </li>
+);
+
+const InfoFieldSkeleton = () => (
+  <div className="rounded-md border border-border bg-muted/20 px-3 py-2">
+    <Skeleton className="h-3 w-16 mb-2" />
+    <Skeleton className="h-4 w-24" />
+  </div>
+);
+
 const UsersPage = () => {
   const { toast } = useToast();
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -403,6 +435,11 @@ const UsersPage = () => {
     }
   };
 
+  const list = filterFor(tab);
+  const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedList = list.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -426,142 +463,139 @@ const UsersPage = () => {
         </Select>
       </div>
 
-      {(() => {
-        const list = filterFor(tab);
-        const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
-        const currentPage = Math.min(page, totalPages);
-        const pagedList = list.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
-        return (
-          <div className="mt-4 space-y-4">
-            {loading ? (
-              <Card className="overflow-hidden">
-                <div className="p-10 text-center text-sm text-muted-foreground">Loading users...</div>
-              </Card>
-            ) : list.length > 0 ? (
-              <Card className="overflow-hidden">
-                <ul className="divide-y divide-border">
-                  {pagedList.map((row) => (
-                      <li key={row.id} className="p-4 flex flex-col lg:flex-row lg:items-center gap-4">
-                        <div className="flex items-start gap-4 min-w-0 flex-1">
-                          <Avatar className="h-11 w-11 flex-shrink-0">
-                            {row.avatar_url ? <AvatarImage src={row.avatar_url} alt="" /> : null}
-                            <AvatarFallback className="bg-primary-soft text-primary text-sm font-medium">
-                              {row.initials}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <p className="font-medium truncate">{row.display}</p>
-                              <Badge variant="secondary" className={statusTone(row.status)}>
-                                {prettyText(row.status, "Active")}
-                              </Badge>
-                              <Badge variant="outline" className="capitalize">
-                                {row.role === "admin" || row.role === "super_admin" ? (
-                                  <ShieldCheck className="mr-1 h-3 w-3" />
-                                ) : null}
-                                {prettyText(row.roleLabel)}
-                              </Badge>
-                            </div>
-                            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                              {row.subtitle && (
-                                <span className="inline-flex items-center gap-1">
-                                  <MapPin className="h-3 w-3" />
-                                  {row.subtitle}
-                                </span>
-                              )}
-                              {row.email && (
-                                <span className="inline-flex items-center gap-1">
-                                  <Mail className="h-3 w-3" />
-                                  {row.email}
-                                </span>
-                              )}
-                              {row.phone && (
-                                <span className="inline-flex items-center gap-1">
-                                  <Phone className="h-3 w-3" />
-                                  {row.phone}
-                                </span>
-                              )}
-                              {row.created_at && (
-                                <span className="inline-flex items-center gap-1">
-                                  <Calendar className="h-3 w-3" />
-                                  Joined {fmtDate(row.created_at)}
-                                </span>
-                              )}
-                            </div>
-                          </div>
+      <div className="mt-4 space-y-4">
+        {loading ? (
+          <Card className="overflow-hidden">
+            <ul className="divide-y divide-border">
+              <UserCardSkeleton />
+              <UserCardSkeleton />
+              <UserCardSkeleton />
+              <UserCardSkeleton />
+              <UserCardSkeleton />
+            </ul>
+          </Card>
+        ) : list.length > 0 ? (
+          <Card className="overflow-hidden">
+            <ul className="divide-y divide-border">
+              {pagedList.map((row) => (
+                  <li key={row.id} className="p-4 flex flex-col lg:flex-row lg:items-center gap-4">
+                    <div className="flex items-start gap-4 min-w-0 flex-1">
+                      <Avatar className="h-11 w-11 flex-shrink-0">
+                        {row.avatar_url ? <AvatarImage src={row.avatar_url} alt="" /> : null}
+                        <AvatarFallback className="bg-primary-soft text-primary text-sm font-medium">
+                          {row.initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-medium truncate">{row.display}</p>
+                          <Badge variant="secondary" className={statusTone(row.status)}>
+                            {prettyText(row.status, "Active")}
+                          </Badge>
+                          <Badge variant="outline" className="capitalize">
+                            {row.role === "admin" || row.role === "super_admin" ? (
+                              <ShieldCheck className="mr-1 h-3 w-3" />
+                            ) : null}
+                            {prettyText(row.roleLabel)}
+                          </Badge>
                         </div>
-
-                        <div className="flex items-center justify-between lg:justify-end gap-2 lg:ml-auto w-full lg:w-auto">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button size="icon" variant="outline" className="h-8 w-8" aria-label="Open user actions">
-                                <ChevronDown className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => openUserDetail(row)}>
-                                <Eye className="h-4 w-4 mr-2" />
-                                View full details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleToggleStatus(row)} disabled={savingId === row.id}>
-                                <Ban className="h-4 w-4 mr-2" />
-                                {isActiveStatus(row.status) ? "Suspend" : "Activate"}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                onClick={() => handleDeleteUser(row)}
-                                disabled={savingId === row.id}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                          {row.subtitle && (
+                            <span className="inline-flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              {row.subtitle}
+                            </span>
+                          )}
+                          {row.email && (
+                            <span className="inline-flex items-center gap-1">
+                              <Mail className="h-3 w-3" />
+                              {row.email}
+                            </span>
+                          )}
+                          {row.phone && (
+                            <span className="inline-flex items-center gap-1">
+                              <Phone className="h-3 w-3" />
+                              {row.phone}
+                            </span>
+                          )}
+                          {row.created_at && (
+                            <span className="inline-flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              Joined {fmtDate(row.created_at)}
+                            </span>
+                          )}
                         </div>
-                      </li>
-                    ))}
-                </ul>
-
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-border">
-                    <span className="text-xs text-muted-foreground">
-                      Page {currentPage} of {totalPages} - {list.length} total
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 px-2"
-                        disabled={currentPage <= 1}
-                        onClick={() => setPage((current) => Math.max(1, current - 1))}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                        <span className="hidden sm:inline ml-1">Prev</span>
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 px-2"
-                        disabled={currentPage >= totalPages}
-                        onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-                      >
-                        <span className="hidden sm:inline mr-1">Next</span>
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </Card>
-            ) : (
-              <Card className="p-10 text-center text-sm text-muted-foreground">
-                No users found from the backend for this filter.
-              </Card>
+
+                    <div className="flex items-center justify-between lg:justify-end gap-2 lg:ml-auto w-full lg:w-auto">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="icon" variant="outline" className="h-8 w-8" aria-label="Open user actions">
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openUserDetail(row)}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View full details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleToggleStatus(row)} disabled={savingId === row.id}>
+                            <Ban className="h-4 w-4 mr-2" />
+                            {isActiveStatus(row.status) ? "Suspend" : "Activate"}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => handleDeleteUser(row)}
+                            disabled={savingId === row.id}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </li>
+                ))}
+            </ul>
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-border">
+                <span className="text-xs text-muted-foreground">
+                  Page {currentPage} of {totalPages} - {list.length} total
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 px-2"
+                    disabled={currentPage <= 1}
+                    onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-1">Prev</span>
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 px-2"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                  >
+                    <span className="hidden sm:inline mr-1">Next</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             )}
-          </div>
-        );
-      })()}
+          </Card>
+        ) : (
+          <Card className="p-10 text-center text-sm text-muted-foreground">
+            No users found from the backend for this filter.
+          </Card>
+        )}
+      </div>
 
       <Dialog
         open={Boolean(activeUser)}
@@ -598,9 +632,15 @@ const UsersPage = () => {
 
               <div className="max-h-[54vh] overflow-y-auto px-5 py-5 sm:px-6">
                 {detailLoading && (
-                  <div className="mb-4 inline-flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Loading full user details...
+                  <div className="mb-4 space-y-3">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <InfoFieldSkeleton />
+                      <InfoFieldSkeleton />
+                      <InfoFieldSkeleton />
+                      <InfoFieldSkeleton />
+                      <InfoFieldSkeleton />
+                      <InfoFieldSkeleton />
+                    </div>
                   </div>
                 )}
 
@@ -610,26 +650,30 @@ const UsersPage = () => {
                   </div>
                 )}
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <InfoField label="Role" value={prettyText(activeUser.roleLabel)} />
-                  <InfoField label="Email" value={activeUser.email} />
-                  <InfoField label="Phone" value={activeUser.phone} />
-                  <InfoField label="User type" value={prettyText(activeUser.user_type)} />
-                  <InfoField label="Status" value={prettyText(activeUser.status, "Active")} />
-                  <InfoField label="Organization" value={activeUser.organization_name} />
-                  <InfoField label="Website" value={activeUser.website_url} />
-                  <InfoField label="Joined" value={fmtDate(activeUser.created_at)} />
-                </div>
-
-                {detailRowsFor(activeUser.raw).length > 0 && (
-                  <div className="mt-6">
-                    <h3 className="text-sm font-semibold">Additional information</h3>
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                      {detailRowsFor(activeUser.raw).map((row) => (
-                        <InfoField key={row.key} label={row.label} value={row.value} />
-                      ))}
+                {!detailLoading && !detailError && (
+                  <>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <InfoField label="Role" value={prettyText(activeUser.roleLabel)} />
+                      <InfoField label="Email" value={activeUser.email} />
+                      <InfoField label="Phone" value={activeUser.phone} />
+                      <InfoField label="User type" value={prettyText(activeUser.user_type)} />
+                      <InfoField label="Status" value={prettyText(activeUser.status, "Active")} />
+                      <InfoField label="Organization" value={activeUser.organization_name} />
+                      <InfoField label="Website" value={activeUser.website_url} />
+                      <InfoField label="Joined" value={fmtDate(activeUser.created_at)} />
                     </div>
-                  </div>
+
+                    {detailRowsFor(activeUser.raw).length > 0 && (
+                      <div className="mt-6">
+                        <h3 className="text-sm font-semibold">Additional information</h3>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          {detailRowsFor(activeUser.raw).map((row) => (
+                            <InfoField key={row.key} label={row.label} value={row.value} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 

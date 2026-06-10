@@ -22,9 +22,6 @@ import {
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Select,
@@ -34,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Plus,
   Edit2,
@@ -46,120 +44,142 @@ import {
   Loader2,
   Search,
   TrendingUp,
-  Users,
-  CreditCard,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { api, ApiError } from "@/lib/api";
 
 type SubscriptionPackage = {
   id: string;
   name: string;
   type: "individual" | "family" | "corporate" | "custom";
   price: number;
+  price_kobo?: number;
   currency: string;
-  billingPeriod: "monthly" | "quarterly" | "yearly";
-  consultationsIncluded: number;
+  billing_period: "monthly" | "quarterly" | "yearly";
+  consultations_included: number;
   features: string[];
   description: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 };
 
-// Initial packages
-const INITIAL_PACKAGES: SubscriptionPackage[] = [
-  {
-    id: "1",
-    name: "Individual Package",
-    type: "individual",
-    price: 50000,
-    currency: "NGN",
-    billingPeriod: "yearly",
-    consultationsIncluded: 8,
-    features: [
-      "8 Consultations per year",
-      "Access to healthcare support",
-      "Personal healthcare management",
-      "Online appointment booking",
-    ],
-    description: "Personal healthcare designed for everyday wellness.",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    name: "Family Package",
-    type: "family",
-    price: 100000,
-    currency: "NGN",
-    billingPeriod: "yearly",
-    consultationsIncluded: 20,
-    features: [
-      "20 Consultations per year",
-      "Family healthcare management",
-      "Multiple member access",
-      "Online appointment booking",
-      "Priority healthcare support",
-    ],
-    description: "Comprehensive coverage for the whole family.",
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+// Skeleton row component for table
+const TableRowSkeleton = () => (
+  <TableRow>
+    <TableCell>
+      <div className="space-y-1">
+        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-3 w-48" />
+      </div>
+    </TableCell>
+    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+    <TableCell className="text-right">
+      <div className="flex items-center justify-end gap-2">
+        <Skeleton className="h-8 w-8 rounded-md" />
+        <Skeleton className="h-8 w-8 rounded-md" />
+      </div>
+    </TableCell>
+  </TableRow>
+);
+
+// Stats card skeleton
+const StatsCardSkeleton = () => (
+  <Card>
+    <CardContent className="pt-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <Skeleton className="h-4 w-24 mb-2" />
+          <Skeleton className="h-8 w-16" />
+        </div>
+        <Skeleton className="h-8 w-8 rounded-lg" />
+      </div>
+    </CardContent>
+  </Card>
+);
 
 const SubscriptionPackagesManager = () => {
-  const [packages, setPackages] = useState<SubscriptionPackage[]>(INITIAL_PACKAGES);
+  const [packages, setPackages] = useState<SubscriptionPackage[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState<SubscriptionPackage | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [packageToDelete, setPackageToDelete] = useState<SubscriptionPackage | null>(null);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
-  // Form state
+  // Form state (API format)
   const [formData, setFormData] = useState({
     name: "",
     type: "individual" as "individual" | "family" | "corporate" | "custom",
-    price: 50000,
-    currency: "NGN",
-    billingPeriod: "yearly" as "monthly" | "quarterly" | "yearly",
-    consultationsIncluded: 8,
+    price_kobo: 5000000, // 50,000 NGN = 5,000,000 kobo
+    billing_period: "yearly" as "monthly" | "quarterly" | "yearly",
+    consultations_included: 8,
     description: "",
     features: [""],
-    isActive: true,
+    is_active: true,
   });
 
-  const loadPackages = () => {
-    const saved = localStorage.getItem("subscription_packages");
-    if (saved) {
-      setPackages(JSON.parse(saved));
-    } else {
-      setPackages(INITIAL_PACKAGES);
-      localStorage.setItem("subscription_packages", JSON.stringify(INITIAL_PACKAGES));
+  // Fetch packages from API
+  const fetchPackages = async () => {
+    setInitialLoading(true);
+    try {
+      const response = await api.admin.subscriptionPackages.list({
+        search: searchQuery || undefined,
+      });
+      // Transform API response to component format
+      const transformedPackages = response.data.map((pkg: any) => ({
+        id: pkg.id,
+        name: pkg.name,
+        type: pkg.type,
+        price: pkg.price_kobo / 100, // Convert kobo to NGN
+        price_kobo: pkg.price_kobo,
+        currency: "NGN",
+        billing_period: pkg.billing_period,
+        consultations_included: pkg.consultations_included,
+        features: pkg.features,
+        description: pkg.description,
+        is_active: pkg.is_active,
+        created_at: pkg.created_at,
+        updated_at: pkg.updated_at,
+      }));
+      setPackages(transformedPackages);
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to load subscription packages");
+      }
+      console.error("Error fetching packages:", error);
+    } finally {
+      setInitialLoading(false);
     }
   };
 
   useEffect(() => {
-    loadPackages();
+    fetchPackages();
   }, []);
 
-  const savePackages = (newPackages: SubscriptionPackage[]) => {
-    localStorage.setItem("subscription_packages", JSON.stringify(newPackages));
-    setPackages(newPackages);
-  };
+  // Search debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!initialLoading) {
+        fetchPackages();
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-  const filteredPackages = packages.filter(
-    (pkg) =>
-      pkg.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      pkg.type.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredPackages = packages; // Search is handled by API
 
   const stats = {
     total: packages.length,
-    active: packages.filter((p) => p.isActive).length,
+    active: packages.filter((p) => p.is_active).length,
     totalRevenue: packages.reduce((sum, p) => sum + p.price, 0),
     avgPrice: packages.length ? packages.reduce((sum, p) => sum + p.price, 0) / packages.length : 0,
   };
@@ -168,13 +188,12 @@ const SubscriptionPackagesManager = () => {
     setFormData({
       name: "",
       type: "individual",
-      price: 50000,
-      currency: "NGN",
-      billingPeriod: "yearly",
-      consultationsIncluded: 8,
+      price_kobo: 5000000,
+      billing_period: "yearly",
+      consultations_included: 8,
       description: "",
       features: [""],
-      isActive: true,
+      is_active: true,
     });
     setEditingPackage(null);
   };
@@ -184,74 +203,96 @@ const SubscriptionPackagesManager = () => {
     setFormData({
       name: pkg.name,
       type: pkg.type,
-      price: pkg.price,
-      currency: pkg.currency,
-      billingPeriod: pkg.billingPeriod,
-      consultationsIncluded: pkg.consultationsIncluded,
+      price_kobo: pkg.price_kobo || pkg.price * 100,
+      billing_period: pkg.billing_period,
+      consultations_included: pkg.consultations_included,
       description: pkg.description,
       features: pkg.features.length ? pkg.features : [""],
-      isActive: pkg.isActive,
+      is_active: pkg.is_active,
     });
     setIsModalOpen(true);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!packageToDelete) return;
     setLoading(true);
-    setTimeout(() => {
-      const newPackages = packages.filter((p) => p.id !== packageToDelete.id);
-      savePackages(newPackages);
+    try {
+      await api.admin.subscriptionPackages.delete(packageToDelete.id);
       toast.success(`${packageToDelete.name} has been deleted`);
       setIsDeleteModalOpen(false);
       setPackageToDelete(null);
+      fetchPackages();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to delete package");
+      }
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name || !formData.description) {
       toast.error("Please fill in all required fields");
       return;
     }
 
+    if (formData.features.filter(f => f.trim()).length === 0) {
+      toast.error("Please add at least one feature");
+      return;
+    }
+
     setLoading(true);
-    setTimeout(() => {
-      const newPackage: SubscriptionPackage = {
-        id: editingPackage?.id || Date.now().toString(),
+    try {
+      const packageData = {
         name: formData.name,
         type: formData.type,
-        price: formData.price,
-        currency: formData.currency,
-        billingPeriod: formData.billingPeriod,
-        consultationsIncluded: formData.consultationsIncluded,
-        features: formData.features.filter((f) => f.trim()),
         description: formData.description,
-        isActive: formData.isActive,
-        createdAt: editingPackage?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        price_kobo: formData.price_kobo,
+        billing_period: formData.billing_period,
+        consultations_included: formData.consultations_included,
+        features: formData.features.filter((f) => f.trim()),
+        is_active: formData.is_active,
       };
 
-      let newPackages;
       if (editingPackage) {
-        newPackages = packages.map((p) => (p.id === editingPackage.id ? newPackage : p));
+        await api.admin.subscriptionPackages.update(editingPackage.id, packageData);
         toast.success(`${formData.name} has been updated`);
       } else {
-        newPackages = [newPackage, ...packages];
+        await api.admin.subscriptionPackages.create(packageData);
         toast.success(`${formData.name} has been created`);
       }
 
-      savePackages(newPackages);
       setIsModalOpen(false);
       resetForm();
+      fetchPackages();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to save package");
+      }
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
-  const togglePackageStatus = (pkg: SubscriptionPackage) => {
-    const updated = { ...pkg, isActive: !pkg.isActive, updatedAt: new Date().toISOString() };
-    const newPackages = packages.map((p) => (p.id === pkg.id ? updated : p));
-    savePackages(newPackages);
-    toast.success(`${pkg.name} is now ${updated.isActive ? "active" : "inactive"}`);
+  const togglePackageStatus = async (pkg: SubscriptionPackage) => {
+    try {
+      await api.admin.subscriptionPackages.update(pkg.id, {
+        is_active: !pkg.is_active,
+      });
+      toast.success(`${pkg.name} is now ${!pkg.is_active ? "active" : "inactive"}`);
+      fetchPackages();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to update package status");
+      }
+    }
   };
 
   const formatPrice = (price: number) => {
@@ -270,6 +311,63 @@ const SubscriptionPackagesManager = () => {
         return period;
     }
   };
+
+  // Show skeleton loading while fetching initial data
+  if (initialLoading) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          {/* Header Skeleton */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <Skeleton className="h-9 w-64 mb-2" />
+              <Skeleton className="h-4 w-96" />
+            </div>
+            <Skeleton className="h-10 w-36" />
+          </div>
+
+          {/* Stats Cards Skeleton */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+          </div>
+
+          {/* Search Bar Skeleton */}
+          <div className="relative max-w-sm">
+            <Skeleton className="h-10 w-full" />
+          </div>
+
+          {/* Table Skeleton */}
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Package Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Billing Period</TableHead>
+                    <TableHead>Consultations</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRowSkeleton />
+                  <TableRowSkeleton />
+                  <TableRowSkeleton />
+                  <TableRowSkeleton />
+                  <TableRowSkeleton />
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -375,24 +473,24 @@ const SubscriptionPackagesManager = () => {
                     </TableCell>
                     <TableCell className="capitalize">{pkg.type}</TableCell>
                     <TableCell className="font-semibold">{formatPrice(pkg.price)}</TableCell>
-                    <TableCell className="capitalize">{pkg.billingPeriod}</TableCell>
-                    <TableCell>{pkg.consultationsIncluded} / year</TableCell>
+                    <TableCell className="capitalize">{pkg.billing_period}</TableCell>
+                    <TableCell>{pkg.consultations_included} / year</TableCell>
                     <TableCell>
                       <button
                         onClick={() => togglePackageStatus(pkg)}
                         className={cn(
                           "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition",
-                          pkg.isActive
+                          pkg.is_active
                             ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
                             : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                         )}
                       >
-                        {pkg.isActive ? (
+                        {pkg.is_active ? (
                           <CheckCircle className="h-3 w-3" />
                         ) : (
                           <XCircle className="h-3 w-3" />
                         )}
-                        {pkg.isActive ? "Active" : "Inactive"}
+                        {pkg.is_active ? "Active" : "Inactive"}
                       </button>
                     </TableCell>
                     <TableCell className="text-right">
@@ -422,7 +520,7 @@ const SubscriptionPackagesManager = () => {
               </TableBody>
             </Table>
 
-            {filteredPackages.length === 0 && (
+            {filteredPackages.length === 0 && !initialLoading && (
               <div className="text-center py-12">
                 <Package className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground">No packages found</p>
@@ -482,7 +580,7 @@ const SubscriptionPackagesManager = () => {
               </div>
 
               <div>
-                <Label>Description</Label>
+                <Label>Description *</Label>
                 <Textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -497,27 +595,26 @@ const SubscriptionPackagesManager = () => {
                   <Label>Price (NGN)</Label>
                   <Input
                     type="number"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) || 0 })}
+                    value={formData.price_kobo / 100}
+                    onChange={(e) => setFormData({ ...formData, price_kobo: (parseInt(e.target.value) || 0) * 100 })}
                   />
                 </div>
                 <div>
                   <Label>Currency</Label>
-                  <Select value={formData.currency} onValueChange={(v) => setFormData({ ...formData, currency: v })}>
+                  <Select value="NGN" disabled>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="NGN">NGN (₦)</SelectItem>
-                      <SelectItem value="USD">USD ($)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
                   <Label>Billing Period</Label>
                   <Select
-                    value={formData.billingPeriod}
-                    onValueChange={(v: any) => setFormData({ ...formData, billingPeriod: v })}
+                    value={formData.billing_period}
+                    onValueChange={(v: any) => setFormData({ ...formData, billing_period: v })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -535,16 +632,16 @@ const SubscriptionPackagesManager = () => {
                 <Label>Consultations Included (per year)</Label>
                 <Input
                   type="number"
-                  value={formData.consultationsIncluded}
+                  value={formData.consultations_included}
                   onChange={(e) =>
-                    setFormData({ ...formData, consultationsIncluded: parseInt(e.target.value) || 0 })
+                    setFormData({ ...formData, consultations_included: parseInt(e.target.value) || 0 })
                   }
                 />
               </div>
 
               {/* Features */}
               <div>
-                <Label>Features</Label>
+                <Label>Features *</Label>
                 {formData.features.map((feature, index) => (
                   <div key={index} className="flex gap-2 mt-2">
                     <Input
@@ -582,8 +679,8 @@ const SubscriptionPackagesManager = () => {
               <div className="flex items-center justify-between">
                 <Label>Active Status</Label>
                 <Switch
-                  checked={formData.isActive}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                  checked={formData.is_active}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
                 />
               </div>
 
@@ -595,14 +692,14 @@ const SubscriptionPackagesManager = () => {
                     <div>
                       <h3 className="font-display font-bold text-lg">{formData.name || "Package Name"}</h3>
                       <p className="text-xs text-muted-foreground">
-                        {formData.billingPeriod.toUpperCase()} BILLING
+                        {formData.billing_period.toUpperCase()} BILLING
                       </p>
                     </div>
                     <div className="text-right">
                       <span className="font-display text-2xl font-bold">
-                        {formatPrice(formData.price)}
+                        {formatPrice(formData.price_kobo / 100)}
                       </span>
-                      <span className="text-xs text-muted-foreground"> / {getBillingText(formData.billingPeriod)}</span>
+                      <span className="text-xs text-muted-foreground"> / {getBillingText(formData.billing_period)}</span>
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">{formData.description || "Description"}</p>
@@ -615,10 +712,10 @@ const SubscriptionPackagesManager = () => {
                         </li>
                       ) : null
                     )}
-                    {formData.consultationsIncluded > 0 && (
+                    {formData.consultations_included > 0 && (
                       <li className="flex items-center gap-2 text-sm text-muted-foreground">
                         <CalendarDays className="h-3.5 w-3.5" />
-                        {formData.consultationsIncluded} consultations per year
+                        {formData.consultations_included} consultations per year
                       </li>
                     )}
                   </ul>

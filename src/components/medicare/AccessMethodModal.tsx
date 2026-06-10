@@ -51,7 +51,7 @@ export default function AccessMethodModal({ open, onClose, onSelect }: Props) {
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl">{"\n"}</DialogTitle>
+          <DialogTitle className="text-2xl">Select Access Method</DialogTitle>
           <DialogDescription>
             Select your preferred access method to continue with your appointment.
           </DialogDescription>
@@ -59,7 +59,7 @@ export default function AccessMethodModal({ open, onClose, onSelect }: Props) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
           {OPTIONS.map((opt) => {
-            const Icon = opt.icon;
+            const Icon = opt.icon; 
             return (
               <button
                 key={opt.key}
@@ -88,7 +88,7 @@ export default function AccessMethodModal({ open, onClose, onSelect }: Props) {
         </div>
 
         <p className="text-xs text-muted-foreground text-center mt-2">
-          {"\n"}
+          All bookings are secure and encrypted
         </p>
       </DialogContent>
     </Dialog>

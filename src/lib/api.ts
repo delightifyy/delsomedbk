@@ -165,26 +165,47 @@ export async function apiRequest<T = unknown, M = Record<string, unknown>>(
     finalHeaders.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(buildApiUrl(path, query), {
-    ...requestOptions,
-    headers: finalHeaders,
-    body: finalBody,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-  const payload = await parseResponse<T, M>(response);
+  try {
+    const url = buildApiUrl(path, query);
+    
+    const response = await fetch(url, {
+      ...requestOptions,
+      headers: finalHeaders,
+      body: finalBody,
+      signal: controller.signal,
+      mode: 'cors',
+      credentials: 'omit',
+    });
 
-  if (!response.ok) {
-    if (auth && response.status === 401) {
-      clearApiAuthState();
+    clearTimeout(timeoutId);
+
+    const payload = await parseResponse<T, M>(response);
+
+    if (!response.ok) {
+      if (auth && response.status === 401) {
+        clearApiAuthState();
+      }
+      const message =
+        typeof payload.message === "string" && payload.message
+          ? payload.message
+          : `API request failed (${response.status})`;
+      throw new ApiError(message, response.status, payload.errors);
     }
-    const message =
-      typeof payload.message === "string" && payload.message
-        ? payload.message
-        : `API request failed (${response.status})`;
-    throw new ApiError(message, response.status, payload.errors);
-  }
 
-  return payload;
+    return payload;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new ApiError("Request timeout - server is not responding. Please check your connection.", 408);
+    }
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw new ApiError("Cannot connect to server. Please check if the backend is running and CORS is configured correctly.", 0);
+    }
+    throw error;
+  }
 }
 
 const filenameFromDisposition = (value: string | null) => {
@@ -211,36 +232,50 @@ export async function apiFileRequest(
     finalHeaders.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(buildApiUrl(path, query), {
-    ...requestOptions,
-    headers: finalHeaders,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-  if (!response.ok) {
-    if (auth && response.status === 401) {
-      clearApiAuthState();
+  try {
+    const response = await fetch(buildApiUrl(path, query), {
+      ...requestOptions,
+      headers: finalHeaders,
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      if (auth && response.status === 401) {
+        clearApiAuthState();
+      }
+
+      let message = `File download failed (${response.status})`;
+      let errors: unknown;
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        const payload = await response.json() as ApiEnvelope;
+        message = typeof payload.message === "string" && payload.message ? payload.message : message;
+        errors = payload.errors;
+      } else {
+        const text = await response.text();
+        if (text) message = text;
+      }
+
+      throw new ApiError(message, response.status, errors);
     }
 
-    let message = `File download failed (${response.status})`;
-    let errors: unknown;
-    const contentType = response.headers.get("content-type") || "";
-    if (contentType.includes("application/json")) {
-      const payload = await response.json() as ApiEnvelope;
-      message = typeof payload.message === "string" && payload.message ? payload.message : message;
-      errors = payload.errors;
-    } else {
-      const text = await response.text();
-      if (text) message = text;
+    return {
+      blob: await response.blob(),
+      contentType: response.headers.get("content-type") || "application/octet-stream",
+      filename: filenameFromDisposition(response.headers.get("content-disposition")),
+    };
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new ApiError("File download timeout", 408);
     }
-
-    throw new ApiError(message, response.status, errors);
+    throw error;
   }
-
-  return {
-    blob: await response.blob(),
-    contentType: response.headers.get("content-type") || "application/octet-stream",
-    filename: filenameFromDisposition(response.headers.get("content-disposition")),
-  };
 }
 
 export const appendFormValue = (form: FormData, key: string, value: unknown) => {
@@ -340,6 +375,8 @@ export const api = {
       post: (slug: string, postSlug: string) => apiRequest(`/public/mini-sites/${slug}/posts/${postSlug}`),
       clinicLocations: (miniSiteSlug: string) =>
         apiRequest<{ data: any[] }>(`/public/mini-sites/${miniSiteSlug}/clinic-locations`, { auth: false }),
+      hmoProviders: (query?: { is_active?: boolean; page?: number; per_page?: number }) =>
+        apiRequest<any[]>("/public/hmo-providers", { query }),
     },
 
     self: {
@@ -480,12 +517,16 @@ export const api = {
         slot_start_time: string;
         access_method: "card" | "subscription" | "hmo" | "organization";
         consents: string[];
-        enrollee_id?: string;
-        hmo_policy_number?: string;
-        hmo_provider?: string;
-        organization_id?: string;
-        employee_id?: string;
-        auth_file_url?: string;
+        access_method_payload?: {
+          subscription_id?: string;
+          hmo_provider_id?: string;
+          policy_number?: string;
+          member_name?: string;
+          member_dob?: string;
+          organization_id?: string;
+          employee_id?: string;
+          authorization_letter_url?: string;
+        };
         location_id?: string;
         appointment_type?: "physical" | "online";
         doctor_user_uuid?: string;
@@ -495,7 +536,11 @@ export const api = {
         { method: "POST", auth: true, body }
       ),
       
-      list: (query?: { status?: "pending" | "confirmed" | "cancelled" | "completed"; page?: number; per_page?: number }) => 
+      list: (query?: { 
+        status?: "pending" | "confirmed" | "cancelled" | "completed" | "awaiting_verification" | "verified" | "rejected";
+        page?: number; 
+        per_page?: number 
+      }) => 
         apiRequest<{ data: any[]; meta: PaginationMeta }>("/me/appointments", { auth: true, query }),
       
       detail: (appointmentUuid: string) => 
@@ -505,14 +550,25 @@ export const api = {
         apiRequest(`/me/appointments/${appointmentUuid}/cancel`, { 
           method: "POST", 
           auth: true, 
-          body: { reason } 
+          body: reason ? { reason } : undefined 
         }),
       
-      reschedule: (appointmentUuid: string, body: { slot_date: string; slot_start_time: string; location_id?: string }) => 
+      reschedule: (appointmentUuid: string, body: { 
+        slot_date: string; 
+        slot_start_time: string; 
+        location_id?: string 
+      }) => 
         apiRequest(`/me/appointments/${appointmentUuid}/reschedule`, { 
           method: "POST", 
           auth: true, 
           body 
+        }),
+      
+      uploadLetter: (formData: FormData) => 
+        apiRequest<{ url: string; file_url: string }>("/me/appointments/upload-letter", { 
+          method: "POST", 
+          auth: true, 
+          body: formData 
         }),
     },
     
@@ -685,10 +741,7 @@ export const api = {
         apiRequest(`/admin/lookups/${resource}/${id}`, { method: "DELETE", auth: true }),
     },
 
-    // Admin Appointments Endpoints
     appointments: {
-      // Get all appointments with filters
-      // Query params: status, access_method, doctor_uuid, from, to, page, per_page
       list: (query?: { 
         page?: number; 
         per_page?: number;
@@ -700,18 +753,15 @@ export const api = {
       }) => 
         apiRequest<any[], PaginationMeta>("/admin/appointments", { auth: true, query }),
       
-      // Get appointment details by UUID
       detail: (appointmentUuid: string) => 
         apiRequest<{ data: any }>(`/admin/appointments/${appointmentUuid}`, { auth: true }),
       
-      // Verify an appointment (for HMO and organization verification queue)
       verify: (appointmentUuid: string) => 
         apiRequest(`/admin/appointments/${appointmentUuid}/verify`, { 
           method: "POST", 
           auth: true 
         }),
       
-      // Reject an appointment verification
       reject: (appointmentUuid: string, body?: { reason?: string }) => 
         apiRequest(`/admin/appointments/${appointmentUuid}/reject-verification`, { 
           method: "POST", 
@@ -720,9 +770,7 @@ export const api = {
         }),
     },
 
-    // HMO Providers Management Endpoints
     hmoProviders: {
-      // Get all HMO providers with pagination and search
       list: (query?: { 
         page?: number; 
         per_page?: number;
@@ -731,7 +779,6 @@ export const api = {
       }) => 
         apiRequest<any[], PaginationMeta>("/admin/hmo-providers", { auth: true, query }),
       
-      // Create a new HMO provider
       create: (body: { 
         name: string; 
         code: string; 
@@ -743,11 +790,9 @@ export const api = {
           body 
         }),
       
-      // Get a single HMO provider by ID
       detail: (hmoProviderId: string | number) => 
         apiRequest(`/admin/hmo-providers/${hmoProviderId}`, { auth: true }),
       
-      // Update an HMO provider
       update: (hmoProviderId: string | number, body: { 
         name?: string; 
         code?: string; 
@@ -759,14 +804,12 @@ export const api = {
           body 
         }),
       
-      // Delete an HMO provider
       delete: (hmoProviderId: string | number) => 
         apiRequest(`/admin/hmo-providers/${hmoProviderId}`, { 
           method: "DELETE", 
           auth: true 
         }),
       
-      // Reorder HMO providers
       reorder: (body: { ids: (string | number)[] }) => 
         apiRequest("/admin/hmo-providers/reorder", { 
           method: "POST", 
@@ -774,7 +817,209 @@ export const api = {
           body 
         }),
     },
+
+    subscriptionPackages: {
+      list: (query?: { 
+        type?: "individual" | "family" | "corporate" | "custom";
+        billing_period?: "monthly" | "quarterly" | "yearly";
+        search?: string;
+        page?: number; 
+        per_page?: number;
+        is_active?: boolean;
+      }) => 
+        apiRequest<any[], PaginationMeta>("/admin/subscription-packages", { auth: true, query }),
+      
+      detail: (subscriptionPackageId: string | number) => 
+        apiRequest<any>(`/admin/subscription-packages/${subscriptionPackageId}`, { auth: true }),
+      
+      create: (body: { 
+        name: string;
+        type: "individual" | "family" | "corporate" | "custom";
+        description: string;
+        price_kobo: number;
+        billing_period: "monthly" | "quarterly" | "yearly";
+        consultations_included: number;
+        features: string[];
+        is_active?: boolean;
+      }) => 
+        apiRequest("/admin/subscription-packages", { 
+          method: "POST", 
+          auth: true, 
+          body 
+        }),
+      
+      update: (subscriptionPackageId: string | number, body: { 
+        name?: string;
+        type?: "individual" | "family" | "corporate" | "custom";
+        description?: string;
+        price_kobo?: number;
+        billing_period?: "monthly" | "quarterly" | "yearly";
+        consultations_included?: number;
+        features?: string[];
+        is_active?: boolean;
+      }) => 
+        apiRequest(`/admin/subscription-packages/${subscriptionPackageId}`, { 
+          method: "PATCH", 
+          auth: true, 
+          body 
+        }),
+      
+      delete: (subscriptionPackageId: string | number) => 
+        apiRequest(`/admin/subscription-packages/${subscriptionPackageId}`, { 
+          method: "DELETE", 
+          auth: true 
+        }),
+      
+      reorder: (body: { ids: (string | number)[] }) => 
+        apiRequest("/admin/subscription-packages/reorder", { 
+          method: "POST", 
+          auth: true, 
+          body 
+        }),
+      
+      subscribers: (subscriptionPackageId: string | number, query?: { 
+        page?: number; 
+        per_page?: number;
+        status?: "active" | "expired" | "cancelled";
+      }) => 
+        apiRequest<any[], PaginationMeta>(`/admin/subscription-packages/${subscriptionPackageId}/subscribers`, { 
+          auth: true, 
+          query 
+        }),
+    },
+
+    // Patient Subscriptions Management Endpoints
+    patientSubscriptions: {
+      // Get all patient subscriptions with pagination and filters
+      list: (query?: { 
+        page?: number; 
+        per_page?: number;
+        search?: string;
+        package_id?: string;
+        status?: "active" | "expired" | "cancelled" | "pending";
+        from_date?: string;
+        to_date?: string;
+      }) => 
+        apiRequest<any[], PaginationMeta>("/admin/patient-subscriptions", { auth: true, query }),
+      
+      // Get a single patient subscription by DSM ID
+      detail: (dsmId: string) => 
+        apiRequest<any>(`/admin/patient-subscriptions/${dsmId}`, { auth: true }),
+      
+      // Cancel a patient subscription
+      cancel: (dsmId: string, body?: { reason?: string }) => 
+        apiRequest(`/admin/patient-subscriptions/${dsmId}/cancel`, { 
+          method: "POST", 
+          auth: true, 
+          body 
+        }),
+      
+      // Renew a patient subscription
+      renew: (dsmId: string, body?: { 
+        billing_period?: "monthly" | "quarterly" | "yearly";
+        start_date?: string;
+      }) => 
+        apiRequest(`/admin/patient-subscriptions/${dsmId}/renew`, { 
+          method: "POST", 
+          auth: true, 
+          body 
+        }),
+      
+      // Get subscription history
+      history: (dsmId: string, query?: { 
+        page?: number; 
+        per_page?: number;
+      }) => 
+        apiRequest<any[], PaginationMeta>(`/admin/patient-subscriptions/${dsmId}/history`, { 
+          auth: true, 
+          query 
+        }),
+      
+      // Export subscriptions to CSV
+      export: (query?: { 
+        package_id?: string;
+        status?: string;
+        from_date?: string;
+        to_date?: string;
+      }) => 
+        apiFileRequest("/admin/patient-subscriptions/export", { 
+          auth: true, 
+          query 
+        }),
+    },
+
+    subscribers: {
+      list: (query?: { 
+        page?: number; 
+        per_page?: number;
+        search?: string;
+        package_id?: string;
+        status?: "active" | "expired" | "cancelled" | "pending";
+        from_date?: string;
+        to_date?: string;
+      }) => 
+        apiRequest<any[], PaginationMeta>("/admin/subscribers", { auth: true, query }),
+      
+      detail: (subscriberId: string | number) => 
+        apiRequest<any>(`/admin/subscribers/${subscriberId}`, { auth: true }),
+      
+      update: (subscriberId: string | number, body: { 
+        status?: "active" | "expired" | "cancelled" | "pending";
+        auto_renew?: boolean;
+        notes?: string;
+      }) => 
+        apiRequest(`/admin/subscribers/${subscriberId}`, { 
+          method: "PATCH", 
+          auth: true, 
+          body 
+        }),
+      
+      cancel: (subscriberId: string | number, body?: { reason?: string }) => 
+        apiRequest(`/admin/subscribers/${subscriberId}/cancel`, { 
+          method: "POST", 
+          auth: true, 
+          body 
+        }),
+      
+      renew: (subscriberId: string | number, body?: { 
+        billing_period?: "monthly" | "quarterly" | "yearly";
+        start_date?: string;
+      }) => 
+        apiRequest(`/admin/subscribers/${subscriberId}/renew`, { 
+          method: "POST", 
+          auth: true, 
+          body 
+        }),
+      
+      history: (subscriberId: string | number, query?: { 
+        page?: number; 
+        per_page?: number;
+      }) => 
+        apiRequest<any[], PaginationMeta>(`/admin/subscribers/${subscriberId}/history`, { 
+          auth: true, 
+          query 
+        }),
+      
+      export: (query?: { 
+        package_id?: string;
+        status?: string;
+        from_date?: string;
+        to_date?: string;
+      }) => 
+        apiFileRequest("/admin/subscribers/export", { 
+          auth: true, 
+          query 
+        }),
+    },
   },
+};
+
+export const publicApi = {
+  hmoProviders: (query?: { is_active?: boolean; page?: number; per_page?: number }) =>
+    apiRequest<any[]>("/public/hmo-providers", { query }),
+  partners: () => api.cms.partners(),
+  subscriptionPackages: (query?: { is_active?: boolean; type?: string }) =>
+    apiRequest<any[]>("/public/subscription-packages", { query }),
 };
 
 export async function fetchJson(path: string, options: ApiRequestOptions = {}) {
@@ -786,6 +1031,7 @@ export default {
   API_ASSET_ORIGIN,
   API_FALLBACK_TO_LOCAL,
   api,
+  publicApi,
   apiFileRequest,
   apiRequest,
   buildApiUrl,

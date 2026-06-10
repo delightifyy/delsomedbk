@@ -391,14 +391,14 @@ const PAGE_GROUPS: PageGroup[] = [
       { id: "contact", label: "Contact Info + Footer" },
     ],
   },
-  {
-    id: "hospital",
-    label: "Hospital",
-    icon: Building2,
-    sections: [
-      { id: "hospital", label: "Hospital Locations" },
-    ],
-  },
+  // {
+  //   id: "hospital",
+  //   label: "Hospital",
+  //   icon: Building2,
+  //   sections: [
+  //     { id: "hospital", label: "Hospital Locations" },
+  //   ],
+  // },
 ];
 
 /* =========================================================

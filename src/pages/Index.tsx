@@ -2,11 +2,20 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Link } from "react-router-dom";
 import {
-  ShieldCheck, Search, ArrowRight, UserPlus, HeartPulse, Sparkles,
+  ShieldCheck,
+  Search,
+  ArrowRight,
+  UserPlus,
+  HeartPulse,
+  Sparkles,
 } from "lucide-react";
 import heroDoctor from "@/assets/hero-doctor-v5.jpg";
 import { SPECIALTIES, type Doctor } from "@/data/doctors";
@@ -25,18 +34,34 @@ import { collection, doctorFromApi } from "@/lib/backendAdapters";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const TIMELINE = [
-  { icon: UserPlus, title: "Create your account", desc: "Sign up as a patient, doctor or organization in under two minutes. No paperwork, no friction." },
-  { icon: Search, title: "Find a trusted doctor", desc: "Filter our directory of manually verified doctors by specialty, state and city." },
-  { icon: HeartPulse, title: "Get the care you need", desc: "Reach out directly. Connect with a doctor who fits your needs and your context." },
+  {
+    icon: UserPlus,
+    title: "Create your account",
+    desc: "Sign up as a patient, doctor or organization in under two minutes. No paperwork, no friction.",
+  },
+  {
+    icon: Search,
+    title: "Find a trusted doctor",
+    desc: "Filter our directory of manually verified doctors by specialty, state and city.",
+  },
+  {
+    icon: HeartPulse,
+    title: "Get the care you need",
+    desc: "Reach out directly. Connect with a doctor who fits your needs and your context.",
+  },
 ];
 
-const REGISTRATION_SPECIALTIES = SPECIALTIES.filter((specialty) => specialty !== "Others");
+const REGISTRATION_SPECIALTIES = SPECIALTIES.filter(
+  (specialty) => specialty !== "Others",
+);
 
 const Index = () => {
   const [featured, setFeatured] = useState<Doctor[]>([]);
   const [featuredLoading, setFeaturedLoading] = useState(true);
   const [hero, setHero] = useState({ specialty: "", state: "" });
-  const [specialties, setSpecialties] = useState<string[]>(REGISTRATION_SPECIALTIES);
+  const [specialties, setSpecialties] = useState<string[]>(
+    REGISTRATION_SPECIALTIES,
+  );
   const [states, setStates] = useState<string[]>([]);
 
   useEffect(() => {
@@ -48,11 +73,17 @@ const Index = () => {
           api.doctors.list({ per_page: 4 }),
           api.lookups.states(),
         ]);
-        const mapped = collection(response.data).map((entry, index) => doctorFromApi(entry, index)).slice(0, 4);
+        const mapped = collection(response.data)
+          .map((entry, index) => doctorFromApi(entry, index))
+          .slice(0, 4);
         if (!cancelled) {
           setFeatured(mapped);
           setSpecialties(REGISTRATION_SPECIALTIES);
-          setStates(collection(stateResponse.data).map((entry: any) => String(entry?.name ?? entry?.title ?? "")).filter(Boolean));
+          setStates(
+            collection(stateResponse.data)
+              .map((entry: any) => String(entry?.name ?? entry?.title ?? ""))
+              .filter(Boolean),
+          );
         }
       } catch {
         if (!cancelled) {
@@ -75,36 +106,59 @@ const Index = () => {
       {/* 01 / HERO — split asymmetric */}
       <section className="relative overflow-hidden border-b border-border">
         <div className="absolute inset-0 gradient-soft" aria-hidden />
-        <div className="absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full bg-secondary/10 blur-3xl" aria-hidden />
+        <div
+          className="absolute -top-40 -right-40 h-[500px] w-[500px] rounded-full bg-secondary/10 blur-3xl"
+          aria-hidden
+        />
         <div className="container relative grid lg:grid-cols-12 gap-10 lg:gap-12 items-center py-12 sm:py-16 lg:py-24">
           <div className="lg:col-span-7 space-y-6 sm:space-y-7 animate-fade-up">
             <SectionLabel number="" label="" />
             <h1 className="font-display text-[2.5rem] leading-[1.05] sm:text-6xl lg:text-7xl font-bold sm:leading-[1.02] text-balance">
-              Access <span className="text-primary">Trusted Doctors</span> Anytime, <span className="italic text-secondary">Anywhere</span>.
+              Access <span className="text-primary">Trusted Doctors</span>{" "}
+              Anytime, <span className="italic text-secondary">Anywhere</span>.
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground max-w-xl leading-relaxed">
-              DesolMed connects patients with verified, licensed doctors across and outside Nigeria to give healthcare professionals a beautiful place to grow their practice online.
+              DesolMed connects patients with verified, licensed doctors across
+              and outside Nigeria to give healthcare professionals a beautiful
+              place to grow their practice online.
             </p>
 
             {/* Inline search */}
             <form
-              onSubmit={(e) => { e.preventDefault(); window.location.href = "/doctors"; }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                window.location.href = "/doctors";
+              }}
               className="rounded-2xl bg-card border border-border shadow-card p-2 flex flex-col sm:flex-row gap-2 max-w-2xl"
             >
-              <Select value={hero.specialty} onValueChange={(v) => setHero((p) => ({ ...p, specialty: v }))}>
+              <Select
+                value={hero.specialty}
+                onValueChange={(v) => setHero((p) => ({ ...p, specialty: v }))}
+              >
                 <SelectTrigger className="border-0 sm:border-r border-border rounded-xl sm:rounded-r-none focus:ring-0 h-12 flex-1">
                   <SelectValue placeholder="Any specialty" />
                 </SelectTrigger>
                 <SelectContent>
-                  {specialties.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  {specialties.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              <Select value={hero.state} onValueChange={(v) => setHero((p) => ({ ...p, state: v }))}>
+              <Select
+                value={hero.state}
+                onValueChange={(v) => setHero((p) => ({ ...p, state: v }))}
+              >
                 <SelectTrigger className="border-0 sm:border-r border-border rounded-xl sm:rounded-none focus:ring-0 h-12 flex-1">
                   <SelectValue placeholder="Any state" />
                 </SelectTrigger>
                 <SelectContent>
-                  {states.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  {states.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Button type="submit" variant="hero" size="lg" className="h-12">
@@ -113,9 +167,15 @@ const Index = () => {
             </form>
 
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 text-sm text-muted-foreground">
-              <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-secondary" /> Verified Doctors Only</span>
+              <span className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-secondary" /> Verified
+                Doctors Only
+              </span>
               <span className="text-border">·</span>
-              <span className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-secondary" /> Free for Patients</span> 
+              <span className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-secondary" /> Free for
+                Patients
+              </span>
               <span className="text-border">·</span>
               <span>Doctors · 36 States</span>
             </div>
@@ -123,7 +183,10 @@ const Index = () => {
 
           {/* Right: portrait collage */}
           <div className="lg:col-span-5 relative animate-fade-in">
-            <div className="absolute -inset-6 gradient-hero rounded-[50%] opacity-10 blur-3xl" aria-hidden />
+            <div
+              className="absolute -inset-6 gradient-hero rounded-[50%] opacity-10 blur-3xl"
+              aria-hidden
+            />
             <div className="relative aspect-[4/5] max-w-[320px] sm:max-w-[400px] lg:max-w-[460px] mx-auto">
               <div className="absolute inset-0 bg-white rounded-[50%] shadow-card overflow-hidden">
                 <img
@@ -142,8 +205,12 @@ const Index = () => {
                 <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-secondary ring-2 ring-card animate-pulse" />
               </span>
               <div>
-                <p className="text-xs font-semibold leading-tight">Dr. Chiamaka Eze</p>
-                <p className="text-[10px] text-secondary leading-tight">● Online now</p>
+                <p className="text-xs font-semibold leading-tight">
+                  Dr. Chiamaka Eze
+                </p>
+                <p className="text-[10px] text-secondary leading-tight">
+                  ● Online now
+                </p>
               </div>
             </div>
             <div className="hidden md:flex absolute -right-4 top-12 bg-card rounded-xl shadow-elegant border border-border p-3 gap-2.5 items-center">
@@ -151,8 +218,12 @@ const Index = () => {
                 <ShieldCheck className="h-4 w-4" />
               </span>
               <div>
-                <p className="text-xs font-semibold leading-tight">License Verified</p>
-                <p className="text-[10px] text-muted-foreground leading-tight">By DesolMed Medical Team</p>
+                <p className="text-xs font-semibold leading-tight">
+                  License Verified
+                </p>
+                <p className="text-[10px] text-muted-foreground leading-tight">
+                  By DesolMed Medical Team
+                </p>
               </div>
             </div>
           </div>
@@ -217,7 +288,8 @@ const Index = () => {
               Trusted care, in three deliberate steps.
             </h2>
             <p className="text-muted-foreground leading-relaxed">
-              No friction. No confusion. Just a clear path from "I need a doctor" to "I found the right one."
+              No friction. No confusion. Just a clear path from "I need a
+              doctor" to "I found the right one."
             </p>
           </div>
 
@@ -233,24 +305,31 @@ const Index = () => {
                   </span>
                   <span className="h-px w-8 bg-border" />
                 </div>
-                <h3 className="font-display text-xl sm:text-2xl font-bold leading-snug">{s.title}</h3>
-                <p className="mt-2 text-sm sm:text-base text-muted-foreground max-w-lg leading-relaxed">{s.desc}</p>
+                <h3 className="font-display text-xl sm:text-2xl font-bold leading-snug">
+                  {s.title}
+                </h3>
+                <p className="mt-2 text-sm sm:text-base text-muted-foreground max-w-lg leading-relaxed">
+                  {s.desc}
+                </p>
               </li>
             ))}
           </ol>
         </div>
       </section>
 
-
       {/* 06 / TRUSTED BY */}
       <section className="container py-14 sm:py-20 border-t border-border">
         <div className="text-center max-w-xl mx-auto mb-10 space-y-3">
-          <SectionLabel number="" label="Trusted by" className="justify-center" />
+          <SectionLabel
+            number=""
+            label="Trusted by"
+            className="justify-center"
+          />
           <h2 className="font-display text-2xl sm:text-3xl font-bold">
             Leading HMOs and Partners.
           </h2>
         </div>
-        <LogoWall />
+        <LogoWall type="hmo" />
       </section>
 
       {/* 07 / TESTIMONIALS */}
@@ -258,7 +337,8 @@ const Index = () => {
         <div className="max-w-2xl mb-10 sm:mb-12 space-y-3">
           <SectionLabel number="" label="From the network" />
           <h2 className="font-display text-2xl sm:text-4xl font-bold leading-tight">
-            Patients, Pharmacists, Doctors, Laboratories / Diagnostics and HMOs , and other Organizations.
+            Patients, Pharmacists, Doctors, Laboratories / Diagnostics and HMOs
+            , and other Organizations.
           </h2>
         </div>
         <Testimonials />
@@ -274,7 +354,13 @@ const Index = () => {
             </h2>
             <p className="text-muted-foreground">
               Can't find what you're looking for?{" "}
-              <Link to="/contact" className="text-primary font-semibold hover:text-secondary">Talk to our team</Link>.
+              <Link
+                to="/contact"
+                className="text-primary font-semibold hover:text-secondary"
+              >
+                Talk to our team
+              </Link>
+              .
             </p>
           </div>
           <div className="lg:col-span-8">

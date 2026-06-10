@@ -7,12 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { signInPatientWithPassword } from "@/lib/localStore";
+import { api, ApiError, setStoredAuthToken } from "@/lib/api";
 
 const PatientLogin = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, loading, refetchUser } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,16 +32,63 @@ const PatientLogin = () => {
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setBusy(true);
+    
     try {
-      await signInPatientWithPassword({ email, password });
-      toast({ title: "Welcome back", description: "You can now access your patient portal." });
-      navigate(redirect, { replace: true });
-    } catch (error) {
-      toast({
-        title: "Login failed",
-        description: error instanceof Error ? error.message : "Unable to sign in. Please try again.",
-        variant: "destructive",
+      const response = await api.auth.patientLogin({ 
+        email: email.trim(), 
+        password 
       });
+      
+      if (response.data?.token) {
+        setStoredAuthToken(response.data.token);
+        
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        await refetchUser();
+        
+        toast({ 
+          title: "Welcome back", 
+          description: "You can now access your patient portal." 
+        });
+        
+        navigate(redirect, { replace: true });
+      } else {
+        throw new Error("No token received from server");
+      }
+    } catch (error) {
+      if (error instanceof ApiError) {
+        if (error.status === 401) {
+          toast({
+            title: "Login failed",
+            description: "Invalid email or password. Please try again.",
+            variant: "destructive",
+          });
+        } else if (error.status === 408) {
+          toast({
+            title: "Connection timeout",
+            description: "Server is taking too long to respond. Please try again.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Login failed",
+            description: error.message || "Unable to sign in. Please try again.",
+            variant: "destructive",
+          });
+        }
+      } else if (error instanceof Error) {
+        toast({
+          title: "Login failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Login failed",
+          description: "An unexpected error occurred. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setBusy(false);
     }
@@ -64,15 +111,15 @@ const PatientLogin = () => {
 
           <form onSubmit={onSubmit} className="mt-8 space-y-5 rounded-2xl border border-border bg-card p-6 shadow-sm">
             <div className="space-y-2">
-              <Label htmlFor="patient-email">Email or Username</Label>
+              <Label htmlFor="patient-email">Email Address</Label>
               <Input
                 id="patient-email"
-                type="text"
+                type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 required
-                autoComplete="username"
-                placeholder="Patients@delsomed.com"
+                autoComplete="email"
+                placeholder="agboolasamuel30@gmail.com"
               />
             </div>
 
@@ -94,6 +141,15 @@ const PatientLogin = () => {
               Login
             </Button>
 
+            <div className="text-center">
+              <Link
+                to="/forgot-password"
+                className="text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
             <p className="text-center text-sm text-muted-foreground">
               Don't have an account?{" "}
               <Link to="/register/patient" className="font-semibold text-primary hover:underline">
@@ -108,7 +164,6 @@ const PatientLogin = () => {
               <ArrowLeft className="h-3.5 w-3.5" />
               Back to site
             </Link>
-
           </form>
         </div>
       </section>

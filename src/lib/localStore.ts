@@ -1,9 +1,10 @@
+// lib/localStore.ts
 import { ADVERTS } from "@/data/doctors";
 import { BLOG_POSTS } from "@/data/blogs";
 import { NEWS } from "@/data/news";
 import { FAQS } from "@/data/faqs";
 import { TESTIMONIALS } from "@/data/testimonials";
-import { API_FALLBACK_TO_LOCAL, ApiError, api, clearStoredAuthToken, setStoredAuthToken } from "@/lib/api";
+import { API_FALLBACK_TO_LOCAL, ApiError, api, clearStoredAuthToken, setStoredAuthToken, getStoredAuthToken } from "@/lib/api";
 
 export type LocalRole = "admin" | "user";
 export type UserType = "patient" | "doctor" | "organization" | "pharmacy" | "lab-diagnostics";
@@ -364,11 +365,15 @@ const readSession = (): LocalSession | null => {
   }
 };
 
-const writeSession = (session: LocalSession | null) => {
+export const setStoredSession = (session: LocalSession | null) => {
   if (typeof window === "undefined") return;
   if (session) window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   else window.localStorage.removeItem(SESSION_KEY);
   window.dispatchEvent(new Event(AUTH_EVENT));
+};
+
+const writeSession = (session: LocalSession | null) => {
+  setStoredSession(session);
 };
 
 const publicUser = (user: LocalUser): LocalSession["user"] => ({
@@ -501,48 +506,10 @@ export const signUpPatient = async ({ email, password, fullName }: { email: stri
   return { data: { session } };
 };
 
-const createDummyPatientSession = (identifier: string) => {
-  const rawIdentifier = identifier.trim() || "patient";
-  const slug = rawIdentifier
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]+/g, "-")
-    .replace(/^-+|-+$/g, "") || "patient";
-  const email = rawIdentifier.includes("@") ? rawIdentifier.toLowerCase() : `${slug}@patient.local`;
-  const displayName = rawIdentifier.includes("@") ? rawIdentifier.split("@")[0] : rawIdentifier;
-  const session: LocalSession = {
-    user: {
-      id: `dummy-patient-${slug}`,
-      email,
-      full_name: displayName,
-      created_at: now(),
-    },
-    roles: ["user"],
-  };
-
-  clearStoredAuthToken();
-  writeSession(session);
-  return { data: { session } };
-};
-
+// REAL API - NO FALLBACKS
 export const signInPatientWithPassword = async ({ email, password }: { email: string; password: string }) => {
-  const store = readStore();
   const normalizedEmail = email.trim().toLowerCase();
-  const user = store.users.find((candidate) => candidate.email.toLowerCase() === normalizedEmail);
-
-  if (user && user.password === password) {
-    const role = store.roles.find((entry) => entry.user_id === user.id)?.role ?? "user";
-    const profile = store.profiles.find((entry) => entry.id === user.id);
-    const isPatient = profile?.user_type === "patient" || role === "user";
-
-    if (!isPatient || role === "admin") {
-      throw new Error("Please use a patient account to access the patient portal.");
-    }
-
-    const session: LocalSession = { user: publicUser(user), roles: [role] };
-    writeSession(session);
-    return { data: { session } };
-  }
-
+  
   try {
     const response = await api.auth.patientLogin({ email: normalizedEmail, password });
     const backendUser = response.data.user;
@@ -572,51 +539,48 @@ export const signInPatientWithPassword = async ({ email, password }: { email: st
     writeSession(session);
     return { data: { session } };
   } catch (error) {
-    return createDummyPatientSession(email || password);
+    console.error("Patient login error:", error);
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new Error("Unable to sign in. Please check your credentials.");
   }
 };
 
 export const signInDoctorWithPassword = async ({ email, password }: { email: string; password: string }) => {
-  const store = readStore();
   const normalizedEmail = email.trim().toLowerCase();
 
-  // Local fallback: check seeded/local users with profile.user_type === 'doctor'
-  const user = store.users.find((candidate) => candidate.email.toLowerCase() === normalizedEmail);
-  if (user && user.password === password) {
-    const profile = store.profiles.find((p) => p.id === user.id);
-    const isDoctor = profile?.user_type === "doctor";
-    if (!isDoctor) {
-      throw new Error("Please use a doctor account to access the MediCare admin.");
-    }
-    const session: LocalSession = { user: publicUser(user), roles: ["doctor"] };
-    clearStoredAuthToken();
-    writeSession(session);
-    return { data: { session } };
-  }
-
-  // Try backend patient login (some deployments treat doctors as patient-type users)
   try {
     const response = await api.auth.patientLogin({ email: normalizedEmail, password });
     const backendUser = response.data.user;
     const token = response.data.token;
+    
     if (!token) throw new Error("Login succeeded but no token returned.");
 
     const roles = normalizeRoleList(backendUser?.roles);
     const isDoctorBackend = roles.includes("doctor") || backendUser?.user_type === "doctor" || backendUser?.is_doctor;
+    
     if (!isDoctorBackend) throw new Error("This account is not a doctor account.");
 
     const fullName = [backendUser?.first_name, backendUser?.last_name].filter(Boolean).join(" ").trim();
     const session: LocalSession = {
-      user: { id: String(backendUser?.uuid ?? backendUser?.id ?? normalizedEmail), email: backendUser?.email ?? normalizedEmail, full_name: fullName || backendUser?.full_name || backendUser?.name || null, created_at: backendUser?.created_at ?? new Date().toISOString() },
+      user: { 
+        id: String(backendUser?.uuid ?? backendUser?.id ?? normalizedEmail), 
+        email: backendUser?.email ?? normalizedEmail, 
+        full_name: fullName || backendUser?.full_name || backendUser?.name || null, 
+        created_at: backendUser?.created_at ?? new Date().toISOString() 
+      },
       token,
       roles: ["doctor"],
       token_type: response.data.token_type,
       expires_in: response.data.expires_in,
     };
+    
     setStoredAuthToken(token);
     writeSession(session);
     return { data: { session } };
   } catch (err) {
+    console.error("Doctor login error:", err);
     throw err instanceof Error ? err : new Error("Unable to sign in as doctor. Please check credentials.");
   }
 };
@@ -627,7 +591,9 @@ export const signInWithPassword = async ({ email, password }: { email: string; p
     const backendUser = response.data.user;
     const fullName = [backendUser?.first_name, backendUser?.last_name].filter(Boolean).join(" ").trim();
     const token = response.data.token;
+    
     if (!token) throw new Error("Login succeeded but the backend did not return an admin token.");
+    
     const roles = normalizeRoleList(backendUser?.roles);
     const session: LocalSession = {
       user: {
@@ -646,67 +612,24 @@ export const signInWithPassword = async ({ email, password }: { email: string; p
     writeSession(session);
     return { data: { session } };
   } catch (error) {
+    console.error("Admin login error:", error);
     if (error instanceof ApiError) throw error;
-    if (!API_FALLBACK_TO_LOCAL) throw error;
+    throw new Error("Unable to sign in as admin. Please check your credentials.");
   }
-
-  const store = readStore();
-  const normalizedEmail = email.trim().toLowerCase();
-  let user = store.users.find((candidate) => candidate.email.toLowerCase() === normalizedEmail);
-
-  if (user) {
-    save((state) => {
-      const existing = state.users.find((candidate) => candidate.id === user!.id);
-      if (existing) {
-        existing.password = password;
-      }
-      const role = state.roles.find((entry) => entry.user_id === user!.id);
-      if (!role) {
-        state.roles.push({ user_id: user!.id, role: "admin" });
-      } else {
-        role.role = "admin";
-      }
-    });
-    user = readStore().users.find((candidate) => candidate.id === user.id) ?? user;
-  } else {
-    user = {
-      id: crypto.randomUUID(),
-      email: normalizedEmail,
-      full_name: null,
-      password,
-      created_at: now(),
-    };
-
-    save((state) => {
-      state.users.push(user!);
-      state.profiles.push({
-        id: user!.id,
-        full_name: null,
-        avatar_url: null,
-        email: user!.email,
-        phone: null,
-        organization_name: null,
-        user_type: null,
-        website_url: null,
-        created_at: user!.created_at,
-      });
-      state.roles.push({ user_id: user!.id, role: "admin" });
-    });
-  }
-
-  const session: LocalSession = { user: publicUser(user) };
-  writeSession(session);
-  return { data: { session } };
 };
 
 export const signOut = async () => {
   try {
-    await api.auth.logout();
-  } catch {
-    // Local fallback sessions do not have a server token to invalidate.
+    const token = getStoredAuthToken();
+    if (token) {
+      await api.auth.logout();
+    }
+  } catch (error) {
+    console.error("Logout API error:", error);
+  } finally {
+    clearStoredAuthToken();
+    writeSession(null);
   }
-  clearStoredAuthToken();
-  writeSession(null);
   return { error: null };
 };
 

@@ -5,6 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -12,26 +20,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Search,
   Stethoscope,
-  Globe,
-  Plus,
-  ExternalLink,
-  Trash2,
-  MapPin,
-  Calendar,
+  Eye,
   Mail,
+  Phone,
+  Globe,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { type LocalRegistration, type LocalProfile } from "@/lib/localStore";
@@ -46,6 +44,79 @@ type DoctorProfile = {
     public_url: string;
     admin_url: string;
   } | null;
+  specialty?: string;
+  specialty_name?: string;
+};
+
+const PAGE_SIZE = 50; // Changed from 10 to 50
+
+const fmtDate = (s?: string | null) =>
+  s ? new Date(s).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "—";
+
+const fmtDateTime = (s?: string | null) =>
+  s ? new Date(s).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+
+// Skeleton row component
+const TableRowSkeleton = () => (
+  <TableRow>
+    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+    <TableCell>
+      <div className="space-y-1">
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-3 w-32" />
+      </div>
+    </TableCell>
+    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+    <TableCell><Skeleton className="h-5 w-36" /></TableCell>
+    <TableCell><Skeleton className="h-8 w-8 rounded-md" /></TableCell>
+  </TableRow>
+);
+
+// Detail field skeleton
+const DetailFieldSkeleton = () => (
+  <div className="space-y-1">
+    <Skeleton className="h-3 w-20" />
+    <Skeleton className="h-4 w-32" />
+  </div>
+);
+
+// Helper to get specialty from various possible locations
+const getDoctorSpecialty = (entry: any, profile: any): string => {
+  if (entry?.specialty_name) return entry.specialty_name;
+  if (entry?.specialty) return entry.specialty;
+  if (entry?.profile?.specialty_name) return entry.profile.specialty_name;
+  if (entry?.profile?.specialty) return entry.profile.specialty;
+  if (profile?.specialty) return profile.specialty;
+  if (entry?.details?.specialty) return entry.details.specialty;
+  if (entry?.details?.specialty_name) return entry.details.specialty_name;
+  
+  const findSpecialty = (obj: any): string | null => {
+    if (!obj) return null;
+    if (obj.specialty_name) return obj.specialty_name;
+    if (obj.specialty) return obj.specialty;
+    for (const key in obj) {
+      if (typeof obj[key] === 'object' && obj[key] !== null) {
+        const found = findSpecialty(obj[key]);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+  
+  const found = findSpecialty(entry);
+  if (found) return found;
+  
+  return "Not specified";
+};
+
+// Helper to get city from various possible locations
+const getDoctorCity = (entry: any, profile: any): string | null => {
+  return entry?.city || entry?.profile?.city || profile?.city || null;
+};
+
+// Helper to get state from various possible locations
+const getDoctorState = (entry: any, profile: any): string | null => {
+  return entry?.state_name || entry?.state || entry?.profile?.state_name || entry?.profile?.state || profile?.state || null;
 };
 
 const DoctorsPageInner = () => {
@@ -53,11 +124,10 @@ const DoctorsPageInner = () => {
   const [doctors, setDoctors] = useState<DoctorProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const [page, setPage] = useState(1);
   const [selectedDoctor, setSelectedDoctor] = useState<DoctorProfile | null>(null);
-  const [websiteUrl, setWebsiteUrl] = useState("");
-  const [showDialog, setShowDialog] = useState(false);
-  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -65,6 +135,11 @@ const DoctorsPageInner = () => {
       const response = await api.admin.users.list({ role: "doctor" });
       const approvedDoctors = collection(response.data).map((entry: any) => {
         const profile = userProfileFromApi(entry) as LocalProfile;
+        
+        const specialty = getDoctorSpecialty(entry, profile);
+        const city = getDoctorCity(entry, profile);
+        const state = getDoctorState(entry, profile);
+        
         const registration: LocalRegistration = {
           id: profile.id,
           applicant_type: "doctor",
@@ -73,21 +148,30 @@ const DoctorsPageInner = () => {
           organization_name: profile.organization_name,
           email: profile.email ?? "",
           phone: profile.phone,
-          city: entry?.city ?? entry?.profile?.city ?? null,
-          state: entry?.state_name ?? entry?.state ?? entry?.profile?.state ?? null,
+          city: city,
+          state: state,
           zone: entry?.zone_name ?? entry?.zone ?? entry?.profile?.zone ?? null,
-          specialty: entry?.specialty_name ?? entry?.specialty ?? entry?.profile?.specialty ?? null,
-          details: entry?.profile ?? {},
+          specialty: specialty,
+          details: entry?.profile ?? entry ?? {},
           documents: [],
           reviewer_notes: null,
           reviewed_at: null,
           created_at: profile.created_at,
         };
-        return { registration, profile, miniSite: null } as DoctorProfile;
+        
+        return { 
+          registration, 
+          profile, 
+          miniSite: null,
+          specialty: specialty,
+          specialty_name: specialty,
+        } as DoctorProfile;
       });
+      
       const miniSites = await Promise.allSettled(
         approvedDoctors.map((doctor) => api.admin.doctors.miniSite(doctor.registration.id)),
       );
+      
       setDoctors(
         approvedDoctors.map((doctor, index) => ({
           ...doctor,
@@ -101,8 +185,14 @@ const DoctorsPageInner = () => {
               : null,
         })),
       );
-    } catch {
+    } catch (error) {
+      console.error("Error loading doctors:", error);
       setDoctors([]);
+      toast({
+        title: "Error",
+        description: "Failed to load doctors",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -119,71 +209,60 @@ const DoctorsPageInner = () => {
       d.registration.full_name?.toLowerCase().includes(needle) ||
       d.registration.email?.toLowerCase().includes(needle) ||
       d.registration.specialty?.toLowerCase().includes(needle) ||
-      d.registration.city?.toLowerCase().includes(needle)
+      d.registration.city?.toLowerCase().includes(needle) ||
+      d.registration.state?.toLowerCase().includes(needle)
     );
   });
 
-  const handleEditWebsite = (doctor: DoctorProfile) => {
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedDoctors = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const handleViewDetails = async (doctor: DoctorProfile) => {
     setSelectedDoctor(doctor);
-    setWebsiteUrl(doctor.profile?.website_url || "");
-    setShowDialog(true);
-  };
-
-  const handleSaveWebsite = async () => {
-    if (!selectedDoctor?.profile) return;
-    setBusy(true);
+    setShowDetailDialog(true);
+    setDetailLoading(true);
+    
     try {
-      toast({
-        title: "Website not updated",
-        description: "This backend only exposes doctor self-profile updates for website details.",
-      });
-      setShowDialog(false);
+      const response = await api.admin.users.detail(doctor.registration.id);
+      const fullProfile = userProfileFromApi(response.data) as LocalProfile;
+      const specialty = getDoctorSpecialty(response.data, fullProfile);
+      const city = getDoctorCity(response.data, fullProfile);
+      const state = getDoctorState(response.data, fullProfile);
+      
+      setSelectedDoctor(prev => prev ? {
+        ...prev,
+        profile: fullProfile,
+        specialty: specialty,
+        registration: {
+          ...prev.registration,
+          specialty: specialty,
+          city: city,
+          state: state,
+          details: response.data,
+        }
+      } : null);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update website link",
-        variant: "destructive",
-      });
+      console.error("Error fetching doctor details:", error);
     } finally {
-      setBusy(false);
+      setDetailLoading(false);
     }
   };
-
-  const handleDeleteWebsite = async () => {
-    if (!selectedDoctor?.profile) return;
-    setBusy(true);
-    try {
-      toast({
-        title: "Website not removed",
-        description: "This backend only exposes doctor self-profile updates for website details.",
-      });
-      setShowDeleteAlert(false);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to remove website link",
-        variant: "destructive",
-      });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const fmtDate = (s?: string | null) =>
-    s ? new Date(s).toLocaleDateString(undefined, { dateStyle: "medium" }) : "—";
 
   return (
     <DashboardLayout>
-      <div className="container max-w-6xl py-8 px-4">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Approved Doctors</h1>
-          <p className="text-slate-600">Manage doctor profiles and their website links</p>
+        <div>
+          <h1 className="font-display text-3xl font-bold">Approved Doctors</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Manage doctor profiles, view details, and access their mini-sites.
+          </p>
         </div>
 
         {/* Search */}
-        <div className="mb-6 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <div className="relative max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by name, email, specialty, or city..."
             value={q}
@@ -192,182 +271,293 @@ const DoctorsPageInner = () => {
           />
         </div>
 
-        {/* Loading state */}
-        {loading && (
-          <div className="text-center py-12">
-            <p className="text-slate-600">Loading doctors...</p>
-          </div>
-        )}
-
-        {/* Empty state */}
-        {!loading && filtered.length === 0 && (
-          <Card className="p-8 text-center">
-            <Stethoscope className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-600">
-              {doctors.length === 0
-                ? "No approved doctors yet"
-                : "No doctors match your search"}
-            </p>
-          </Card>
-        )}
-
-        {/* Doctors grid */}
-        {!loading && filtered.length > 0 && (
-          <div className="grid gap-4">
-            {filtered.map((doctor) => (
-              <Card key={doctor.registration.id} className="p-6">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                  {/* Doctor info */}
-                  <div className="flex-1">
-                    <div className="flex items-start gap-4">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-lg text-slate-900">
-                          {doctor.registration.full_name}
-                        </h3>
-                        <p className="text-sm text-slate-600 mt-1">
-                          <Mail className="inline h-3.5 w-3.5 mr-1" />
-                          {doctor.registration.email}
+        {/* Doctors Table */}
+        <Card className="overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Contact</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Mini-Site URL</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <>
+                  <TableRowSkeleton />
+                  <TableRowSkeleton />
+                  <TableRowSkeleton />
+                  <TableRowSkeleton />
+                  <TableRowSkeleton />
+                </>
+              ) : pagedDoctors.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                    {doctors.length === 0 ? "No approved doctors yet" : "No doctors match your search"}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                pagedDoctors.map((doctor) => (
+                  <TableRow key={doctor.registration.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{doctor.registration.full_name || "—"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Registered {fmtDate(doctor.registration.created_at)}
                         </p>
-                        
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          <Badge variant="secondary" className="bg-primary-soft text-primary">
-                            <Stethoscope className="h-3 w-3 mr-1" />
-                            {doctor.registration.specialty || "General"}
-                          </Badge>
-                          <Badge variant="secondary" className="bg-accent/10 text-accent">
-                            <MapPin className="h-3 w-3 mr-1" />
-                            {doctor.registration.city}, {doctor.registration.state}
-                          </Badge>
-                          <Badge variant="secondary" className="bg-green-50 text-green-700">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            Registered {fmtDate(doctor.registration.created_at)}
-                          </Badge>
-                        </div>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    {doctor.miniSite?.public_url ? (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(doctor.miniSite?.public_url, "_blank")}
-                          className="gap-2"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                          Open Doctor-site
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(doctor.miniSite?.admin_url, "_blank")}
-                          className="gap-2"
-                        >
-                          <Globe className="h-4 w-4" />
-                          Open Admin
-                        </Button>
-                      </>
-                    ) : doctor.profile?.website_url ? (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(doctor.profile?.website_url, "_blank")}
-                          className="gap-2"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                          View Website
-                        </Button>
-                      </>
-                    ) : (
-                      <Badge variant="secondary" className="bg-muted text-muted-foreground">
-                        No mini-site yet
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        {doctor.registration.email && (
+                          <p className="text-sm flex items-center gap-1">
+                            <Mail className="h-3 w-3 text-muted-foreground" />
+                            <span className="truncate max-w-[180px]">{doctor.registration.email}</span>
+                          </p>
+                        )}
+                        {doctor.registration.phone && (
+                          <p className="text-sm flex items-center gap-1">
+                            <Phone className="h-3 w-3 text-muted-foreground" />
+                            {doctor.registration.phone}
+                          </p>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className="bg-emerald-500 hover:bg-emerald-600">
+                        Approved
                       </Badge>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
+                    </TableCell>
+                    <TableCell>
+                      {doctor.miniSite?.public_url ? (
+                        <a 
+                          href={doctor.miniSite.public_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline break-all flex items-center gap-1"
+                        >
+                          <Globe className="h-3 w-3" />
+                          {doctor.miniSite.public_url.length > 40 
+                            ? doctor.miniSite.public_url.substring(0, 40) + "..." 
+                            : doctor.miniSite.public_url}
+                        </a>
+                      ) : doctor.profile?.website_url ? (
+                        <a 
+                          href={doctor.profile.website_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline break-all flex items-center gap-1"
+                        >
+                          <Globe className="h-3 w-3" />
+                          {doctor.profile.website_url.length > 40 
+                            ? doctor.profile.website_url.substring(0, 40) + "..." 
+                            : doctor.profile.website_url}
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">No URL available</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleViewDetails(doctor)}
+                        title="View Details"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
 
-        {/* Website edit dialog */}
-        <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {selectedDoctor?.profile?.website_url
-                  ? "Edit Website Link"
-                  : "Create Website Link"}
-              </DialogTitle>
-              <DialogDescription>
-                Add or update the website link for Dr. {selectedDoctor?.registration.full_name}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-900 mb-2">
-                  Website URL
-                </label>
-                <Input
-                  type="url"
-                  placeholder="https://example.com"
-                  value={websiteUrl}
-                  onChange={(e) => setWebsiteUrl(e.target.value)}
-                  className="w-full"
-                />
-                <p className="text-xs text-slate-500 mt-1">
-                  Enter the doctor's website or practice link
-                </p>
+          {/* Pagination */}
+          {!loading && filtered.length > 0 && totalPages > 1 && (
+            <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3">
+              <p className="text-xs text-muted-foreground">
+                Showing {(currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length} doctors
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1}
+                >
+                  <ChevronLeft className="h-4 w-4" /> Previous
+                </Button>
+                <span className="text-sm text-muted-foreground px-2">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                >
+                  Next <ChevronRight className="h-4 w-4" />
+                </Button>
               </div>
             </div>
-
-            <DialogFooter className="gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowDialog(false)}
-                disabled={busy}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSaveWebsite}
-                disabled={busy || !websiteUrl.trim()}
-                className="gap-2"
-              >
-                {busy ? "Saving..." : "Save Link"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Delete confirmation dialog */}
-        <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Remove Website Link?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will remove the website link for Dr. {selectedDoctor?.registration.full_name}.
-                The button will change back to "Create Link".
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteWebsite}
-                disabled={busy}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                {busy ? "Removing..." : "Remove Link"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+          )}
+          
+          {/* Show total count even when only one page */}
+          {!loading && filtered.length > 0 && totalPages === 1 && (
+            <div className="border-t border-border px-4 py-3">
+              <p className="text-xs text-muted-foreground text-center">
+                Showing all {filtered.length} doctors
+              </p>
+            </div>
+          )}
+        </Card>
       </div>
+
+      {/* Doctor Details Dialog */}
+      <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl">
+              Doctor Details
+            </DialogTitle>
+            <DialogDescription>
+              Complete information about this doctor.
+            </DialogDescription>
+          </DialogHeader>
+
+          {detailLoading ? (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <DetailFieldSkeleton />
+                <DetailFieldSkeleton />
+                <DetailFieldSkeleton />
+                <DetailFieldSkeleton />
+                <DetailFieldSkeleton />
+                <DetailFieldSkeleton />
+              </div>
+            </div>
+          ) : selectedDoctor && (
+            <div className="space-y-6">
+              {/* Basic Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">Full Name</p>
+                  <p className="font-medium">{selectedDoctor.registration.full_name || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Specialty</p>
+                  <p>{selectedDoctor.registration.specialty && selectedDoctor.registration.specialty !== "Not specified" 
+                    ? selectedDoctor.registration.specialty 
+                    : "Not specified"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Email</p>
+                  <p>{selectedDoctor.registration.email || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Phone</p>
+                  <p>{selectedDoctor.registration.phone || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">City</p>
+                  <p>{selectedDoctor.registration.city || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">State</p>
+                  <p>{selectedDoctor.registration.state || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Zone</p>
+                  <p>{selectedDoctor.registration.zone || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Registered On</p>
+                  <p>{fmtDateTime(selectedDoctor.registration.created_at)}</p>
+                </div>
+              </div>
+
+              {/* Website / Mini-Site */}
+              <div className="rounded-lg border border-border p-4">
+                <h4 className="font-semibold mb-3">Online Presence</h4>
+                <div className="space-y-2">
+                  {selectedDoctor.miniSite?.public_url ? (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Mini-Site URL</p>
+                      <a 
+                        href={selectedDoctor.miniSite.public_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline break-all"
+                      >
+                        {selectedDoctor.miniSite.public_url}
+                      </a>
+                    </div>
+                  ) : selectedDoctor.profile?.website_url ? (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Website URL</p>
+                      <a 
+                        href={selectedDoctor.profile.website_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline break-all"
+                      >
+                        {selectedDoctor.profile.website_url}
+                      </a>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No website or mini-site available</p>
+                  )}
+                  
+                  {selectedDoctor.miniSite?.admin_url && (
+                    <div className="mt-2">
+                      <p className="text-xs text-muted-foreground">Admin URL</p>
+                      <a 
+                        href={selectedDoctor.miniSite.admin_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline break-all"
+                      >
+                        {selectedDoctor.miniSite.admin_url}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Registration Application Details */}
+              {selectedDoctor.registration.details && Object.keys(selectedDoctor.registration.details).length > 0 && (
+                <div className="rounded-lg border border-border p-4">
+                  <h4 className="font-semibold mb-3">Registration Application Details</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    {Object.entries(selectedDoctor.registration.details)
+                      .filter(([key]) => !['id', 'uuid', 'password', 'token', 'created_at', 'updated_at', 'email_verified_at', 'profile'].includes(key))
+                      .slice(0, 10)
+                      .map(([key, value]) => {
+                        if (!value) return null;
+                        const formattedKey = key.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim();
+                        return (
+                          <div key={key}>
+                            <p className="text-xs text-muted-foreground capitalize">{formattedKey}</p>
+                            <p className="text-sm">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</p>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDetailDialog(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
