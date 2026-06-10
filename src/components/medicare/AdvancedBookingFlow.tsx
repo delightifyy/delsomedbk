@@ -598,6 +598,11 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
                         <Clock className="h-3 w-3" /> {s.duration}
                         {disabled && <span className="ml-2 text-rose-600 font-medium">Appointment not available</span>}
                       </div>
+                      <div className="mt-3">
+                        <span className={`inline-flex text-xs font-semibold px-2 py-1 rounded ${active ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
+                          {active ? "Selected" : "Select"}
+                        </span>
+                      </div>
                     </button>
                   );
                 })}

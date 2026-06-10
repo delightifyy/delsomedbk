@@ -1,11 +1,11 @@
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { PageHeader, StatCard, SectionCard } from "@/components/portal/PortalUI";
 import { patientNav } from "./nav";
-import { patientMock, formatNGN } from "@/data/portalMock";
+import { patientMock } from "@/data/portalMock";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { CalendarDays, FileText, Pill, Wallet, Video, Plus, ArrowRight, Clock, ShieldCheck, BadgeCheck, Building2, CreditCard } from "lucide-react";
+import { CalendarDays, FileText, Pill, Video, Plus, ArrowRight, Clock, ShieldCheck, BadgeCheck, Building2, CreditCard } from "lucide-react";
 import { Link } from "react-router-dom";
 import { usePatientCategory, categoryLabel } from "@/hooks/usePatientCategory";
 
@@ -53,11 +53,10 @@ const PatientDashboard = () => {
 
 
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <StatCard label="Upcoming" value={patientMock.stats.upcoming} icon={CalendarDays} trend="Next: May 15" />
         <StatCard label="Past Visits" value={patientMock.stats.past} icon={FileText} accent="secondary" />
         <StatCard label="Active Rx" value={patientMock.stats.prescriptions} icon={Pill} />
-        <StatCard label="Wallet" value={formatNGN(patientMock.stats.balanceNGN)} icon={Wallet} accent="muted" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
