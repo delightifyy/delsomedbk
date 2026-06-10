@@ -53,6 +53,7 @@ const DashAppointments = lazy(() => import("./pages/dashboard/Appointments.tsx")
 const HmoProviders = lazy(() => import("./pages/dashboard/HMOProviders.tsx"));
 const PatientDashboard = lazy(() => import("./pages/patient/Dashboard.tsx"));
 const PatientAppointments = lazy(() => import("./pages/patient/Appointments.tsx"));
+const PatientConsultations = lazy(() => import("./pages/patient/ConsultationHistory.tsx"));
 const PatientRecords = lazy(() => import("./pages/patient/MedicalRecords.tsx"));
 const PatientPrescriptions = lazy(() => import("./pages/patient/Prescriptions.tsx"));
 const PatientPayments = lazy(() => import("./pages/patient/Payments.tsx"));
@@ -142,6 +143,7 @@ const App = () => (
               {/* Patient Portal */}
               <Route path="/patient" element={<PatientGuard><PatientDashboard /></PatientGuard>} />
               <Route path="/patient/appointments" element={<PatientGuard><PatientAppointments /></PatientGuard>} />
+              <Route path="/patient/consultations" element={<PatientGuard><PatientConsultations /></PatientGuard>} />
               <Route path="/patient/records" element={<PatientGuard><PatientRecords /></PatientGuard>} />
               <Route path="/patient/prescriptions" element={<PatientGuard><PatientPrescriptions /></PatientGuard>} />
               <Route path="/patient/payments" element={<PatientGuard><PatientPayments /></PatientGuard>} />
