@@ -22,7 +22,7 @@ const Appointments = () => {
       <SectionCard>
         <div className="space-y-3">
           {patientMock.appointments.map((a) => (
-            <button key={a.id} onClick={() => setSelected(a)} className="w-full text-left flex items-center gap-4 p-4 rounded-lg border border-border/60 hover:border-primary/40 hover:bg-muted/40 transition-all">
+            <div key={a.id} onClick={() => setSelected(a)} role="button" tabIndex={0} className="w-full text-left flex items-center gap-4 p-4 rounded-lg border border-border/60 hover:border-primary/40 hover:bg-muted/40 transition-all cursor-pointer">
               <Avatar className="h-10 w-10"><AvatarFallback className="bg-primary/10 text-primary text-xs">{a.doctor.split(" ").slice(-2).map(s=>s[0]).join("")}</AvatarFallback></Avatar>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm">{a.doctor}</p>
@@ -44,7 +44,7 @@ const Appointments = () => {
                   <User className="h-3.5 w-3.5" /> View Profile
                 </Link>
               </Button>
-            </button>
+            </div>
           ))}
         </div>
       </SectionCard>
