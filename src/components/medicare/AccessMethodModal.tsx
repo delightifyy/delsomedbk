@@ -32,7 +32,7 @@ const OPTIONS: {
   },
   {
     key: "hmo",
-    title: "\u200BCard",
+    title: "HMO",
     desc: "Book using your Health Maintenance Organization",
     icon: ShieldCheck,
     accent: "from-emerald-100 to-emerald-50 border-emerald-300",

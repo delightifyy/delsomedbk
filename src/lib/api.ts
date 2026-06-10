@@ -1,3 +1,4 @@
+// src/lib/api.ts
 const DEFAULT_API_BASE_URL = "https://delsomed.itl.ng/api/v1";
 
 const isLocalhostHost = (host: string) =>
@@ -159,7 +160,7 @@ export async function apiRequest<T = unknown, M = Record<string, unknown>>(
     const token = getStoredAuthToken();
     if (!token) {
       clearApiAuthState();
-      throw new ApiError("Your admin session has expired. Please sign in again.", 401);
+      throw new ApiError("Your session has expired. Please sign in again.", 401);
     }
     finalHeaders.set("Authorization", `Bearer ${token}`);
   }
@@ -205,7 +206,7 @@ export async function apiFileRequest(
     const token = getStoredAuthToken();
     if (!token) {
       clearApiAuthState();
-      throw new ApiError("Your admin session has expired. Please sign in again.", 401);
+      throw new ApiError("Your session has expired. Please sign in again.", 401);
     }
     finalHeaders.set("Authorization", `Bearer ${token}`);
   }
@@ -303,6 +304,8 @@ export const api = {
     detail: (uuid: string) => apiRequest(`/doctors/${uuid}`),
     availability: (uuid: string, query?: QueryParams) =>
       apiRequest(`/doctors/${uuid}/availability`, { query }),
+    clinicLocations: (doctorUserUuid: string) =>
+      apiRequest<{ data: any[] }>(`/doctors/${doctorUserUuid}/clinic-locations`, { auth: false }),
   },
 
   posts: {
@@ -335,10 +338,23 @@ export const api = {
       posts: (slug: string, query?: QueryParams) =>
         apiRequest<any[]>(`/public/mini-sites/${slug}/posts`, { query }),
       post: (slug: string, postSlug: string) => apiRequest(`/public/mini-sites/${slug}/posts/${postSlug}`),
+      clinicLocations: (miniSiteSlug: string) =>
+        apiRequest<{ data: any[] }>(`/public/mini-sites/${miniSiteSlug}/clinic-locations`, { auth: false }),
     },
 
     self: {
       bundle: () => apiRequest("/me/mini-site", { auth: true }),
+      
+      clinicLocations: {
+        list: () => apiRequest<any[]>("/me/mini-site/clinic-locations", { auth: true }),
+        create: (body: { name: string; address_line: string; city: string; phone?: string; is_active?: boolean }) =>
+          apiRequest("/me/mini-site/clinic-locations", { method: "POST", auth: true, body }),
+        update: (id: string, body: { name?: string; is_active?: boolean }) =>
+          apiRequest(`/me/mini-site/clinic-locations/${id}`, { method: "PATCH", auth: true, body }),
+        delete: (id: string) =>
+          apiRequest(`/me/mini-site/clinic-locations/${id}`, { method: "DELETE", auth: true }),
+      },
+      
       hero: {
         show: () => apiRequest("/me/mini-site/hero", { auth: true }),
         update: (body: Record<string, unknown>) =>
@@ -456,6 +472,54 @@ export const api = {
       apiRequest("/me/profile", { method: "PATCH", auth: true, body }),
     uploadAvatar: (form: FormData) =>
       apiRequest("/me/profile/avatar", { method: "POST", auth: true, body: form }),
+    
+    appointments: {
+      create: (body: {
+        service_card_id: string;
+        slot_date: string;
+        slot_start_time: string;
+        access_method: "card" | "subscription" | "hmo" | "organization";
+        consents: string[];
+        enrollee_id?: string;
+        hmo_policy_number?: string;
+        hmo_provider?: string;
+        organization_id?: string;
+        employee_id?: string;
+        auth_file_url?: string;
+        location_id?: string;
+        appointment_type?: "physical" | "online";
+        doctor_user_uuid?: string;
+        mini_site_slug?: string;
+      }) => apiRequest<{ data: { reference: string; appointment_id: string; status: string } }>(
+        "/me/appointments", 
+        { method: "POST", auth: true, body }
+      ),
+      
+      list: (query?: { status?: "pending" | "confirmed" | "cancelled" | "completed"; page?: number; per_page?: number }) => 
+        apiRequest<{ data: any[]; meta: PaginationMeta }>("/me/appointments", { auth: true, query }),
+      
+      detail: (appointmentUuid: string) => 
+        apiRequest<{ data: any }>(`/me/appointments/${appointmentUuid}`, { auth: true }),
+      
+      cancel: (appointmentUuid: string, reason?: string) => 
+        apiRequest(`/me/appointments/${appointmentUuid}/cancel`, { 
+          method: "POST", 
+          auth: true, 
+          body: { reason } 
+        }),
+      
+      reschedule: (appointmentUuid: string, body: { slot_date: string; slot_start_time: string; location_id?: string }) => 
+        apiRequest(`/me/appointments/${appointmentUuid}/reschedule`, { 
+          method: "POST", 
+          auth: true, 
+          body 
+        }),
+    },
+    
+    uploads: {
+      file: (form: FormData) =>
+        apiRequest<{ url: string }>("/me/uploads", { method: "POST", auth: true, body: form }),
+    },
   },
 
   admin: {
@@ -619,6 +683,96 @@ export const api = {
         apiRequest(`/admin/lookups/${resource}/${id}`, { method: "PATCH", auth: true, body }),
       delete: (resource: string, id: string | number) =>
         apiRequest(`/admin/lookups/${resource}/${id}`, { method: "DELETE", auth: true }),
+    },
+
+    // Admin Appointments Endpoints
+    appointments: {
+      // Get all appointments with filters
+      // Query params: status, access_method, doctor_uuid, from, to, page, per_page
+      list: (query?: { 
+        page?: number; 
+        per_page?: number;
+        status?: "pending" | "awaiting_verification" | "verified" | "rejected" | "completed" | "confirmed";
+        access_method?: "card" | "subscription" | "hmo" | "organization";
+        doctor_uuid?: string;
+        from?: string;
+        to?: string;
+      }) => 
+        apiRequest<any[], PaginationMeta>("/admin/appointments", { auth: true, query }),
+      
+      // Get appointment details by UUID
+      detail: (appointmentUuid: string) => 
+        apiRequest<{ data: any }>(`/admin/appointments/${appointmentUuid}`, { auth: true }),
+      
+      // Verify an appointment (for HMO and organization verification queue)
+      verify: (appointmentUuid: string) => 
+        apiRequest(`/admin/appointments/${appointmentUuid}/verify`, { 
+          method: "POST", 
+          auth: true 
+        }),
+      
+      // Reject an appointment verification
+      reject: (appointmentUuid: string, body?: { reason?: string }) => 
+        apiRequest(`/admin/appointments/${appointmentUuid}/reject-verification`, { 
+          method: "POST", 
+          auth: true, 
+          body 
+        }),
+    },
+
+    // HMO Providers Management Endpoints
+    hmoProviders: {
+      // Get all HMO providers with pagination and search
+      list: (query?: { 
+        page?: number; 
+        per_page?: number;
+        search?: string;
+        is_active?: boolean;
+      }) => 
+        apiRequest<any[], PaginationMeta>("/admin/hmo-providers", { auth: true, query }),
+      
+      // Create a new HMO provider
+      create: (body: { 
+        name: string; 
+        code: string; 
+        is_active?: boolean;
+      }) => 
+        apiRequest("/admin/hmo-providers", { 
+          method: "POST", 
+          auth: true, 
+          body 
+        }),
+      
+      // Get a single HMO provider by ID
+      detail: (hmoProviderId: string | number) => 
+        apiRequest(`/admin/hmo-providers/${hmoProviderId}`, { auth: true }),
+      
+      // Update an HMO provider
+      update: (hmoProviderId: string | number, body: { 
+        name?: string; 
+        code?: string; 
+        is_active?: boolean;
+      }) => 
+        apiRequest(`/admin/hmo-providers/${hmoProviderId}`, { 
+          method: "PATCH", 
+          auth: true, 
+          body 
+        }),
+      
+      // Delete an HMO provider
+      delete: (hmoProviderId: string | number) => 
+        apiRequest(`/admin/hmo-providers/${hmoProviderId}`, { 
+          method: "DELETE", 
+          auth: true 
+        }),
+      
+      // Reorder HMO providers
+      reorder: (body: { ids: (string | number)[] }) => 
+        apiRequest("/admin/hmo-providers/reorder", { 
+          method: "POST", 
+          auth: true, 
+          body 
+        }),
     },
   },
 };

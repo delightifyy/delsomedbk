@@ -7,7 +7,7 @@ import {
   Star, Sparkles, FileText, Layers, Megaphone, Phone as PhoneIcon, Search,
   Home, Info, Heart, Wrench, Video, MessageSquare, ChevronRight, ChevronDown, X,
   Facebook, Twitter, Instagram, Linkedin, Newspaper, Mail, MapPin,
-  CalendarClock, Loader2,
+  CalendarClock, Loader2, Building2,
 } from "lucide-react";
 import {
   defaultSettings, loadSettings, resetSettings, saveSettings,
@@ -248,6 +248,18 @@ const syncMiniSiteToApi = async (settings: MediCareSettings) => {
   await syncFooterLinks("support", settings.footer.supportLinks);
 };
 
+/* ---------- Clinic Locations Types ---------- */
+export type ClinicLocation = {
+  id: string;
+  name: string;
+  address_line: string;
+  city: string;
+  phone: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+};
+
 /* ---------- Tiny atoms ---------- */
 const inputCls = "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400";
 const textareaCls = inputCls + " min-h-[90px]";
@@ -306,7 +318,7 @@ const reorder = <T extends { order: number }>(items: T[], id: string, dir: -1 | 
 type Tab =
   | "home" | "navbar" | "hero" | "partners" | "about" | "whyChoose"
   | "services" | "media" | "seo"
-  | "branding" | "contact" | "blog" | "servicesPage" | "availability";
+  | "branding" | "contact" | "blog" | "servicesPage" | "availability" | "clinicLocations";
 
 type PageGroup = {
   id: string;
@@ -352,6 +364,14 @@ const PAGE_GROUPS: PageGroup[] = [
     icon: CalendarClock,
     sections: [
       { id: "availability", label: "Schedule" },
+    ],
+  },
+  {
+    id: "clinicLocations",
+    label: "Clinic Locations",
+    icon: Building2,
+    sections: [
+      { id: "clinicLocations", label: "Locations" },
     ],
   },
   {
@@ -587,6 +607,7 @@ const MediCareAdmin = () => {
           {tab === "whyChoose"    && <WhyChooseEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
           {tab === "services" && <ServicesEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
           {tab === "availability" && <AvailabilityEditor askDelete={askDelete} />}
+          {tab === "clinicLocations" && <ClinicLocationsEditor askDelete={askDelete} />}
           {tab === "media"        && <MediaLibraryEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
           {tab === "seo"          && <SeoEditor s={s} setSettings={setSettings} />}
           {tab === "contact"      && <ContactEditor s={s} setSettings={setSettings} askDelete={askDelete} />}
@@ -607,15 +628,282 @@ const MediCareAdmin = () => {
 
 export default MediCareAdmin;
 
-/* ---------- HOME (composite of all home-page sections) ---------- */
-// const HomeEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => (
-//   <div className="space-y-12">
-//     <SectionHeader title="Home Page" desc="Edit every section that appears on the public MediCare home page." />
-//     {/* NavbarEditor removed per request - previously allowed editing navbar links */}
-//     <HeroEditor s={s} setSettings={setSettings} />
-//   </div>
-// );
+/* =========================================================
+                   CLINIC LOCATIONS EDITOR
+========================================================= */
+const ClinicLocationsEditor = ({ askDelete }: { askDelete: (label: string, fn: () => void) => void }) => {
+  const [locations, setLocations] = useState<ClinicLocation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [editing, setEditing] = useState<Partial<ClinicLocation> | null>(null);
+  const [confirmDel, setConfirmDel] = useState<ClinicLocation | null>(null);
 
+  const loadLocations = async () => {
+    setLoading(true);
+    try {
+      const response = await medicareApi.medicare.self.clinicLocations.list();
+      setLocations(Array.isArray(response.data) ? response.data : []);
+    } catch (err) {
+      console.error("Failed to load clinic locations:", err);
+      toast.error("Could not load clinic locations.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadLocations();
+  }, []);
+
+  const createLocation = async (data: Omit<ClinicLocation, "id" | "created_at" | "updated_at">) => {
+    setSaving(true);
+    try {
+      await medicareApi.medicare.self.clinicLocations.create(data);
+      toast.success("Clinic location created");
+      await loadLocations();
+      setEditing(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not create location");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateLocation = async (id: string, data: Partial<ClinicLocation>) => {
+    setSaving(true);
+    try {
+      await medicareApi.medicare.self.clinicLocations.update(id, data);
+      toast.success("Clinic location updated");
+      await loadLocations();
+      setEditing(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not update location");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteLocation = async (id: string) => {
+    setSaving(true);
+    try {
+      await medicareApi.medicare.self.clinicLocations.delete(id);
+      toast.success("Clinic location deleted");
+      await loadLocations();
+      setConfirmDel(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not delete location");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openCreateModal = () => {
+    setEditing({
+      name: "",
+      address_line: "",
+      city: "",
+      phone: "",
+      is_active: true,
+    });
+  };
+
+  const openEditModal = (location: ClinicLocation) => {
+    setEditing({ ...location });
+  };
+
+  const handleSave = () => {
+    if (!editing) return;
+    if (!editing.name?.trim()) {
+      toast.error("Location name is required");
+      return;
+    }
+    if (!editing.address_line?.trim()) {
+      toast.error("Address line is required");
+      return;
+    }
+    if (!editing.city?.trim()) {
+      toast.error("City is required");
+      return;
+    }
+
+    const payload = {
+      name: editing.name.trim(),
+      address_line: editing.address_line.trim(),
+      city: editing.city.trim(),
+      phone: editing.phone?.trim() || "",
+      is_active: editing.is_active ?? true,
+    };
+
+    if (editing.id) {
+      void updateLocation(editing.id, payload);
+    } else {
+      void createLocation(payload);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader
+        title="Clinic Locations"
+        desc="Manage all clinic locations displayed on the public site."
+      />
+
+      <Card>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="font-semibold text-slate-900">Locations</h3>
+            <p className="text-xs text-slate-500 mt-0.5">{locations.length} location{locations.length === 1 ? "" : "s"} total</p>
+          </div>
+          <button
+            onClick={openCreateModal}
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4" /> Add Location
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+          </div>
+        ) : locations.length === 0 ? (
+          <div className="text-center py-12 border border-dashed border-slate-200 rounded-xl">
+            <Building2 className="h-10 w-10 mx-auto text-slate-300 mb-3" />
+            <p className="text-sm text-slate-500">No clinic locations yet.</p>
+            <p className="text-xs text-slate-400 mt-1">Click "Add Location" to create your first location.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {locations.map((loc) => (
+              <div
+                key={loc.id}
+                className={`flex items-start justify-between p-4 rounded-xl border transition-all ${
+                  loc.is_active ? "border-slate-200 bg-white" : "border-slate-100 bg-slate-50 opacity-70"
+                }`}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="font-semibold text-slate-900">{loc.name}</h4>
+                    {!loc.is_active && (
+                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-500">
+                        Inactive
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-slate-600 mt-1">{loc.address_line}, {loc.city}</p>
+                  {loc.phone && (
+                    <p className="text-sm text-slate-500 mt-0.5">{loc.phone}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 ml-4">
+                  <button
+                    onClick={() => openEditModal(loc)}
+                    className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold hover:bg-slate-50"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => setConfirmDel(loc)}
+                    className="p-2 rounded-lg hover:bg-rose-50 text-rose-600"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {/* Edit/Create Modal */}
+      {editing && (
+        <div className="fixed inset-0 z-[140] grid place-items-center bg-black/60 p-4 overflow-auto">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+              <h3 className="font-bold text-slate-900 text-lg">
+                {editing.id ? "Edit Location" : "New Location"}
+              </h3>
+              <button
+                onClick={() => setEditing(null)}
+                className="p-2 rounded-lg hover:bg-slate-100"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <Field label="Location Name" hint="e.g., DesolMed Victoria Island">
+                <input
+                  className={inputCls}
+                  value={editing.name ?? ""}
+                  onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                  placeholder="Clinic name"
+                />
+              </Field>
+              <Field label="Address Line" hint="Street address">
+                <input
+                  className={inputCls}
+                  value={editing.address_line ?? ""}
+                  onChange={(e) => setEditing({ ...editing, address_line: e.target.value })}
+                  placeholder="12 Adeola Odeku Street"
+                />
+              </Field>
+              <Field label="City">
+                <input
+                  className={inputCls}
+                  value={editing.city ?? ""}
+                  onChange={(e) => setEditing({ ...editing, city: e.target.value })}
+                  placeholder="Lagos"
+                />
+              </Field>
+              <Field label="Phone Number" hint="Optional">
+                <input
+                  className={inputCls}
+                  value={editing.phone ?? ""}
+                  onChange={(e) => setEditing({ ...editing, phone: e.target.value })}
+                  placeholder="+234 818 689 9594"
+                />
+              </Field>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editing.is_active ?? true}
+                  onChange={(e) => setEditing({ ...editing, is_active: e.target.checked })}
+                  className="h-4 w-4 rounded border-slate-300"
+                />
+                <span className="text-sm font-medium text-slate-700">Active (visible on site)</span>
+              </label>
+            </div>
+            <div className="flex justify-end gap-2 p-5 border-t border-slate-100">
+              <button
+                onClick={() => setEditing(null)}
+                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700 disabled:opacity-60"
+              >
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                <Save className="h-4 w-4" />
+                {saving ? "Saving..." : "Save Location"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={!!confirmDel}
+        title="Delete location?"
+        message={`"${confirmDel?.name}" will be permanently removed.`}
+        onCancel={() => setConfirmDel(null)}
+        onConfirm={() => confirmDel && deleteLocation(confirmDel.id)}
+      />
+    </div>
+  );
+};
 
 /* ---------- AVAILABILITY ---------- */
 const defaultAvailabilityBundle: AvailabilityBundle = {

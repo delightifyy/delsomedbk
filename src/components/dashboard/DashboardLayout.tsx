@@ -1,3 +1,4 @@
+// DashboardLayout.tsx
 import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -19,6 +20,9 @@ import {
   Tags,
   HeartPulse,
   CreditCard,
+  PlusCircle,
+  CalendarCheck,
+  Building2, // Add this for HMO Providers icon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,10 +41,12 @@ const items = [
   { to: "/dashboard/contacts", label: "Contact Messages", icon: MessageSquare },
   { to: "/dashboard/blog", label: "Health Adverts", icon: Megaphone },
   { to: "/dashboard/news", label: "News", icon: Newspaper },
+  { to: "/dashboard/appointments", label: "Appointments", icon: CalendarCheck },
+  { to: "/dashboard/hmo-providers", label: "HMO Providers", icon: Building2 }, // NEW MENU ITEM
   // { to: "/dashboard/newsletter", label: "Newsletter", icon: MailCheck },
   { to: "/dashboard/lookups", label: "Lookups", icon: Tags },
   { to: "/dashboard/subscribers", label: "Subscribers List", icon: CreditCard },
-  
+  { to: "/dashboard/create-subscriber-page", label: "Create Subscriber Page", icon: PlusCircle },
   { to: "/dashboard/faqs", label: "FAQs", icon: CircleHelp },
   { to: "/dashboard/testimonials", label: "Testimonials", icon: MessageCircleHeart },
   { to: "/dashboard/activity-logs", label: "Activity Logs", icon: Activity },

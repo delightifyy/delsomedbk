@@ -48,6 +48,9 @@ const DashLookups = lazy(() => import("./pages/dashboard/Lookups.tsx"));
 const DashFaqs = lazy(() => import("./pages/dashboard/Faqs.tsx"));
 const DashTestimonials = lazy(() => import("./pages/dashboard/Testimonials.tsx"));
 const DashSubscribers = lazy(() => import("./pages/dashboard/Subscribers.tsx"));
+const DashSubscriberCreate = lazy(() => import("./pages/dashboard/CreateSubscriptionPage.tsx"));
+const DashAppointments = lazy(() => import("./pages/dashboard/Appointments.tsx"));
+const HmoProviders = lazy(() => import("./pages/dashboard/HMOProviders.tsx"));
 const PatientDashboard = lazy(() => import("./pages/patient/Dashboard.tsx"));
 const PatientAppointments = lazy(() => import("./pages/patient/Appointments.tsx"));
 const PatientRecords = lazy(() => import("./pages/patient/MedicalRecords.tsx"));
@@ -131,6 +134,9 @@ const App = () => (
               <Route path="/dashboard/faqs" element={<AdminGuard><DashFaqs /></AdminGuard>} />
               <Route path="/dashboard/testimonials" element={<AdminGuard><DashTestimonials /></AdminGuard>} />
               <Route path="/dashboard/subscribers" element={<AdminGuard><DashSubscribers /></AdminGuard>} />
+              <Route path="/dashboard/create-subscriber-page" element={<AdminGuard><DashSubscriberCreate /></AdminGuard>} />
+              <Route path="/dashboard/appointments" element={<AdminGuard><DashAppointments /></AdminGuard>} />
+              <Route path="/dashboard/hmo-providers" element={<AdminGuard><HmoProviders /></AdminGuard>} /> {/* FIXED: added hyphen */}
               <Route path="/dashboard/notifications" element={<AdminGuard><DashNotifications /></AdminGuard>} />
 
               {/* Patient Portal */}

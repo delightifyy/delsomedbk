@@ -3,20 +3,16 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   X, ArrowLeft, ArrowRight, Check, Loader2, MapPin, Video, Building2,
   Stethoscope, ShieldCheck, BadgeCheck, CreditCard, Clock, Upload, FileText,
-  CalendarDays, AlertTriangle, LockKeyhole, CheckCircle2,
+  CalendarDays, AlertTriangle, LockKeyhole, CheckCircle2, UserIcon, PhoneIcon,
 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { signInPatientWithPassword } from "@/lib/localStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { api, getStoredAuthToken, setStoredAuthToken } from "@/lib/api";
 
 const fmtNGN = (n: number) => `₦${n.toLocaleString("en-NG")}`;
-
 
 export type AccessMethod = "card" | "subscription" | "hmo" | "organization";
 
@@ -25,29 +21,35 @@ type Service = {
   name: string;
   description: string;
   duration: string;
-  price: number; // NGN
+  price: number;
   available?: boolean;
+  service_card_id?: string;
+};
+
+type ClinicLocation = {
+  id: string;
+  name: string;
+  address_line: string;
+  city: string;
+  phone: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
 };
 
 const SERVICES: Service[] = [
-  { id: "f2f", name: "Face-to-Face GP consultation", description: "In-clinic GP visit", duration: "15 min", price: 90 },
-  { id: "tel", name: "Telephone GP consultation", description: "Phone-based GP advice", duration: "15 min", price: 49 },
-  { id: "vid", name: "Video GP consultation", description: "Secure video appointment", duration: "15 min", price: 79 },
-  { id: "ext", name: "Extended GP consultation", description: "Longer in-depth visit", duration: "30 min", price: 130 },
-  { id: "comp", name: "Comprehensive GP consultation", description: "Full health review", duration: "45 min", price: 185 },
-  { id: "fol", name: "GP follow up consultation", description: "Follow-up appointment", duration: "15 min", price: 60 },
-  { id: "btr", name: "Blood Test Results Review", description: "Review your latest results", duration: "15 min", price: 40 },
-  { id: "home", name: "GP Home Visit", description: "Doctor visits your home", duration: "60 min", price: 250 },
-  { id: "homeooh", name: "GP Home Visit (Out-of-hours: 5pm–8pm)", description: "After-hours home visit", duration: "60 min", price: 350 },
-  { id: "npp", name: "Nationwide Pathology Phlebotomy Service", description: "Blood draw service", duration: "15 min", price: 0 },
-  { id: "nppm", name: "NP Phlebotomy with Blood Pressure & Measurements", description: "Phlebotomy plus vitals", duration: "15 min", price: 0 },
-  { id: "army", name: "Army Entry Medical Examination", description: "Medical exam for army entry", duration: "60 min", price: 250 },
-];
-
-const HOSPITAL_LOCATIONS = [
-  { id: "lagos-vi", name: "DesolMed Victoria Island", address: "12 Adeola Odeku St, Lagos" },
-  { id: "abuja-cbd", name: "DesolMed Abuja CBD", address: "Plot 22, Aguiyi Ironsi St, Abuja" },
-  { id: "ph-gra", name: "DesolMed Port Harcourt GRA", address: "5 Aba Road, GRA Phase 2" },
+  { id: "f2f", name: "Face-to-Face GP consultation", description: "In-clinic GP visit", duration: "15 min", price: 90, service_card_id: "service_card_id_1" },
+  { id: "tel", name: "Telephone GP consultation", description: "Phone-based GP advice", duration: "15 min", price: 49, service_card_id: "service_card_id_2" },
+  { id: "vid", name: "Video GP consultation", description: "Secure video appointment", duration: "15 min", price: 79, service_card_id: "service_card_id_3" },
+  { id: "ext", name: "Extended GP consultation", description: "Longer in-depth visit", duration: "30 min", price: 130, service_card_id: "service_card_id_4" },
+  { id: "comp", name: "Comprehensive GP consultation", description: "Full health review", duration: "45 min", price: 185, service_card_id: "service_card_id_5" },
+  { id: "fol", name: "GP follow up consultation", description: "Follow-up appointment", duration: "15 min", price: 60, service_card_id: "service_card_id_6" },
+  { id: "btr", name: "Blood Test Results Review", description: "Review your latest results", duration: "15 min", price: 40, service_card_id: "service_card_id_7" },
+  { id: "home", name: "GP Home Visit", description: "Doctor visits your home", duration: "60 min", price: 250, service_card_id: "service_card_id_8" },
+  { id: "homeooh", name: "GP Home Visit (Out-of-hours: 5pm–8pm)", description: "After-hours home visit", duration: "60 min", price: 350, service_card_id: "service_card_id_9" },
+  { id: "npp", name: "Nationwide Pathology Phlebotomy Service", description: "Blood draw service", duration: "15 min", price: 0, service_card_id: "service_card_id_10" },
+  { id: "nppm", name: "NP Phlebotomy with Blood Pressure & Measurements", description: "Phlebotomy plus vitals", duration: "15 min", price: 0, service_card_id: "service_card_id_11" },
+  { id: "army", name: "Army Entry Medical Examination", description: "Medical exam for army entry", duration: "60 min", price: 250, service_card_id: "service_card_id_12" },
 ];
 
 const HMO_PROVIDERS = [
@@ -70,6 +72,8 @@ type Props = {
   open: boolean;
   onClose: () => void;
   method: AccessMethod | null;
+  doctorUserUuid?: string;
+  miniSiteSlug?: string;
 };
 
 type SubMode = "physical" | "online" | null;
@@ -87,9 +91,19 @@ const generateDates = () => {
 };
 const TIMES = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "14:00", "14:30", "15:00", "15:30", "16:00"];
 
-export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
-  const { user } = useAuth();
+export default function AdvancedBookingFlow({ open, onClose, method, doctorUserUuid, miniSiteSlug }: Props) {
   const navigate = useNavigate();
+
+  // Auth state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authUser, setAuthUser] = useState<any>(null);
+
+  // Clinic locations from API
+  const [clinicLocations, setClinicLocations] = useState<ClinicLocation[]>([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
 
   // shared
   const [step, setStep] = useState(0);
@@ -102,15 +116,8 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [bookingRef, setBookingRef] = useState<string | null>(null);
 
-  // auth
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [authBusy, setAuthBusy] = useState(false);
-
   // subscription
   const [enrolleeId, setEnrolleeId] = useState("");
-  const [subVerified, setSubVerified] = useState<null | { ok: boolean; reason?: string }>(null);
-  const [subChecking, setSubChecking] = useState(false);
 
   // HMO
   const [hmoProvider, setHmoProvider] = useState<string>("");
@@ -124,23 +131,30 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
   const [employeeId, setEmployeeId] = useState("");
   const [authFile, setAuthFile] = useState<File | null>(null);
   const [orgStatus, setOrgStatus] = useState<"idle" | "pending" | "approved" | "rejected">("idle");
+  const [uploadingFile, setUploadingFile] = useState(false);
 
   // payment (card)
   const [cardNumber, setCardNumber] = useState("");
   const [cardExp, setCardExp] = useState("");
   const [cardCvc, setCardCvc] = useState("");
 
-  // Reset on close
+  // Check authentication on mount when modal opens
   useEffect(() => {
-    if (!open) {
-      setTimeout(() => {
-        setStep(0); setSubMode(null); setLocation(""); setService(null); setDate(""); setTime("");
-        setAgreed({}); setBookingRef(null); setEmail(""); setPassword("");
-        setEnrolleeId(""); setSubVerified(null);
-        setHmoProvider(""); setPolicyNumber(""); setMemberDetails(""); setHmoStatus("idle"); setHmoReason("");
-        setOrgId(""); setEmployeeId(""); setAuthFile(null); setOrgStatus("idle");
-        setCardNumber(""); setCardExp(""); setCardCvc("");
-      }, 300);
+    if (open) {
+      const token = getStoredAuthToken();
+      if (token) {
+        // Validate token by fetching profile
+        api.me.profile()
+          .then((response) => {
+            setIsAuthenticated(true);
+            setAuthUser(response.data);
+          })
+          .catch(() => {
+            // Token invalid, clear it
+            setStoredAuthToken(null);
+            setIsAuthenticated(false);
+          });
+      }
     }
   }, [open]);
 
@@ -154,73 +168,97 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
     return SERVICES;
   }, [method, hmoProvider]);
 
-  // Build dynamic step list per method
+  // Fetch clinic locations from API when modal opens or when doctor/slug changes
+  useEffect(() => {
+    if (open && doctorUserUuid && miniSiteSlug) {
+      fetchClinicLocations();
+    }
+  }, [open, doctorUserUuid, miniSiteSlug]);
+
+  const fetchClinicLocations = async () => {
+    setLoadingLocations(true);
+    try {
+      let locations: ClinicLocation[] = [];
+      
+      if (doctorUserUuid) {
+        try {
+          const response = await api.doctors.clinicLocations(doctorUserUuid);
+          if (response.data && Array.isArray(response.data)) {
+            locations = response.data;
+          }
+        } catch (err) {
+          console.log("Doctor endpoint failed, trying mini-site endpoint");
+        }
+      }
+      
+      if (locations.length === 0 && miniSiteSlug) {
+        try {
+          const response = await api.medicare.public.clinicLocations(miniSiteSlug);
+          if (response.data && Array.isArray(response.data)) {
+            locations = response.data;
+          }
+        } catch (err) {
+          console.log("Mini-site endpoint failed or no locations found");
+        }
+      }
+      
+      const activeLocations = locations.filter(loc => loc.is_active !== false);
+      setClinicLocations(activeLocations);
+      
+      if (activeLocations.length === 0) {
+        toast.warning("No active clinic locations available for this doctor");
+      }
+    } catch (error) {
+      console.error("Failed to fetch clinic locations:", error);
+      toast.error("Could not load clinic locations. Please try again.");
+    } finally {
+      setLoadingLocations(false);
+    }
+  };
+
+  // Build dynamic step list
   const steps = useMemo(() => {
-    const base = ["Service", "Schedule", "Mode", "Login", "Consent", "Payment"];
-    if (method === "card") return ["Service", "Schedule", "Mode", "Login", "Consent", "Payment"];
-    if (method === "subscription") return ["Service", "Schedule", "Subscription", "Login", "Consent"];
-    if (method === "hmo") return ["Service", "Schedule", "Verify", "Login", "Consent"];
-    if (method === "organization") return ["Service", "Schedule", "Details", "Login", "Consent"];
-    return base;
+    const baseSteps = ["Login", "Service", "Mode", "Schedule", "Consent"];
+    
+    if (method === "card") return [...baseSteps, "Payment"];
+    if (method === "subscription") return [...baseSteps, "Subscription"];
+    if (method === "hmo") return [...baseSteps, "Verify"];
+    if (method === "organization") return [...baseSteps, "Details"];
+    return [...baseSteps, "Payment"];
   }, [method]);
 
-  const close = () => onClose();
+  // Reset EVERYTHING when modal opens
+  useEffect(() => {
+    if (open) {
+      setIsAuthenticated(false);
+      setAuthUser(null);
+      setAuthEmail("");
+      setAuthPassword("");
+      setStep(0);
+      setSubMode(null);
+      setLocation("");
+      setService(null);
+      setDate("");
+      setTime("");
+      setAgreed({});
+      setBookingRef(null);
+      setEnrolleeId("");
+      setHmoProvider("");
+      setPolicyNumber("");
+      setMemberDetails("");
+      setHmoStatus("idle");
+      setHmoReason("");
+      setOrgId("");
+      setEmployeeId("");
+      setAuthFile(null);
+      setOrgStatus("idle");
+      setCardNumber("");
+      setCardExp("");
+      setCardCvc("");
+    }
+  }, [open]);
 
   if (!open || !method) return null;
-
-  // ---- Validation per current step ----
-  const canNext = (() => {
-    const label = steps[step];
-    switch (label) {
-      case "Mode": return !!subMode && (subMode === "online" || !!location);
-      case "Service": return method === "hmo" ? !!hmoProvider && !!service && service.available !== false : !!service && service.available !== false;
-      case "Subscription": return subVerified?.ok === true;
-      case "Verify": return hmoStatus === "approved";
-      case "Details": return !!orgId && !!employeeId && !!authFile && orgStatus === "approved";
-      case "Schedule": return !!date && !!time;
-      case "Login": return !!user;
-      case "Consent": return CONSENTS.every((c) => agreed[c.key]);
-      case "Payment": return cardNumber.length >= 12 && cardExp.length >= 4 && cardCvc.length >= 3;
-      default: return true;
-    }
-  })();
-
-  const isLastStep = step === steps.length - 1;
-
-  async function handleLogin() {
-    if (!email || !password) {
-      toast.error("Enter email and password");
-      return;
-    }
-    setAuthBusy(true);
-    try {
-      await signInPatientWithPassword({ email, password });
-      toast.success("Logged in");
-    } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Login failed");
-    } finally {
-      setAuthBusy(false);
-    }
-  }
-
-  async function verifySubscription() {
-    if (!enrolleeId.trim()) return;
-    setSubChecking(true);
-    setSubVerified(null);
-    await new Promise((r) => setTimeout(r, 900));
-    // Demo logic: IDs starting with DSM- are active
-    if (/^DSM-/i.test(enrolleeId.trim())) {
-      setSubVerified({ ok: true });
-      toast.success("Subscription verified successfully");
-    } else if (/EXP/i.test(enrolleeId)) {
-      setSubVerified({ ok: false, reason: "Subscription expired" });
-    } else if (/INACT/i.test(enrolleeId)) {
-      setSubVerified({ ok: false, reason: "Subscription inactive" });
-    } else {
-      setSubVerified({ ok: false, reason: "Invalid Subscription ID" });
-    }
-    setSubChecking(false);
-  }
 
   async function verifyHmo() {
     if (!policyNumber.trim()) return;
@@ -236,50 +274,155 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
     }
   }
 
+  async function uploadAuthFile(file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("type", "authorization_letter");
+    
+    const response = await api.me.uploads.file(formData);
+    return response.data.url;
+  }
+
   async function verifyOrg() {
     if (!orgId || !employeeId || !authFile) return;
+    
     setOrgStatus("pending");
-    await new Promise((r) => setTimeout(r, 1200));
-    setOrgStatus("approved");
-    toast.success("Organization request approved");
+    setUploadingFile(true);
+    
+    try {
+      // Upload the file first
+      const fileUrl = await uploadAuthFile(authFile);
+      
+      // Here you would typically verify with your backend
+      await new Promise((r) => setTimeout(r, 800));
+      
+      setOrgStatus("approved");
+      toast.success("Organization request approved");
+    } catch (error) {
+      console.error("Upload error:", error);
+      setOrgStatus("rejected");
+      toast.error("Failed to upload authorization file");
+    } finally {
+      setUploadingFile(false);
+    }
+  }
+
+  async function handleLogin() {
+    if (!authEmail || !authPassword) {
+      toast.error("Please enter email and password");
+      return;
+    }
+    
+    setAuthBusy(true);
+    
+    try {
+      const response = await api.auth.patientLogin({
+        email: authEmail,
+        password: authPassword,
+      });
+      
+      if (response.data?.token) {
+        setStoredAuthToken(response.data.token);
+        setIsAuthenticated(true);
+        setAuthUser(response.data.user);
+        toast.success("Logged in successfully!");
+      } else {
+        throw new Error("No token received");
+      }
+    } catch (error: any) {
+      console.error("Login error:", error);
+      toast.error(error.message || "Login failed. Please check your credentials.");
+    } finally {
+      setAuthBusy(false);
+    }
   }
 
   async function submitBooking() {
     if (!service) return;
+    
     setSubmitting(true);
-    const payload = {
-      concern_name: service.name,
-      category_name: subMode === "physical" ? "Physical" : subMode === "online" ? "Online" : method,
-      slot_date: date,
-      slot_time: time,
-      amount_cents: Math.round(service.price * 100),
-      currency: "NGN",
-      payment_method: method,
-      patient_data: {
-        user_id: user?.id,
-        email: user?.email || email,
-        mode: subMode,
-        location,
-      },
-      agreements: Object.keys(agreed).filter((k) => agreed[k]),
-      payment_meta: {
-        method,
-        enrolleeId: enrolleeId || undefined,
-        hmoProvider: hmoProvider || undefined,
-        policyNumber: policyNumber || undefined,
-        orgId: orgId || undefined,
-        employeeId: employeeId || undefined,
-      },
-      status: method === "card" ? "confirmed" : method === "subscription" ? "confirmed" : "pending",
-    };
-    const { data, error } = await supabase.from("bookings").insert(payload).select("reference").single();
-    setSubmitting(false);
-    if (error || !data) {
-      toast.error("Could not create booking");
-      return;
+    
+    try {
+      const token = getStoredAuthToken();
+      if (!token) {
+        toast.error("Please login again to continue");
+        setIsAuthenticated(false);
+        setStep(0);
+        return;
+      }
+      
+      // Map consents to API expected format
+      const apiConsents = [];
+      if (agreed.treatment) apiConsents.push("treatment");
+      if (agreed.privacy) apiConsents.push("privacy_policy");
+      if (agreed.terms) apiConsents.push("terms_conditions");
+      if (agreed.disclaimer) apiConsents.push("not_emergency");
+      
+      // Build the request body
+      const requestBody: any = {
+        service_card_id: service.service_card_id || service.id,
+        slot_date: date,
+        slot_start_time: time,
+        access_method: method,
+        consents: apiConsents,
+      };
+      
+      // Add location if physical appointment
+      if (subMode === "physical" && location) {
+        requestBody.location_id = location;
+        requestBody.appointment_type = "physical";
+      } else {
+        requestBody.appointment_type = "online";
+      }
+      
+      // Add doctor and mini-site info
+      if (doctorUserUuid) {
+        requestBody.doctor_user_uuid = doctorUserUuid;
+      }
+      if (miniSiteSlug) {
+        requestBody.mini_site_slug = miniSiteSlug;
+      }
+      
+      // Add method-specific fields
+      if (method === "subscription") {
+        requestBody.enrollee_id = enrolleeId;
+      }
+      
+      if (method === "hmo") {
+        requestBody.hmo_policy_number = policyNumber;
+        requestBody.hmo_provider = hmoProvider;
+      }
+      
+      if (method === "organization") {
+        requestBody.organization_id = orgId;
+        requestBody.employee_id = employeeId;
+        if (authFile) {
+          const fileUrl = await uploadAuthFile(authFile);
+          requestBody.auth_file_url = fileUrl;
+        }
+      }
+      
+      // Make the API call
+      const response = await api.me.appointments.create(requestBody);
+      
+      if (response.data) {
+        setBookingRef(response.data.reference);
+        toast.success("Appointment booked successfully!");
+      } else {
+        throw new Error("No response data");
+      }
+    } catch (error: any) {
+      console.error("Booking error:", error);
+      if (error.status === 401) {
+        toast.error("Session expired. Please login again.");
+        setIsAuthenticated(false);
+        setStep(0);
+      } else {
+        toast.error(error.message || "Failed to book appointment. Please try again.");
+      }
+    } finally {
+      setSubmitting(false);
     }
-    setBookingRef(data.reference);
-    toast.success("Appointment booked");
   }
 
   function handleNext() {
@@ -290,7 +433,32 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
     setStep((s) => s + 1);
   }
 
-  // success view
+  const close = () => onClose();
+
+  const canNext = (() => {
+    const label = steps[step];
+    switch (label) {
+      case "Login": return isAuthenticated;
+      case "Service": 
+        if (method === "hmo") {
+          return !!hmoProvider && !!service && service.available !== false;
+        }
+        return !!service && service.available !== false;
+      case "Mode": 
+        if (subMode === "online") return true;
+        return subMode === "physical" && !!location;
+      case "Schedule": return !!date && !!time;
+      case "Consent": return CONSENTS.every((c) => agreed[c.key]);
+      case "Payment": return cardNumber.length >= 12 && cardExp.length >= 4 && cardCvc.length >= 3;
+      case "Subscription": return !!enrolleeId.trim();
+      case "Verify": return hmoStatus === "approved";
+      case "Details": return !!orgId && !!employeeId && !!authFile && orgStatus === "approved";
+      default: return true;
+    }
+  })();
+
+  const isLastStep = step === steps.length - 1;
+
   if (bookingRef) {
     return (
       <Shell onClose={close} title="Appointment Confirmed" step={steps.length} total={steps.length}>
@@ -300,7 +468,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
           </div>
           <h3 className="font-display text-2xl font-bold">Booking #{bookingRef}</h3>
           <p className="text-muted-foreground mt-2 max-w-md mx-auto">
-            Your appointment is confirmed. A confirmation email and notification have been sent. You can track it in your patient portal.
+            Your appointment is confirmed. A confirmation email and notification have been sent.
           </p>
           <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
             <Button onClick={() => { close(); navigate("/patient"); }}>Go to Patient Portal</Button>
@@ -315,61 +483,77 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
 
   return (
     <Shell onClose={close} title={currentLabel} step={step + 1} total={steps.length}>
-      {/* Step body */}
       <div className="px-1 sm:px-2 py-2">
-        {currentLabel === "Mode" && (
-          <div className="space-y-4">
-            <h3 className="font-display text-xl font-semibold">Choose appointment type</h3>
-            <div className="grid sm:grid-cols-2 gap-3">
-              {[
-                { k: "physical" as const, title: "Physical Appointment", icon: MapPin, desc: "Visit a DesolMed clinic" },
-                { k: "online" as const, title: "Online Appointment", icon: Video, desc: "Video / phone consultation" },
-              ].map((o) => {
-                const Icon = o.icon;
-                const active = subMode === o.k;
-                return (
-                  <button
-                    key={o.k}
-                    type="button"
-                    onClick={() => setSubMode(o.k)}
-                    className={`text-left rounded-xl border-2 p-5 transition ${active ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
-                  >
-                    <Icon className="h-6 w-6 text-primary mb-2" />
-                    <div className="font-semibold">{o.title}</div>
-                    <div className="text-sm text-muted-foreground">{o.desc}</div>
-                  </button>
-                );
-              })}
-            </div>
-
-            {subMode === "physical" && (
-              <div className="space-y-2 pt-2">
-                <Label>Select hospital location</Label>
-                <div className="grid gap-2">
-                  {HOSPITAL_LOCATIONS.map((l) => (
-                    <button
-                      key={l.id}
-                      type="button"
-                      onClick={() => setLocation(l.id)}
-                      className={`text-left rounded-lg border p-3 transition ${location === l.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
-                    >
-                      <div className="font-medium">{l.name}</div>
-                      <div className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" />{l.address}</div>
-                    </button>
-                  ))}
+        {/* LOGIN STEP */}
+        {currentLabel === "Login" && (
+          <div className="space-y-3 max-w-md mx-auto">
+            {!isAuthenticated ? (
+              <>
+                <div className="flex items-center gap-2">
+                  <LockKeyhole className="h-5 w-5 text-primary" />
+                  <h3 className="font-display text-xl font-semibold">Login to Continue</h3>
                 </div>
+
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <Label>Email</Label>
+                    <Input 
+                      type="email" 
+                      value={authEmail} 
+                      onChange={(e) => setAuthEmail(e.target.value)} 
+                      placeholder="you@example.com" 
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Password</Label>
+                    <Input 
+                      type="password" 
+                      value={authPassword} 
+                      onChange={(e) => setAuthPassword(e.target.value)} 
+                      placeholder="Password" 
+                    />
+                  </div>
+                  <Button onClick={handleLogin} disabled={authBusy} className="w-full">
+                    {authBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Login"}
+                  </Button>
+                  
+                  <p className="text-sm text-muted-foreground text-center">
+                    Don't have an account?{" "}
+                    <Link to="/register/patient" className="text-primary font-medium hover:underline" onClick={close}>
+                      Register here
+                    </Link>
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-4">
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
+                      <UserIcon className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{authUser?.email || authEmail}</p>
+                      <p className="text-xs text-muted-foreground">Account verified</p>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm text-center text-muted-foreground">
+                  Click Next to continue with your booking
+                </p>
               </div>
             )}
           </div>
         )}
 
+        {/* SERVICE STEP */}
         {currentLabel === "Service" && (
           <div className="space-y-3">
             <h3 className="font-display text-xl font-semibold">Choose a service</h3>
             {method === "hmo" && (
               <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-4">
                 <div className="space-y-2">
-                  <Label htmlFor="hmo-provider">Card Provider</Label>
+                  <Label htmlFor="hmo-provider">HMO Provider</Label>
                   <select
                     id="hmo-provider"
                     value={hmoProvider}
@@ -379,22 +563,16 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
                     }}
                     className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   >
-                    <option value="">Choose your Card provider</option>
+                    <option value="">Choose your HMO provider</option>
                     {HMO_PROVIDERS.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name}
                       </option>
                     ))}
                   </select>
-                  {hmoProvider && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <ShieldCheck className="h-3 w-3 text-primary" />
-                      {HMO_PROVIDERS.find((p) => p.id === hmoProvider)?.name.replace("HMO", "Card")} selected
-                    </p>
-                  )}
                 </div>
                 {!hmoProvider && (
-                  <p className="text-sm text-muted-foreground">Choose your Card provider first so we can show the covered services.</p>
+                  <p className="text-sm text-muted-foreground">Choose your HMO provider first so we can show the covered services.</p>
                 )}
               </div>
             )}
@@ -420,11 +598,6 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
                         <Clock className="h-3 w-3" /> {s.duration}
                         {disabled && <span className="ml-2 text-rose-600 font-medium">Appointment not available</span>}
                       </div>
-                      <div className="mt-3">
-                        <span className={`inline-flex text-xs font-semibold px-2 py-1 rounded ${active ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
-                          {active ? "Selected" : "Select"}
-                        </span>
-                      </div>
                     </button>
                   );
                 })}
@@ -433,36 +606,108 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
           </div>
         )}
 
-        {currentLabel === "Subscription" && (
-          <div className="space-y-3 max-w-md">
-            <h3 className="font-display text-xl font-semibold">Enter your Subscription ID</h3>
-            <div className="space-y-2">
-              <Label>Subscription ID</Label>
-              <Input value={enrolleeId} onChange={(e) => setEnrolleeId(e.target.value)} placeholder="e.g. DSM-123456" />
-              <p className="text-xs text-muted-foreground">
-                Don't have a subscription?{" "}
-                <Link to="/subscription" className="text-primary font-medium hover:underline" onClick={close}>Click here to subscribe</Link>.
-              </p>
+        {/* MODE STEP */}
+        {currentLabel === "Mode" && (
+          <div className="space-y-4">
+            <h3 className="font-display text-xl font-semibold">Choose appointment type</h3>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {[
+                { k: "physical" as const, title: "Physical Appointment", icon: MapPin, desc: "Visit a DesolMed clinic" },
+                { k: "online" as const, title: "Online Appointment", icon: Video, desc: "Video / phone consultation" },
+              ].map((o) => {
+                const Icon = o.icon;
+                const active = subMode === o.k;
+                return (
+                  <button
+                    key={o.k}
+                    type="button"
+                    onClick={() => {
+                      setSubMode(o.k);
+                      if (o.k === "online") setLocation("");
+                    }}
+                    className={`text-left rounded-xl border-2 p-5 transition ${active ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
+                  >
+                    <Icon className="h-6 w-6 text-primary mb-2" />
+                    <div className="font-semibold">{o.title}</div>
+                    <div className="text-sm text-muted-foreground">{o.desc}</div>
+                  </button>
+                );
+              })}
             </div>
-            <Button onClick={verifySubscription} disabled={!enrolleeId || subChecking}>
-              {subChecking ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify"}
-            </Button>
-            {subVerified?.ok && (
-              <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-emerald-700 text-sm flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" /> Subscription verified successfully.
+
+            {subMode === "physical" && (
+              <div className="space-y-2 pt-2">
+                <Label>Select hospital location</Label>
+                {loadingLocations ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    <span className="ml-2 text-sm text-muted-foreground">Loading clinic locations...</span>
+                  </div>
+                ) : clinicLocations.length > 0 ? (
+                  <div className="grid gap-2">
+                    {clinicLocations.map((loc) => (
+                      <button
+                        key={loc.id}
+                        type="button"
+                        onClick={() => setLocation(loc.id)}
+                        className={`text-left rounded-lg border p-3 transition ${location === loc.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}
+                      >
+                        <div className="font-medium">{loc.name}</div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                          <MapPin className="h-3 w-3" /> {loc.address_line}, {loc.city}
+                        </div>
+                        {loc.phone && (
+                          <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                            <PhoneIcon className="h-3 w-3" /> {loc.phone}
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 text-center">
+                    <AlertTriangle className="h-5 w-5 text-amber-600 mx-auto mb-2" />
+                    <p className="text-sm text-amber-700">No clinic locations available for this doctor.</p>
+                    <p className="text-xs text-amber-600 mt-1">Please try online consultation or contact support.</p>
+                  </div>
+                )}
               </div>
             )}
-            {subVerified && !subVerified.ok && (
-              <div className="rounded-lg bg-rose-50 border border-rose-200 p-3 text-rose-700 text-sm flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" /> {subVerified.reason}
+            
+            {subMode === "online" && (
+              <div className="rounded-lg bg-primary/5 border border-primary/20 p-4 text-center">
+                <Video className="h-8 w-8 text-primary mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  You'll receive a secure video call link via email and SMS before your appointment.
+                </p>
               </div>
             )}
           </div>
         )}
 
+        {/* SUBSCRIPTION STEP */}
+        {currentLabel === "Subscription" && (
+          <div className="space-y-3 max-w-md">
+            <h3 className="font-display text-xl font-semibold">Enter your Subscription ID</h3>
+            <div className="space-y-2">
+              <Label>Subscription ID</Label>
+              <Input 
+                value={enrolleeId} 
+                onChange={(e) => setEnrolleeId(e.target.value)} 
+                placeholder="e.g. DSM-123456" 
+              />
+              <p className="text-xs text-muted-foreground">
+                Don't have a subscription?{" "}
+                <Link to="/subscription" className="text-primary font-medium hover:underline" onClick={close}>Click here to subscribe</Link>.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* HMO VERIFY STEP */}
         {currentLabel === "Verify" && (
           <div className="space-y-3 max-w-md">
-            <h3 className="font-display text-xl font-semibold">Verify your Card policy</h3>
+            <h3 className="font-display text-xl font-semibold">Verify your HMO policy</h3>
             <div className="space-y-2">
               <Label>Policy Number</Label>
               <Input
@@ -476,9 +721,21 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
               <Label>Member details (optional)</Label>
               <Input value={memberDetails} onChange={(e) => setMemberDetails(e.target.value)} placeholder="Full name / DOB" />
             </div>
+            {hmoStatus === "pending" && <p className="text-sm text-amber-700">Verifying...</p>}
+            {hmoStatus === "approved" && (
+              <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-emerald-700 text-sm flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" /> HMO policy verified.
+              </div>
+            )}
+            {hmoStatus === "rejected" && (
+              <div className="rounded-lg bg-rose-50 border border-rose-200 p-3 text-rose-700 text-sm flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" /> {hmoReason}
+              </div>
+            )}
           </div>
         )}
 
+        {/* ORGANIZATION DETAILS STEP */}
         {currentLabel === "Details" && (
           <div className="space-y-3 max-w-md">
             <h3 className="font-display text-xl font-semibold">Organization details</h3>
@@ -510,16 +767,10 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
                   }}
                 />
               </label>
-              {authFile && (
-                <div className="text-xs text-muted-foreground flex items-center gap-1">
-                  <FileText className="h-3 w-3" /> {authFile.name} ({(authFile.size / 1024).toFixed(0)} KB)
-                </div>
-              )}
             </div>
-            <Button onClick={verifyOrg} disabled={!orgId || !employeeId || !authFile || orgStatus === "pending"}>
-              {orgStatus === "pending" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit for verification"}
+            <Button onClick={verifyOrg} disabled={!orgId || !employeeId || !authFile || orgStatus === "pending" || uploadingFile}>
+              {uploadingFile || orgStatus === "pending" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit for verification"}
             </Button>
-            {orgStatus === "pending" && <p className="text-sm text-amber-700">Pending review…</p>}
             {orgStatus === "approved" && (
               <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-emerald-700 text-sm flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4" /> Approved. Continue to scheduling.
@@ -528,6 +779,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
           </div>
         )}
 
+        {/* SCHEDULE STEP */}
         {currentLabel === "Schedule" && (
           <div className="space-y-4">
             <h3 className="font-display text-xl font-semibold">Pick a date & time</h3>
@@ -565,94 +817,10 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
                 </div>
               </div>
             )}
-
-            {date && time && (
-              <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 space-y-2">
-                <div className="flex items-center gap-2 font-display font-bold">
-                  <CheckCircle2 className="h-4 w-4 text-primary" /> Booking Summary
-                </div>
-                <div className="grid sm:grid-cols-2 gap-y-1 gap-x-4 text-sm">
-                  {service && (
-                    <>
-                      <span className="text-muted-foreground">Service</span>
-                      <span className="font-medium sm:text-right">{service.name}</span>
-                    </>
-                  )}
-                  <span className="text-muted-foreground">Date</span>
-                  <span className="font-medium sm:text-right">
-                    {new Date(date).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric", year: "numeric" })}
-                  </span>
-                  <span className="text-muted-foreground">Time</span>
-                  <span className="font-medium sm:text-right">{time}</span>
-                  {subMode && (
-                    <>
-                      <span className="text-muted-foreground">Mode</span>
-                      <span className="font-medium sm:text-right capitalize">{subMode}</span>
-                    </>
-                  )}
-                  {location && (
-                    <>
-                      <span className="text-muted-foreground">Location</span>
-                      <span className="font-medium sm:text-right">
-                        {HOSPITAL_LOCATIONS.find((l) => l.id === location)?.name}
-                      </span>
-                    </>
-                  )}
-                  {hmoProvider && (
-                    <>
-                      <span className="text-muted-foreground">Card</span>
-                      <span className="font-medium sm:text-right">
-                        {HMO_PROVIDERS.find((p) => p.id === hmoProvider)?.name.replace("HMO", "Card")}
-                      </span>
-                    </>
-                  )}
-                  <span className="text-muted-foreground">Access</span>
-                  <span className="font-medium sm:text-right capitalize">{method}</span>
-                  {service && method === "card" && (
-                    <>
-                      <span className="text-muted-foreground">Amount</span>
-                      <span className="font-display font-bold text-primary sm:text-right">{fmtNGN(service.price)}</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
-
-        {currentLabel === "Login" && (
-          <div className="space-y-3 max-w-md">
-            {user ? (
-              <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-4 text-emerald-700 text-sm flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" /> Logged in as {user.email}. You can continue.
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center gap-2">
-                  <LockKeyhole className="h-5 w-5 text-primary" />
-                  <h3 className="font-display text-xl font-semibold">Login to continue</h3>
-                </div>
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Password</Label>
-                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                </div>
-                <Button onClick={handleLogin} disabled={authBusy} className="w-full">
-                  {authBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Login"}
-                </Button>
-                <p className="text-sm text-muted-foreground text-center">
-                  Don't have an account?{" "}
-                  <Link to="/register/patient" className="text-primary font-medium hover:underline" onClick={close}>Register here</Link>
-                </p>
-              </>
-            )}
-          </div>
-        )}
-
+        {/* CONSENT STEP */}
         {currentLabel === "Consent" && (
           <div className="space-y-3">
             <h3 className="font-display text-xl font-semibold">Consent & agreements</h3>
@@ -670,6 +838,7 @@ export default function AdvancedBookingFlow({ open, onClose, method }: Props) {
           </div>
         )}
 
+        {/* PAYMENT STEP */}
         {currentLabel === "Payment" && service && (
           <div className="space-y-4 max-w-md">
             <h3 className="font-display text-xl font-semibold">Secure payment</h3>
