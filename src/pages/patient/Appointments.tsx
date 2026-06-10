@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Video, Calendar, Clock, Plus, MapPin } from "lucide-react";
+import { Video, Calendar, Clock, Plus, MapPin, User } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Appointments = () => {
   const [selected, setSelected] = useState<typeof patientMock.appointments[number] | null>(null);
@@ -33,6 +34,16 @@ const Appointments = () => {
                 <span className="flex items-center gap-1">{a.mode === "Video" ? <Video className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}{a.mode}</span>
               </div>
               <Badge variant={a.status === "confirmed" ? "default" : a.status === "pending" ? "secondary" : "outline"} className="capitalize">{a.status}</Badge>
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Link to={`/doctors?q=${encodeURIComponent(a.doctor)}`}>
+                  <User className="h-3.5 w-3.5" /> View Profile
+                </Link>
+              </Button>
             </button>
           ))}
         </div>
