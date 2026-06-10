@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Video, Calendar, Clock, Plus, MapPin } from "lucide-react";
+import { Video, Calendar, Clock, Plus, MapPin, User } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Appointments = () => {
   const [selected, setSelected] = useState<typeof patientMock.appointments[number] | null>(null);
@@ -21,7 +22,7 @@ const Appointments = () => {
       <SectionCard>
         <div className="space-y-3">
           {patientMock.appointments.map((a) => (
-            <button key={a.id} onClick={() => setSelected(a)} className="w-full text-left flex items-center gap-4 p-4 rounded-lg border border-border/60 hover:border-primary/40 hover:bg-muted/40 transition-all">
+            <div key={a.id} onClick={() => setSelected(a)} role="button" tabIndex={0} className="w-full text-left flex items-center gap-4 p-4 rounded-lg border border-border/60 hover:border-primary/40 hover:bg-muted/40 transition-all cursor-pointer">
               <Avatar className="h-10 w-10"><AvatarFallback className="bg-primary/10 text-primary text-xs">{a.doctor.split(" ").slice(-2).map(s=>s[0]).join("")}</AvatarFallback></Avatar>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm">{a.doctor}</p>
@@ -33,7 +34,17 @@ const Appointments = () => {
                 <span className="flex items-center gap-1">{a.mode === "Video" ? <Video className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}{a.mode}</span>
               </div>
               <Badge variant={a.status === "confirmed" ? "default" : a.status === "pending" ? "secondary" : "outline"} className="capitalize">{a.status}</Badge>
-            </button>
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Link to={`/doctors?q=${encodeURIComponent(a.doctor)}`}>
+                  <User className="h-3.5 w-3.5" /> View Profile
+                </Link>
+              </Button>
+            </div>
           ))}
         </div>
       </SectionCard>
