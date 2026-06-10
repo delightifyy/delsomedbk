@@ -5,7 +5,7 @@ import { patientMock } from "@/data/portalMock";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { CalendarDays, FileText, Pill, Video, Plus, ArrowRight, Clock, ShieldCheck, BadgeCheck, Building2, CreditCard } from "lucide-react";
+import { CalendarDays, FileText, Pill, Video, Plus, ArrowRight, Clock, ShieldCheck, BadgeCheck, Building2, CreditCard, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { usePatientCategory, categoryLabel } from "@/hooks/usePatientCategory";
 
