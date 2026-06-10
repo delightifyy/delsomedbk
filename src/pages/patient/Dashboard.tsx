@@ -117,6 +117,9 @@ const PatientDashboard = () => {
               <Button variant="outline" className="justify-start" asChild>
                 <Link to="/patient/prescriptions"><Pill className="h-4 w-4" /> Refill Rx</Link>
               </Button>
+              <Button className="justify-start" asChild>
+                <Link to="/subscription"><Star className="h-4 w-4" /> Subscribe / Choose Plan</Link>
+              </Button>
             </div>
           </SectionCard>
 
