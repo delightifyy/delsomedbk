@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Video, Calendar, Clock, Plus, MapPin, User } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Video, Calendar, Clock, Plus, MapPin } from "lucide-react";
 
 const Appointments = () => {
   const [selected, setSelected] = useState<typeof patientMock.appointments[number] | null>(null);
