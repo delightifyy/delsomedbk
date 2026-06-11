@@ -9,12 +9,16 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Video, Calendar, Clock, MapPin, Search, Stethoscope, Pill, FileText, Paperclip, Download } from "lucide-react";
+import { Video, Calendar, Clock, MapPin, Search, Stethoscope, Pill, FileText, Paperclip, Download, FlaskConical, RefreshCw } from "lucide-react";
 
+type Prescription = typeof patientMock.prescriptions[number];
+type LabRequest = typeof patientMock.labRequests[number];
 type Consultation = typeof patientMock.appointments[number] & {
   diagnosis?: string;
   treatment?: string;
   attachments?: string[];
+  prescriptions: Prescription[];
+  labRequests: LabRequest[];
 };
 
 const ConsultationHistory = () => {
@@ -22,7 +26,7 @@ const ConsultationHistory = () => {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "completed" | "upcoming">("all");
 
-  // Enrich consultations with matching medical records by date
+  // Enrich consultations with matching medical records, prescriptions, and lab requests by date
   const consultations: Consultation[] = useMemo(() => {
     return patientMock.appointments
       .map((a) => {
@@ -32,6 +36,8 @@ const ConsultationHistory = () => {
           diagnosis: record?.diagnosis,
           treatment: record?.treatment,
           attachments: record?.attachments,
+          prescriptions: patientMock.prescriptions.filter((p) => p.date === a.date),
+          labRequests: patientMock.labRequests.filter((l) => l.date === a.date),
         };
       })
       .sort((a, b) => (a.date < b.date ? 1 : -1));
