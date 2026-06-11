@@ -329,7 +329,7 @@ const Index = () => {
             Leading HMOs and Partners.
           </h2>
         </div>
-        <LogoWall type="hmo" />
+        <LogoWall />
       </section>
 
       {/* 07 / TESTIMONIALS */}

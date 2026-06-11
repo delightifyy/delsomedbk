@@ -705,7 +705,7 @@ const AppointmentsPage = () => {
                               onClick={async () => {
                                 try {
                                   const response = await api.admin.appointments.detail(appointment.uuid);
-                                  setSelectedAppointment(response.data as Appointment);
+                                  setSelectedAppointment(response.data as unknown as Appointment);
                                   setDetailsOpen(true);
                                 } catch (error) {
                                   toast({

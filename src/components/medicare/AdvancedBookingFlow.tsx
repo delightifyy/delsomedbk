@@ -433,7 +433,7 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
       const response = await api.me.appointments.create(requestBody);
       
       if (response.data) {
-        setBookingRef(response.data.reference || response.data.booking_reference);
+        setBookingRef((response.data as any).reference || (response.data as any).booking_reference);
         toast.success("Appointment booked successfully!");
       } else {
         throw new Error("No response data");

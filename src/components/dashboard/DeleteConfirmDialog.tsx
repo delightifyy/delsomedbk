@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +18,7 @@ type DeleteConfirmDialogProps = {
   loading?: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
+  children?: ReactNode;
 };
 
 export const DeleteConfirmDialog = ({
@@ -27,6 +29,7 @@ export const DeleteConfirmDialog = ({
   loading = false,
   onOpenChange,
   onConfirm,
+  children,
 }: DeleteConfirmDialogProps) => (
   <AlertDialog open={open} onOpenChange={(nextOpen) => !loading && onOpenChange(nextOpen)}>
     <AlertDialogContent className="w-[calc(100vw-1.5rem)] max-w-md">
@@ -34,6 +37,7 @@ export const DeleteConfirmDialog = ({
         <AlertDialogTitle>{title}</AlertDialogTitle>
         <AlertDialogDescription>{description}</AlertDialogDescription>
       </AlertDialogHeader>
+      {children}
       <AlertDialogFooter className="gap-2 sm:space-x-0">
         <AlertDialogCancel disabled={loading} className="w-full sm:w-auto">
           Cancel

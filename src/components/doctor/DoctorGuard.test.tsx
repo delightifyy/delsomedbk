@@ -24,6 +24,7 @@ describe("DoctorGuard", () => {
       isAdmin: true,
       loading: false,
       signOut: vi.fn(),
+      refetchUser: vi.fn(),
     });
 
     render(
