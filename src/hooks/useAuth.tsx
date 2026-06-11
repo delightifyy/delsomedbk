@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const response = await api.auth.me();
       
       if (response.data && isMounted.current) {
-        const userData = response.data;
+        const userData = response.data as User;
         const hasAdminRole = checkAdminRole(userData);
         
         console.log("📦 User data from API:", userData);
@@ -90,9 +90,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           user: {
             id: userData.uuid || userData.id,
             email: userData.email,
-            full_name: userData.name || userData.full_name,
-            role: userData.role,
-          },
+            full_name: userData.name || (userData as any).full_name,
+            ...(userData.role ? { role: userData.role } : {}),
+          } as LocalSession["user"],
           token: token,
           expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
           roles: userData.roles,
