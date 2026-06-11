@@ -239,7 +239,7 @@ const DoctorsPageInner = () => {
           specialty: specialty,
           city: city,
           state: state,
-          details: response.data,
+          details: response.data as Record<string, unknown>,
         }
       } : null);
     } catch (error) {
