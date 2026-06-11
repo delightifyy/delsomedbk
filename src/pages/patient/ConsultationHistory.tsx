@@ -187,6 +187,76 @@ const ConsultationHistory = () => {
                   <p className="text-sm bg-muted/40 p-3 rounded-lg">{selected.notes}</p>
                 </div>
 
+                {selected.prescriptions.length > 0 && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1 mb-2">
+                      <Pill className="h-3 w-3" /> Prescriptions
+                    </p>
+                    <div className="space-y-2">
+                      {selected.prescriptions.map((rx) => (
+                        <div key={rx.id} className="p-3 rounded-lg border border-border/60 bg-muted/30">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm">{rx.medication}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">{rx.dosage}</p>
+                              <p className="text-xs text-muted-foreground mt-1">{rx.refills} refills left</p>
+                            </div>
+                            <Badge variant={rx.status === "active" ? "default" : "outline"} className="capitalize shrink-0">
+                              {rx.status}
+                            </Badge>
+                          </div>
+                          <div className="flex gap-2 mt-2">
+                            <Button size="sm" variant="outline" className="h-7 text-xs">
+                              <Download className="h-3 w-3" /> Download
+                            </Button>
+                            {rx.status === "active" && (
+                              <Button size="sm" className="h-7 text-xs">
+                                <RefreshCw className="h-3 w-3" /> Refill
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {selected.labRequests.length > 0 && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1 mb-2">
+                      <FlaskConical className="h-3 w-3" /> Lab Requests
+                    </p>
+                    <div className="space-y-2">
+                      {selected.labRequests.map((lab) => (
+                        <div key={lab.id} className="p-3 rounded-lg border border-border/60 bg-muted/30">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm">{lab.test}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">{lab.lab}</p>
+                              {lab.result && (
+                                <p className="text-xs mt-1.5">{lab.result}</p>
+                              )}
+                            </div>
+                            <Badge variant={lab.status === "completed" ? "default" : "secondary"} className="capitalize shrink-0">
+                              {lab.status}
+                            </Badge>
+                          </div>
+                          {lab.attachments.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {lab.attachments.map((f) => (
+                                <Badge key={f} variant="outline" className="gap-1 text-xs">
+                                  <FileText className="h-3 w-3" />
+                                  {f}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {selected.attachments && selected.attachments.length > 0 && (
                   <div>
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1 mb-2">
