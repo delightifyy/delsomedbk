@@ -33,16 +33,6 @@ const Appointments = () => {
                 <span className="flex items-center gap-1">{a.mode === "Video" ? <Video className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}{a.mode}</span>
               </div>
               <Badge variant={a.status === "confirmed" ? "default" : a.status === "pending" ? "secondary" : "outline"} className="capitalize">{a.status}</Badge>
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Link to={`/doctors?q=${encodeURIComponent(a.doctor)}`}>
-                  <User className="h-3.5 w-3.5" /> View Profile
-                </Link>
-              </Button>
             </div>
           ))}
         </div>
