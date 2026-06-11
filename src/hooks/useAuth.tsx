@@ -94,7 +94,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             ...(userData.role ? { role: userData.role } : {}),
           } as LocalSession["user"],
           token: token,
-          expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
           roles: userData.roles,
         };
         setSession(localSession);
