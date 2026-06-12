@@ -109,7 +109,7 @@ const PatientDashboard = () => {
                 <Link to="/patient/appointments"><Video className="h-4 w-4" /> Join Consultation</Link>
               </Button>
               <Button variant="outline" className="justify-start" asChild>
-                <Link to="/patient/appointments"><Plus className="h-4 w-4" /> Book Appointment</Link>
+                <Link to="/doctor-portal?book=1"><Plus className="h-4 w-4" /> Book Appointment</Link>
               </Button>
               <Button variant="outline" className="justify-start" asChild>
                 <Link to="/patient/records"><FileText className="h-4 w-4" /> View Records</Link>
