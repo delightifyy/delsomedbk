@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { PageHeader, SectionCard } from "@/components/portal/PortalUI";
 import { patientNav } from "./nav";
@@ -81,7 +82,7 @@ const Appointments = () => {
       <PageHeader
         title="Appointments"
         description="Manage your scheduled visits and consultations."
-        action={<Button><Plus className="h-4 w-4" /> Book Appointment</Button>}
+        action={<Button asChild><Link to="/doctor-portal?book=1"><Plus className="h-4 w-4" /> Book Appointment</Link></Button>}
       />
       <SectionCard>
         <div className="space-y-3">
