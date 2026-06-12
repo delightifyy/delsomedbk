@@ -32,7 +32,7 @@ const PatientDashboard = () => {
         description="Here's a quick overview of your health activity."
         action={
           <Button asChild>
-            <Link to="/patient/appointments"><Plus className="h-4 w-4" /> Book Appointment</Link>
+            <Link to="/doctor-portal?book=1"><Plus className="h-4 w-4" /> Book Appointment</Link>
           </Button>
         }
       />
