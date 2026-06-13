@@ -119,7 +119,7 @@ const PatientLogin = () => {
                 onChange={(event) => setEmail(event.target.value)}
                 required
                 autoComplete="email"
-                placeholder="agboolasamuel30@gmail.com"
+                placeholder="youremail@gmail.com"
               />
             </div>
 
