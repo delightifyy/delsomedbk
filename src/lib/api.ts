@@ -202,7 +202,7 @@ export async function apiRequest<T = unknown, M = Record<string, unknown>>(
       throw new ApiError("Request timeout - server is not responding. Please check your connection.", 408);
     }
     if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new ApiError("Cannot connect to server. Please check if the backend is running and CORS is configured correctly.", 0);
+      throw new ApiError("Cannot connect to server.", 0);
     }
     throw error;
   }
