@@ -19,6 +19,11 @@ import AccessMethodModal, { type AccessMethod } from "@/components/medicare/Acce
 import { DOCTORS, type Doctor } from "@/data/doctors";
 import aboutHospitalImg from "@/assets/about-hospital.jpg";
 
+// Add interface for the props
+interface MediCareProps {
+  doctorSlug?: string;  // For subdomain mode
+}
+
 /* ---------- Scoped design tokens & styles ---------- */
 const tokenStyles = `
 .medicare-root {
@@ -535,7 +540,7 @@ const AppointmentPopup = ({
 };
 
 /* ---------- Page ---------- */
-const MediCare = () => {
+const MediCare = ({ doctorSlug }: MediCareProps = {}) => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
@@ -544,7 +549,8 @@ const MediCare = () => {
   const [accessOpen, setAccessOpen] = useState(false);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [accessMethod, setAccessMethod] = useState<AccessMethod | null>(null);
-  const settings = useMediCareSettings();
+  // Pass the doctorSlug to the settings hook so it loads the correct doctor's settings
+  const settings = useMediCareSettings(doctorSlug);
 
   const handleBookClick = () => {
     setAccessOpen(true);

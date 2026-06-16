@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { DeleteConfirmDialog } from "@/components/dashboard/DeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Trash2, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -18,9 +19,39 @@ type Msg = {
   created_at: string;
 };
 
+// Skeleton Components
+const MessageRowSkeleton = () => (
+  <li className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 border-b border-border">
+    <div className="flex items-start gap-3 min-w-0 flex-1">
+      <Skeleton className="mt-2 h-2 w-2 rounded-full flex-shrink-0" />
+      <div className="flex-1 min-w-0">
+        <Skeleton className="h-5 w-48 mb-1" />
+        <Skeleton className="h-4 w-64" />
+      </div>
+    </div>
+    <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
+      <Skeleton className="h-4 w-24 hidden sm:block" />
+      <Skeleton className="h-8 w-8 rounded-md" />
+    </div>
+  </li>
+);
+
+const MessagesListSkeleton = () => (
+  <div className="rounded-2xl border border-border bg-card overflow-hidden">
+    <ul className="divide-y divide-border">
+      <MessageRowSkeleton />
+      <MessageRowSkeleton />
+      <MessageRowSkeleton />
+      <MessageRowSkeleton />
+      <MessageRowSkeleton />
+    </ul>
+  </div>
+);
+
 const ContactsPage = () => {
   const { toast } = useToast();
   const [items, setItems] = useState<Msg[]>([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<Msg | null>(null);
   const [deleting, setDeleting] = useState<Msg | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -28,12 +59,15 @@ const ContactsPage = () => {
   useEffect(() => {
     let cancelled = false;
     const loadBackend = async () => {
+      setLoading(true);
       try {
         const response = await api.admin.contactMessages.list();
         const mapped = collection(response.data).map(contactMessageFromApi);
         if (!cancelled) setItems(mapped);
       } catch {
         if (!cancelled) setItems([]);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     };
     loadBackend();
@@ -76,7 +110,9 @@ const ContactsPage = () => {
       <p className="text-muted-foreground text-sm mt-1">Submissions from the contact form.</p>
 
       <div className="mt-6 rounded-2xl border border-border bg-card overflow-hidden">
-        {items.length === 0 ? (
+        {loading ? (
+          <MessagesListSkeleton />
+        ) : items.length === 0 ? (
           <div className="p-10 text-center text-sm text-muted-foreground">No messages yet.</div>
         ) : (
           <ul className="divide-y divide-border">

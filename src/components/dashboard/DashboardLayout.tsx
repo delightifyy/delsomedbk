@@ -22,7 +22,8 @@ import {
   CreditCard,
   PlusCircle,
   CalendarCheck,
-  Building2, // Add this for HMO Providers icon
+  Building2,
+  ShieldCheck, // Add this for Coverage Requests icon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,11 +39,12 @@ const items = [
   { to: "/dashboard/users", label: "Users", icon: Users },
   { to: "/dashboard/patients", label: "Patients", icon: HeartPulse },
   { to: "/dashboard/doctors", label: "Doctors", icon: Stethoscope },
+  { to: "/dashboard/coverage-requests", label: "Coverage Requests", icon: ShieldCheck }, // NEW MENU ITEM
   { to: "/dashboard/contacts", label: "Contact Messages", icon: MessageSquare },
   { to: "/dashboard/blog", label: "Health Adverts", icon: Megaphone },
   { to: "/dashboard/news", label: "News", icon: Newspaper },
   { to: "/dashboard/appointments", label: "Appointments", icon: CalendarCheck },
-  { to: "/dashboard/hmo-providers", label: "HMO Providers", icon: Building2 }, // NEW MENU ITEM
+  { to: "/dashboard/hmo-providers", label: "HMO Providers", icon: Building2 },
   // { to: "/dashboard/newsletter", label: "Newsletter", icon: MailCheck },
   { to: "/dashboard/lookups", label: "Lookups", icon: Tags },
   { to: "/dashboard/subscribers", label: "Subscribers List", icon: CreditCard },

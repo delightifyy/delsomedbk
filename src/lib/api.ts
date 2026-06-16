@@ -510,6 +510,117 @@ export const api = {
     uploadAvatar: (form: FormData) =>
       apiRequest("/me/profile/avatar", { method: "POST", auth: true, body: form }),
     
+    patient: {
+      profile: () => apiRequest("/me/patient/profile", { auth: true }),
+      updateProfile: (body: { 
+        first_name?: string; 
+        address?: string; 
+        blood_type?: string; 
+        next_of_kin?: {
+          full_name: string;
+          phone: string;
+          relationship: string;
+        }
+      }) => apiRequest("/me/patient/profile", { method: "PATCH", auth: true, body }),
+      
+      changePassword: (body: {
+        current_password: string;
+        password: string;
+        password_confirmation: string;
+      }) => apiRequest("/me/patient/password", { method: "POST", auth: true, body }),
+      
+      notificationPreferences: (body: { marketing_emails?: boolean }) =>
+        apiRequest("/me/patient/notification-preferences", { method: "PATCH", auth: true, body }),
+      
+      securityPreferences: (body: { two_factor_enabled?: boolean }) =>
+        apiRequest("/me/patient/security-preferences", { method: "PATCH", auth: true, body }),
+    },
+
+    dashboard: () => apiRequest<{
+      upcoming_appointments: any[];
+      recent_consultations: any[];
+      health_snapshot: {
+        blood_type: string;
+        allergies: string[];
+        chronic_conditions: string[];
+      };
+      stats: {
+        upcoming: number;
+        past_visits: number;
+        prescriptions: number;
+      };
+    }>("/me/dashboard", { auth: true }),
+
+    paymentCategory: () => apiRequest<{
+      category: "card" | "hmo" | "subscription" | "organization";
+      details: any;
+    }>("/me/payment-category", { auth: true }),
+
+    switchPaymentCategory: (body: { category: string }) =>
+      apiRequest("/me/payment-category/switch", { method: "POST", auth: true, body }),
+
+    consultations: {
+      list: (query?: { 
+        search?: string; 
+        type?: string; 
+        date_from?: string; 
+        date_to?: string;
+        page?: number;
+        per_page?: number;
+      }) => apiRequest<any[], PaginationMeta>("/me/consultations", { auth: true, query }),
+      
+      detail: (consultationUuid: string) => 
+        apiRequest(`/me/consultations/${consultationUuid}`, { auth: true }),
+      
+      downloadSummary: (consultationUuid: string) =>
+        apiFileRequest(`/me/consultations/${consultationUuid}/summary`, { auth: true }),
+    },
+
+    prescriptions: {
+      list: (query?: { status?: "active" | "expired" | "completed" | "cancelled"; page?: number; per_page?: number }) =>
+        apiRequest<any[], PaginationMeta>("/me/prescriptions", { auth: true, query }),
+      
+      detail: (prescriptionUuid: string) =>
+        apiRequest(`/me/prescriptions/${prescriptionUuid}`, { auth: true }),
+      
+      download: (prescriptionUuid: string) =>
+        apiFileRequest(`/me/prescriptions/${prescriptionUuid}/download`, { auth: true }),
+      
+      requestRefill: (prescriptionUuid: string, body?: { note?: string }) =>
+        apiRequest(`/me/prescriptions/${prescriptionUuid}/refill-requests`, { method: "POST", auth: true, body }),
+    },
+
+    subscriptions: {
+      list: (query?: { status?: "active" | "expired" | "cancelled" | "pending" }) =>
+        apiRequest<any[]>("/me/subscriptions", { auth: true, query }),
+      
+      renew: (dsmId: string, body?: { billing_period?: "monthly" | "quarterly" | "yearly" }) =>
+        apiRequest(`/me/subscriptions/${dsmId}/renew`, { method: "POST", auth: true, body }),
+      
+      upgrade: (body: { subscription_package_id: string }) =>
+        apiRequest("/me/subscriptions/upgrade", { method: "POST", auth: true, body }),
+    },
+
+    coverage: {
+      hmo: {
+        get: () => apiRequest("/me/coverage/hmo", { auth: true }),
+        submit: (body: {
+          provider_id: string;
+          policy_number: string;
+          member_name: string;
+          member_dob?: string;
+        }) => apiRequest("/me/coverage/hmo", { method: "POST", auth: true, body }),
+      },
+      organization: {
+        get: () => apiRequest("/me/coverage/organization", { auth: true }),
+        submit: (body: {
+          company_name: string;
+          employee_id: string;
+          department?: string;
+        }) => apiRequest("/me/coverage/organization", { method: "POST", auth: true, body }),
+      },
+    },
+    
     appointments: {
       create: (body: {
         service_card_id: string;
@@ -770,6 +881,26 @@ export const api = {
         }),
     },
 
+    // ✅ NEW COVERAGE ENDPOINTS FOR ADMIN ✅
+    coverage: {
+      hmo: {
+        list: (query?: { status?: string; page?: number; per_page?: number }) =>
+          apiRequest<any[], PaginationMeta>("/admin/coverage/hmo", { auth: true, query }),
+        verify: (enrollmentUuid: string) =>
+          apiRequest(`/admin/coverage/hmo/${enrollmentUuid}/verify`, { method: "POST", auth: true }),
+        reject: (enrollmentUuid: string, body: { reason: string }) =>
+          apiRequest(`/admin/coverage/hmo/${enrollmentUuid}/reject`, { method: "POST", auth: true, body }),
+      },
+      organization: {
+        list: (query?: { status?: string; page?: number; per_page?: number }) =>
+          apiRequest<any[], PaginationMeta>("/admin/coverage/organization", { auth: true, query }),
+        verify: (membershipUuid: string) =>
+          apiRequest(`/admin/coverage/organization/${membershipUuid}/verify`, { method: "POST", auth: true }),
+        reject: (membershipUuid: string, body: { reason: string }) =>
+          apiRequest(`/admin/coverage/organization/${membershipUuid}/reject`, { method: "POST", auth: true, body }),
+      },
+    },
+
     hmoProviders: {
       list: (query?: { 
         page?: number; 
@@ -888,9 +1019,7 @@ export const api = {
         }),
     },
 
-    // Patient Subscriptions Management Endpoints
     patientSubscriptions: {
-      // Get all patient subscriptions with pagination and filters
       list: (query?: { 
         page?: number; 
         per_page?: number;
@@ -902,11 +1031,9 @@ export const api = {
       }) => 
         apiRequest<any[], PaginationMeta>("/admin/patient-subscriptions", { auth: true, query }),
       
-      // Get a single patient subscription by DSM ID
       detail: (dsmId: string) => 
         apiRequest<any>(`/admin/patient-subscriptions/${dsmId}`, { auth: true }),
       
-      // Cancel a patient subscription
       cancel: (dsmId: string, body?: { reason?: string }) => 
         apiRequest(`/admin/patient-subscriptions/${dsmId}/cancel`, { 
           method: "POST", 
@@ -914,7 +1041,6 @@ export const api = {
           body 
         }),
       
-      // Renew a patient subscription
       renew: (dsmId: string, body?: { 
         billing_period?: "monthly" | "quarterly" | "yearly";
         start_date?: string;
@@ -925,7 +1051,6 @@ export const api = {
           body 
         }),
       
-      // Get subscription history
       history: (dsmId: string, query?: { 
         page?: number; 
         per_page?: number;
@@ -935,7 +1060,6 @@ export const api = {
           query 
         }),
       
-      // Export subscriptions to CSV
       export: (query?: { 
         package_id?: string;
         status?: string;

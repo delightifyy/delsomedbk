@@ -34,6 +34,11 @@ type BookingMethod = "pay-now" | "hmo" | "subscription";
 
 const BOOKING_STEPS = ["Select date", "Select time", "Patient details", "Payment"];
 
+// Add this interface for the prop
+interface DoctorMediCareProps {
+  doctorIdParam?: string;  // For when called from subdomain
+}
+
 const extractMiniSiteSlug = (profileUrl?: string | null) => {
   if (!profileUrl) return "";
   try {
@@ -49,9 +54,13 @@ const extractMiniSiteSlug = (profileUrl?: string | null) => {
   }
 };
 
-const DoctorMediCare = () => {
+// Modified to accept the prop
+const DoctorMediCare = ({ doctorIdParam }: DoctorMediCareProps = {}) => {
   const { toast } = useToast();
-  const { doctorId } = useParams<{ doctorId: string }>();
+  // Get doctorId from either the prop (subdomain mode) or URL param (regular mode)
+  const { doctorId: paramDoctorId } = useParams<{ doctorId: string }>();
+  const doctorId = doctorIdParam || paramDoctorId;
+  
   const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [loadingDoctor, setLoadingDoctor] = useState(true);
 

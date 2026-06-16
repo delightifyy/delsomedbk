@@ -1,554 +1,603 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { PortalLayout } from "@/components/portal/PortalLayout";
-import { PageHeader, EmptyState } from "@/components/portal/PortalUI";
+import { PageHeader, SectionCard } from "@/components/portal/PortalUI";
 import { patientNav } from "./nav";
-import { patientMock } from "@/data/portalMock";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  Video,
   Calendar,
   Clock,
-  MapPin,
   Search,
-  Stethoscope,
-  Pill,
-  FileText,
+  Filter,
   Download,
-  FlaskConical,
-  RefreshCw,
-  ClipboardList,
-  User,
-  NotebookPen,
-  CalendarPlus,
-  Eye,
+  FileText,
+  Stethoscope,
+  Mail,
+  Phone,
+  MapPin,
+  CalendarCheck,
+  Globe,
+  ChevronDown,
+  X,
 } from "lucide-react";
+import { api } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
+import desolmedLogo from "@/assets/desolmed-logo.png";
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-type Prescription = typeof patientMock.prescriptions[number];
-type LabRequest = typeof patientMock.labRequests[number];
-type Consultation = typeof patientMock.appointments[number] & {
+interface Consultation {
+  id: string;
+  consultation_uuid: string;
+  doctor_name: string;
+  doctor_uuid: string;
+  specialty: string;
+  date: string;
+  time: string;
+  type: string;
+  status: "completed" | "cancelled" | "scheduled";
+  reason?: string;
+  notes?: string;
+  prescription?: string;
+}
+
+interface ConsultationDetail {
+  uuid: string;
+  doctor: {
+    name: string;
+    uuid: string;
+    specialty: string;
+    email?: string;
+    phone?: string;
+    image?: string;
+  };
+  consultation_date: string;
+  consultation_time?: string;
+  type: string;
+  status: string;
+  reason: string;
   diagnosis?: string;
-  treatment?: string;
-  attachments?: string[];
-  prescriptions: Prescription[];
-  labRequests: LabRequest[];
+  prescription?: string;
+  notes?: string;
+  follow_up_advice?: string;
+  vital_signs?: {
+    blood_pressure?: string;
+    heart_rate?: number;
+    temperature?: number;
+    weight?: number;
+  };
+  created_at: string;
+}
+
+const statusVariant = (s: string) => {
+  switch (s) {
+    case "completed": return "default";
+    case "scheduled": return "secondary";
+    case "cancelled": return "destructive";
+    default: return "outline";
+  }
 };
 
-const typeLabel = (mode: string) => (mode === "Video" ? "Virtual" : "In-Person");
+// Loading screen component with ONLY logo - NO spinner
+const ConsultationsLoadingScreen = () => (
+  <PortalLayout portalName="Patient Portal" nav={patientNav}>
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center">
+        <div className="relative mb-6">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-teal-500 opacity-20 blur-xl animate-pulse"></div>
+          <div className="relative animate-bounce">
+            <img 
+              src={desolmedLogo} 
+              alt="Desolmed" 
+              className="w-28 h-28 mx-auto object-contain"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </PortalLayout>
+);
 
-const ConsultationHistory = () => {
+// Detail loading screen
+const DetailLoadingScreen = () => (
+  <div className="flex flex-col items-center justify-center py-12">
+    <div className="relative mb-4">
+      <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-teal-500 opacity-20 blur-xl animate-pulse"></div>
+      <div className="relative animate-bounce">
+        <img 
+          src={desolmedLogo} 
+          alt="Desolmed" 
+          className="w-16 h-16 mx-auto object-contain"
+        />
+      </div>
+    </div>
+    <p className="text-muted-foreground text-sm animate-pulse">Loading consultation details...</p>
+  </div>
+);
+
+const Consultations = () => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [filteredConsultations, setFilteredConsultations] = useState<Consultation[]>([]);
+  const [selectedConsultation, setSelectedConsultation] = useState<ConsultationDetail | null>(null);
   const [selected, setSelected] = useState<Consultation | null>(null);
-  const [query, setQuery] = useState("");
-  const [doctorFilter, setDoctorFilter] = useState<string>("all");
-  const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [dateFilter, setDateFilter] = useState<string>("all");
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [downloading, setDownloading] = useState<string | null>(null);
+  
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  
+  const consultationTypes = ["follow_up", "initial", "emergency", "routine"];
 
-  const consultations: Consultation[] = useMemo(() => {
-    return patientMock.appointments
-      .map((a) => {
-        const record = patientMock.records.find((r) => r.date === a.date);
-        return {
-          ...a,
-          diagnosis: record?.diagnosis,
-          treatment: record?.treatment,
-          attachments: record?.attachments,
-          prescriptions: patientMock.prescriptions.filter((p) => p.date === a.date),
-          labRequests: patientMock.labRequests.filter((l) => l.date === a.date),
-        };
-      })
-      .sort((a, b) => (a.date < b.date ? 1 : -1));
-  }, []);
+  // Load consultations list
+  useEffect(() => {
+    const loadConsultations = async () => {
+      setLoading(true);
+      try {
+        const params: any = {};
+        if (searchTerm) params.search = searchTerm;
+        if (selectedTypes.length > 0) params.type = selectedTypes.join(",");
+        if (dateFrom) params.date_from = dateFrom;
+        if (dateTo) params.date_to = dateTo;
+        
+        const response = await api.me.consultations.list(params);
+        console.log("Consultations response:", response);
+        
+        const dataArray = response.data?.data || [];
+        
+        const transformedConsultations = dataArray.map((c: any) => ({
+          id: c.id || c.consultation_uuid,
+          consultation_uuid: c.consultation_uuid || c.uuid,
+          doctor_name: c.doctor_name || c.doctor?.name || "",
+          doctor_uuid: c.doctor_uuid || c.doctor?.uuid,
+          specialty: c.specialty || c.doctor?.specialty || "",
+          date: c.date || c.consultation_date,
+          time: c.time || c.consultation_time,
+          type: c.type || "routine",
+          status: c.status || "completed",
+          reason: c.reason,
+          notes: c.notes,
+        }));
+        
+        setConsultations(transformedConsultations);
+        setFilteredConsultations(transformedConsultations);
+      } catch (error: any) {
+        console.error("Failed to load consultations:", error);
+        toast({
+          title: "Error loading consultations",
+          description: error.message || "Could not load your consultation history",
+          variant: "destructive",
+        });
+        setConsultations([]);
+        setFilteredConsultations([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const doctors = useMemo(
-    () => Array.from(new Set(consultations.map((c) => c.doctor))),
-    [consultations]
-  );
+    loadConsultations();
+  }, [toast]);
 
-  const filtered = consultations.filter((c) => {
-    const matchesQuery = [c.doctor, c.specialty, c.notes, c.diagnosis, c.treatment]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase()
-      .includes(query.toLowerCase());
-    const matchesDoctor = doctorFilter === "all" || c.doctor === doctorFilter;
-    const matchesType =
-      typeFilter === "all" ||
-      (typeFilter === "virtual" && c.mode === "Video") ||
-      (typeFilter === "in_person" && c.mode !== "Video");
-
-    let matchesDate = true;
-    if (dateFilter !== "all") {
-      const now = new Date();
-      const d = new Date(c.date);
-      const days = (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24);
-      if (dateFilter === "30") matchesDate = days <= 30 && days >= -30;
-      if (dateFilter === "90") matchesDate = days <= 90 && days >= -90;
-      if (dateFilter === "year") matchesDate = days <= 365 && days >= -365;
+  // Apply filters
+  useEffect(() => {
+    let filtered = [...consultations];
+    
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(c => 
+        c.doctor_name.toLowerCase().includes(term) ||
+        c.specialty.toLowerCase().includes(term) ||
+        (c.reason && c.reason.toLowerCase().includes(term))
+      );
     }
+    
+    if (selectedTypes.length > 0) {
+      filtered = filtered.filter(c => selectedTypes.includes(c.type));
+    }
+    
+    if (dateFrom) {
+      filtered = filtered.filter(c => c.date >= dateFrom);
+    }
+    
+    if (dateTo) {
+      filtered = filtered.filter(c => c.date <= dateTo);
+    }
+    
+    setFilteredConsultations(filtered);
+  }, [searchTerm, selectedTypes, dateFrom, dateTo, consultations]);
 
-    return matchesQuery && matchesDoctor && matchesType && matchesDate;
-  });
-
-  const statusBadge = (status: string) => {
-    const variant =
-      status === "completed"
-        ? "default"
-        : status === "confirmed"
-        ? "secondary"
-        : status === "pending"
-        ? "outline"
-        : "outline";
-    return (
-      <Badge variant={variant as "default" | "secondary" | "outline"} className="capitalize">
-        {status === "confirmed" ? "Follow-up" : status}
-      </Badge>
-    );
+  // Load consultation details when clicked
+  const loadConsultationDetail = async (consultationUuid: string) => {
+    setDetailLoading(true);
+    try {
+      const response = await api.me.consultations.detail(consultationUuid);
+      console.log("Consultation detail response:", response);
+      const detail = response.data as ConsultationDetail;
+      setSelectedConsultation(detail);
+    } catch (error: any) {
+      console.error("Failed to load consultation details:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Could not load consultation details",
+        variant: "destructive",
+      });
+      setSelectedConsultation(null);
+    } finally {
+      setDetailLoading(false);
+    }
   };
+
+  // Download consultation summary PDF
+  const downloadSummary = async (consultationUuid: string, doctorName: string) => {
+    setDownloading(consultationUuid);
+    try {
+      const response = await api.me.consultations.downloadSummary(consultationUuid);
+      
+      // Create blob link to download
+      const url = window.URL.createObjectURL(response.blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `consultation_${doctorName.replace(/\s/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Download started",
+        description: "Your consultation summary is being downloaded.",
+      });
+    } catch (error: any) {
+      console.error("Failed to download summary:", error);
+      toast({
+        title: "Download failed",
+        description: error.message || "Could not download consultation summary",
+        variant: "destructive",
+      });
+    } finally {
+      setDownloading(null);
+    }
+  };
+
+  const handleSelectConsultation = async (c: Consultation) => {
+    setSelected(c);
+    if (c.consultation_uuid) {
+      await loadConsultationDetail(c.consultation_uuid);
+    }
+  };
+
+  const getInitials = (name: string) => {
+    if (!name) return "DR";
+    return name.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase();
+  };
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return "Date TBD";
+    return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  };
+
+  const formatType = (type: string) => {
+    const types: Record<string, string> = {
+      follow_up: "Follow-up",
+      initial: "Initial Consultation",
+      emergency: "Emergency",
+      routine: "Routine Checkup",
+    };
+    return types[type] || type;
+  };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSelectedTypes([]);
+    setDateFrom("");
+    setDateTo("");
+  };
+
+  if (loading) {
+    return <ConsultationsLoadingScreen />;
+  }
+
+  const displayConsultation = selectedConsultation || (selected ? {
+    uuid: selected.consultation_uuid,
+    doctor: {
+      name: selected.doctor_name,
+      uuid: selected.doctor_uuid,
+      specialty: selected.specialty,
+    },
+    consultation_date: selected.date,
+    consultation_time: selected.time,
+    type: selected.type,
+    status: selected.status,
+    reason: selected.reason || "",
+    created_at: new Date().toISOString(),
+  } : null);
 
   return (
     <PortalLayout portalName="Patient Portal" nav={patientNav}>
       <PageHeader
-        title="Consultation History"
-        description="Review your complete healthcare history — consultations, prescriptions, and lab results in one place."
+        title="Consultations"
+        description="View your consultation history and medical records."
       />
 
-      {/* Filters */}
-      <Card className="border-border/60 mb-5">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-            <div className="relative md:col-span-5">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by doctor, diagnosis, symptoms..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select value={doctorFilter} onValueChange={setDoctorFilter}>
-              <SelectTrigger className="md:col-span-3">
-                <SelectValue placeholder="Doctor" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All doctors</SelectItem>
-                {doctors.map((d) => (
-                  <SelectItem key={d} value={d}>
-                    {d}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="md:col-span-2">
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All types</SelectItem>
-                <SelectItem value="virtual">Virtual</SelectItem>
-                <SelectItem value="in_person">In-Person</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={dateFilter} onValueChange={setDateFilter}>
-              <SelectTrigger className="md:col-span-2">
-                <SelectValue placeholder="Date" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All dates</SelectItem>
-                <SelectItem value="30">Last 30 days</SelectItem>
-                <SelectItem value="90">Last 90 days</SelectItem>
-                <SelectItem value="year">Last year</SelectItem>
-              </SelectContent>
-            </Select>
+      {/* Search and Filters */}
+      <div className="mb-6 space-y-3">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by doctor, specialty, or reason..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Empty state */}
-      {filtered.length === 0 ? (
-        <EmptyState
-          icon={ClipboardList}
-          title="You do not have any consultation records yet."
-          description="Once you've had a consultation, your history, prescriptions and lab results will appear here."
-          action={
-            <Button asChild>
-              <Link to="/doctor-portal?book=1">
-                <CalendarPlus className="h-4 w-4" /> Book Appointment
-              </Link>
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter className="h-4 w-4" />
+          </Button>
+          {(searchTerm || selectedTypes.length > 0 || dateFrom || dateTo) && (
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              <X className="h-4 w-4 mr-1" /> Clear
             </Button>
-          }
-        />
-      ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {filtered.map((c) => (
-            <Card
-              key={c.id}
-              className="border-border/60 hover:shadow-md hover:border-primary/40 transition-all"
-            >
-              <CardContent className="p-5">
-                <div className="flex flex-col md:flex-row md:items-center gap-4">
-                  <Avatar className="h-12 w-12 shrink-0">
-                    <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
-                      {c.doctor
-                        .split(" ")
-                        .slice(-2)
-                        .map((s) => s[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold text-base truncate">{c.doctor}</p>
-                      {statusBadge(c.status)}
-                      <Badge variant="outline" className="capitalize gap-1">
-                        {c.mode === "Video" ? (
-                          <Video className="h-3 w-3" />
-                        ) : (
-                          <MapPin className="h-3 w-3" />
-                        )}
-                        {typeLabel(c.mode)}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      {c.specialty}
-                      {c.diagnosis ? ` • ${c.diagnosis}` : ""}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {new Date(c.date).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5" />
-                        {c.time}
-                      </span>
-                      {c.prescriptions.length > 0 && (
-                        <span className="flex items-center gap-1">
-                          <Pill className="h-3.5 w-3.5" />
-                          {c.prescriptions.length} prescription
-                          {c.prescriptions.length > 1 ? "s" : ""}
-                        </span>
-                      )}
-                      {c.labRequests.length > 0 && (
-                        <span className="flex items-center gap-1">
-                          <FlaskConical className="h-3.5 w-3.5" />
-                          {c.labRequests.length} lab request
-                          {c.labRequests.length > 1 ? "s" : ""}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex md:flex-col gap-2 md:items-end">
-                    <Button size="sm" onClick={() => setSelected(c)} className="w-full md:w-auto">
-                      <Eye className="h-4 w-4" /> View Details
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          )}
         </div>
-      )}
+        
+        {showFilters && (
+          <div className="p-4 rounded-lg border border-border/60 bg-muted/20">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div>
+                <label className="text-xs font-medium mb-1 block">Consultation Type</label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      {selectedTypes.length > 0 ? `${selectedTypes.length} selected` : "All types"}
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56">
+                    {consultationTypes.map((type) => (
+                      <DropdownMenuCheckboxItem
+                        key={type}
+                        checked={selectedTypes.includes(type)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedTypes([...selectedTypes, type]);
+                          } else {
+                            setSelectedTypes(selectedTypes.filter(t => t !== type));
+                          }
+                        }}
+                      >
+                        {formatType(type)}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1 block">From Date</label>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1 block">To Date</label>
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
-      {/* Details sheet */}
-      <Sheet open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
-          {selected && (
+      {/* Consultations List */}
+      <SectionCard>
+        {filteredConsultations.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <FileText className="h-12 w-12 mx-auto mb-3 opacity-30" />
+            <p className="text-sm">No consultations found</p>
+            {(searchTerm || selectedTypes.length > 0 || dateFrom || dateTo) && (
+              <Button variant="link" size="sm" onClick={clearFilters} className="mt-2">
+                Clear filters
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredConsultations.map((c) => (
+              <div 
+                key={c.id} 
+                onClick={() => handleSelectConsultation(c)} 
+                role="button" 
+                tabIndex={0} 
+                className="w-full text-left flex items-center gap-4 p-4 rounded-lg border border-border/60 hover:border-primary/40 hover:bg-muted/40 transition-all cursor-pointer"
+              >
+                <Avatar className="h-10 w-10">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                    {getInitials(c.doctor_name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm">{c.doctor_name}</p>
+                  <p className="text-xs text-muted-foreground">{c.specialty}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                    {c.reason || "No reason provided"}
+                  </p>
+                </div>
+                <div className="hidden md:flex items-center gap-4 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{formatDate(c.date)}</span>
+                  {c.time && <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{c.time}</span>}
+                  <span className="capitalize">{formatType(c.type)}</span>
+                </div>
+                <Badge variant={statusVariant(c.status)} className="capitalize">{c.status}</Badge>
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  className="ml-2"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    downloadSummary(c.consultation_uuid, c.doctor_name);
+                  }}
+                  disabled={downloading === c.consultation_uuid}
+                >
+                  {downloading === c.consultation_uuid ? (
+                    <div className="relative w-4 h-4">
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-teal-500 opacity-20 blur-sm animate-pulse"></div>
+                      <div className="relative animate-bounce">
+                        <img src={desolmedLogo} alt="" className="w-4 h-4 object-contain" />
+                      </div>
+                    </div>
+                  ) : (
+                    <Download className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </SectionCard>
+
+      {/* Consultation Details Sheet */}
+      <Sheet open={!!selected} onOpenChange={(o) => {
+        if (!o) {
+          setSelected(null);
+          setSelectedConsultation(null);
+        }
+      }}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          {detailLoading ? (
+            <DetailLoadingScreen />
+          ) : displayConsultation && (
             <>
               <SheetHeader>
-                <SheetTitle className="flex items-center gap-2">
-                  <Stethoscope className="h-5 w-5 text-primary" />
-                  Consultation Details
-                </SheetTitle>
-                <SheetDescription>
-                  {selected.specialty} •{" "}
-                  {new Date(selected.date).toLocaleDateString("en-US", {
-                    weekday: "long",
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </SheetDescription>
+                <SheetTitle>{displayConsultation.doctor?.name || "Consultation Details"}</SheetTitle>
+                <SheetDescription>{displayConsultation.doctor?.specialty || ""}</SheetDescription>
               </SheetHeader>
-
               <div className="mt-6 space-y-5">
-                {/* Doctor card */}
-                <Card className="border-border/60">
-                  <CardContent className="p-4 flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                        {selected.doctor
-                          .split(" ")
-                          .slice(-2)
-                          .map((s) => s[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold truncate">{selected.doctor}</p>
-                      <p className="text-xs text-muted-foreground">{selected.specialty}</p>
-                    </div>
-                    {statusBadge(selected.status)}
-                  </CardContent>
-                </Card>
-
-                {/* Meta grid */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-[10px] uppercase text-muted-foreground tracking-wider flex items-center gap-1">
-                      <Calendar className="h-3 w-3" /> Date
-                    </p>
-                    <p className="font-medium text-sm mt-1">{selected.date}</p>
+                    <p className="text-[10px] uppercase text-muted-foreground tracking-wider">Date</p>
+                    <p className="font-medium text-sm mt-1">{formatDate(displayConsultation.consultation_date)}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-[10px] uppercase text-muted-foreground tracking-wider flex items-center gap-1">
-                      <Clock className="h-3 w-3" /> Time
-                    </p>
-                    <p className="font-medium text-sm mt-1">{selected.time}</p>
+                    <p className="text-[10px] uppercase text-muted-foreground tracking-wider">Type</p>
+                    <p className="font-medium text-sm mt-1 capitalize">{formatType(displayConsultation.type)}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-[10px] uppercase text-muted-foreground tracking-wider flex items-center gap-1">
-                      {selected.mode === "Video" ? (
-                        <Video className="h-3 w-3" />
-                      ) : (
-                        <MapPin className="h-3 w-3" />
-                      )}{" "}
-                      Type
-                    </p>
-                    <p className="font-medium text-sm mt-1">{typeLabel(selected.mode)}</p>
+                    <p className="text-[10px] uppercase text-muted-foreground tracking-wider">Status</p>
+                    <p className="font-medium text-sm mt-1 capitalize">{displayConsultation.status}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-muted/50">
-                    <p className="text-[10px] uppercase text-muted-foreground tracking-wider flex items-center gap-1">
-                      <User className="h-3 w-3" /> Status
-                    </p>
-                    <p className="font-medium text-sm mt-1 capitalize">{selected.status}</p>
+                    <p className="text-[10px] uppercase text-muted-foreground tracking-wider">Consultation ID</p>
+                    <p className="font-medium text-sm mt-1 truncate">{displayConsultation.uuid?.slice(0, 8)}...</p>
                   </div>
                 </div>
 
-                <Separator />
-
-                {/* Accordion sections */}
-                <Accordion
-                  type="multiple"
-                  defaultValue={["info", "rx", "labs"]}
-                  className="space-y-2"
-                >
-                  <AccordionItem value="info" className="border rounded-lg px-3">
-                    <AccordionTrigger className="hover:no-underline">
-                      <span className="flex items-center gap-2 text-sm font-medium">
-                        <NotebookPen className="h-4 w-4 text-primary" />
-                        Consultation Information
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent className="space-y-3 pb-3">
-                      <div>
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-                          Reason for Visit / Notes
-                        </p>
-                        <p className="text-sm bg-muted/40 p-3 rounded-lg">{selected.notes}</p>
-                      </div>
-                      {selected.diagnosis && (
-                        <div>
-                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-                            Diagnosis
-                          </p>
-                          <p className="text-sm bg-muted/40 p-3 rounded-lg">{selected.diagnosis}</p>
+                {/* Vital Signs (if available) */}
+                {displayConsultation.vital_signs && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Vital Signs</p>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      {displayConsultation.vital_signs.blood_pressure && (
+                        <div className="p-2 rounded-lg bg-muted/30">
+                          <span className="text-muted-foreground">BP:</span> {displayConsultation.vital_signs.blood_pressure}
                         </div>
                       )}
-                      {selected.treatment && (
-                        <div>
-                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-                            Treatment Plan
-                          </p>
-                          <p className="text-sm bg-muted/40 p-3 rounded-lg">{selected.treatment}</p>
+                      {displayConsultation.vital_signs.heart_rate && (
+                        <div className="p-2 rounded-lg bg-muted/30">
+                          <span className="text-muted-foreground">Heart Rate:</span> {displayConsultation.vital_signs.heart_rate} bpm
                         </div>
                       )}
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="rx" className="border rounded-lg px-3">
-                    <AccordionTrigger className="hover:no-underline">
-                      <span className="flex items-center gap-2 text-sm font-medium">
-                        <Pill className="h-4 w-4 text-primary" />
-                        Prescriptions
-                        {selected.prescriptions.length > 0 && (
-                          <Badge variant="secondary" className="ml-1">
-                            {selected.prescriptions.length}
-                          </Badge>
-                        )}
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent className="pb-3">
-                      {selected.prescriptions.length === 0 ? (
-                        <p className="text-sm text-muted-foreground py-2">
-                          No prescriptions for this consultation.
-                        </p>
-                      ) : (
-                        <div className="space-y-2">
-                          {selected.prescriptions.map((rx) => (
-                            <div
-                              key={rx.id}
-                              className="p-3 rounded-lg border border-border/60 bg-muted/30"
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                  <p className="font-medium text-sm">{rx.medication}</p>
-                                  <p className="text-xs text-muted-foreground mt-0.5">
-                                    {rx.dosage}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    {rx.refills} refills left
-                                  </p>
-                                </div>
-                                <Badge
-                                  variant={rx.status === "active" ? "default" : "outline"}
-                                  className="capitalize shrink-0"
-                                >
-                                  {rx.status}
-                                </Badge>
-                              </div>
-                              <div className="flex gap-2 mt-2">
-                                <Button size="sm" variant="outline" className="h-7 text-xs">
-                                  <Download className="h-3 w-3" /> View / Download
-                                </Button>
-                                {rx.status === "active" && (
-                                  <Button size="sm" className="h-7 text-xs">
-                                    <RefreshCw className="h-3 w-3" /> Refill
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          ))}
+                      {displayConsultation.vital_signs.temperature && (
+                        <div className="p-2 rounded-lg bg-muted/30">
+                          <span className="text-muted-foreground">Temp:</span> {displayConsultation.vital_signs.temperature}°C
                         </div>
                       )}
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="labs" className="border rounded-lg px-3">
-                    <AccordionTrigger className="hover:no-underline">
-                      <span className="flex items-center gap-2 text-sm font-medium">
-                        <FlaskConical className="h-4 w-4 text-primary" />
-                        Lab Requests
-                        {selected.labRequests.length > 0 && (
-                          <Badge variant="secondary" className="ml-1">
-                            {selected.labRequests.length}
-                          </Badge>
-                        )}
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent className="pb-3">
-                      {selected.labRequests.length === 0 ? (
-                        <p className="text-sm text-muted-foreground py-2">
-                          No lab requests for this consultation.
-                        </p>
-                      ) : (
-                        <div className="space-y-2">
-                          {selected.labRequests.map((lab) => (
-                            <div
-                              key={lab.id}
-                              className="p-3 rounded-lg border border-border/60 bg-muted/30"
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                  <p className="font-medium text-sm">{lab.test}</p>
-                                  <p className="text-xs text-muted-foreground mt-0.5">{lab.lab}</p>
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    Requested {new Date(lab.date).toLocaleDateString()}
-                                  </p>
-                                  {lab.result && <p className="text-xs mt-1.5">{lab.result}</p>}
-                                </div>
-                                <Badge
-                                  variant={lab.status === "completed" ? "default" : "secondary"}
-                                  className="capitalize shrink-0"
-                                >
-                                  {lab.status}
-                                </Badge>
-                              </div>
-                              {lab.attachments.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5 mt-2">
-                                  {lab.attachments.map((f) => (
-                                    <Badge key={f} variant="outline" className="gap-1 text-xs">
-                                      <FileText className="h-3 w-3" />
-                                      {f}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              )}
-                              {lab.status === "completed" && (
-                                <Button size="sm" variant="outline" className="h-7 text-xs mt-2">
-                                  <Eye className="h-3 w-3" /> View Results
-                                </Button>
-                              )}
-                            </div>
-                          ))}
+                      {displayConsultation.vital_signs.weight && (
+                        <div className="p-2 rounded-lg bg-muted/30">
+                          <span className="text-muted-foreground">Weight:</span> {displayConsultation.vital_signs.weight} kg
                         </div>
                       )}
-                    </AccordionContent>
-                  </AccordionItem>
+                    </div>
+                  </div>
+                )}
 
-                  {selected.attachments && selected.attachments.length > 0 && (
-                    <AccordionItem value="files" className="border rounded-lg px-3">
-                      <AccordionTrigger className="hover:no-underline">
-                        <span className="flex items-center gap-2 text-sm font-medium">
-                          <FileText className="h-4 w-4 text-primary" />
-                          Attachments
-                          <Badge variant="secondary" className="ml-1">
-                            {selected.attachments.length}
-                          </Badge>
-                        </span>
-                      </AccordionTrigger>
-                      <AccordionContent className="pb-3">
-                        <div className="flex flex-wrap gap-2">
-                          {selected.attachments.map((f) => (
-                            <Badge key={f} variant="secondary" className="gap-1">
-                              <FileText className="h-3 w-3" />
-                              {f}
-                            </Badge>
-                          ))}
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Reason for Visit</p>
+                  <p className="text-sm bg-muted/40 p-3 rounded-lg">{displayConsultation.reason || "No reason provided"}</p>
+                </div>
+
+                {displayConsultation.diagnosis && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Diagnosis</p>
+                    <p className="text-sm bg-muted/40 p-3 rounded-lg">{displayConsultation.diagnosis}</p>
+                  </div>
+                )}
+
+                {displayConsultation.prescription && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Prescription</p>
+                    <p className="text-sm bg-muted/40 p-3 rounded-lg whitespace-pre-wrap">{displayConsultation.prescription}</p>
+                  </div>
+                )}
+
+                {displayConsultation.notes && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Doctor's Notes</p>
+                    <p className="text-sm bg-muted/40 p-3 rounded-lg">{displayConsultation.notes}</p>
+                  </div>
+                )}
+
+                {displayConsultation.follow_up_advice && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Follow-up Advice</p>
+                    <p className="text-sm bg-muted/40 p-3 rounded-lg">{displayConsultation.follow_up_advice}</p>
+                  </div>
+                )}
+
+                <div className="pt-4 border-t">
+                  <Button 
+                    className="w-full"
+                    onClick={() => downloadSummary(displayConsultation.uuid, displayConsultation.doctor?.name || "Consultation")}
+                    disabled={downloading === displayConsultation.uuid}
+                  >
+                    {downloading === displayConsultation.uuid ? (
+                      <>
+                        <div className="relative w-4 h-4 mr-2">
+                          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-teal-500 opacity-20 blur-sm animate-pulse"></div>
+                          <div className="relative animate-bounce">
+                            <img src={desolmedLogo} alt="" className="w-4 h-4 object-contain" />
+                          </div>
                         </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  )}
-                </Accordion>
-
-                <div className="flex flex-col gap-2 pt-2">
-                  {selected.mode === "Video" && selected.status !== "completed" && (
-                    <Button className="w-full">
-                      <Video className="h-4 w-4" /> Join Consultation
-                    </Button>
-                  )}
-                  <Button variant="outline" className="w-full">
-                    <Download className="h-4 w-4" /> Download Summary
+                        Downloading Summary...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4 mr-2" />
+                        Download Consultation Summary (PDF)
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
@@ -560,4 +609,4 @@ const ConsultationHistory = () => {
   );
 };
 
-export default ConsultationHistory;
+export default Consultations;
