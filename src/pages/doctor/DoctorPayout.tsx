@@ -8,13 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose, DialogFooter } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label"; // ADD THIS IMPORT
-import { Input } from "@/components/ui/input"; // ADD THIS IMPORT
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // ADD THIS IMPORT
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   DollarSign, Wallet, TrendingUp, Calendar, Download, 
   Eye, CheckCircle, Clock, AlertCircle, ArrowUpRight,
-  FileText, CreditCard, PiggyBank, User, Users, Send
+  FileText, CreditCard, PiggyBank, User, Users, Send,
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
@@ -41,15 +42,29 @@ const mockPayoutHistory = [
   { id: "PAY004", date: "2026-03-10", amount: 26520, status: "Completed", method: "Bank Transfer", reference: "DES-2026-03-10-004" },
 ];
 
-// Mock transaction history
-const mockTransactions = [
-  { id: "TXN001", type: "Consultation", patient: "Adaobi Okeke", amount: 150, date: "2026-06-17", status: "Completed" },
-  { id: "TXN002", type: "Consultation", patient: "Tunde Bakare", amount: 200, date: "2026-06-16", status: "Completed" },
-  { id: "TXN003", type: "Referral Commission", patient: "Ngozi Eze", amount: 85, date: "2026-06-15", status: "Pending" },
-  { id: "TXN004", type: "Consultation", patient: "Yusuf Lawal", amount: 150, date: "2026-06-14", status: "Completed" },
-  { id: "TXN005", type: "Consultation", patient: "Blessing Okafor", amount: 200, date: "2026-06-13", status: "Pending" },
-  { id: "TXN006", type: "Referral Commission", patient: "Samuel Idris", amount: 75, date: "2026-06-12", status: "Completed" },
-];
+// Generate more mock transactions for pagination demo
+const generateMockTransactions = () => {
+  const types = ["Consultation", "Referral Commission", "Lab Test", "Prescription"];
+  const patients = ["Adaobi Okeke", "Tunde Bakare", "Ngozi Eze", "Yusuf Lawal", "Blessing Okafor", "Samuel Idris", "Grace Okafor", "Michael Eze", "Sarah Idris", "David Okafor"];
+  const statuses = ["Completed", "Pending", "Processing"];
+  
+  const transactions = [];
+  for (let i = 1; i <= 45; i++) {
+    const date = new Date(2026, 5, Math.floor(Math.random() * 30) + 1);
+    transactions.push({
+      id: `TXN${String(i).padStart(3, '0')}`,
+      type: types[Math.floor(Math.random() * types.length)],
+      patient: patients[Math.floor(Math.random() * patients.length)],
+      amount: Math.floor(Math.random() * 500) + 50,
+      date: date.toISOString().split('T')[0],
+      status: statuses[Math.floor(Math.random() * statuses.length)],
+    });
+  }
+  // Sort by date descending
+  return transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+};
+
+const mockTransactions = generateMockTransactions();
 
 // Mock referral history
 const mockReferrals = [
@@ -59,19 +74,38 @@ const mockReferrals = [
   { id: "REF004", doctor: "Dr. Kunle Olawale", patient: "David Okafor", date: "2026-05-28", status: "Completed", commission: 75 },
 ];
 
-// Mock payout request history
-const mockPayoutRequests = [
-  { id: "REQ001", date: "2026-06-20", amount: 10000, status: "Pending", method: "Bank Transfer" },
-  { id: "REQ002", date: "2026-06-15", amount: 15000, status: "Approved", method: "Bank Transfer" },
-  { id: "REQ003", date: "2026-06-05", amount: 5000, status: "Processing", method: "Bank Transfer" },
-];
-
 const DoctorPayout = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedTransaction, setSelectedTransaction] = useState<typeof mockTransactions[0] | null>(null);
   const [showTransactionDetail, setShowTransactionDetail] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState("");
   const [showPayoutDialog, setShowPayoutDialog] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [transactionFilter, setTransactionFilter] = useState("all");
+
+  // Get current transactions for pagination
+  const getFilteredTransactions = () => {
+    if (transactionFilter === "all") {
+      return mockTransactions;
+    }
+    return mockTransactions.filter(tx => tx.status.toLowerCase() === transactionFilter.toLowerCase());
+  };
+
+  const filteredTransactions = getFilteredTransactions();
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, filteredTransactions.length);
+  const currentTransactions = filteredTransactions.slice(startIndex, endIndex);
+
+  // Pagination handlers
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch(status.toLowerCase()) {
@@ -276,14 +310,49 @@ const DoctorPayout = () => {
           </Card>
         </TabsContent>
 
-        {/* Transactions Tab */}
+        {/* Transactions Tab with Pagination */}
         <TabsContent value="transactions" className="space-y-4">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <p className="text-sm text-muted-foreground">All your transactions</p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-sm text-muted-foreground">
+                Showing {startIndex + 1}-{endIndex} of {filteredTransactions.length} transactions
+              </p>
+              <Select 
+                value={itemsPerPage.toString()} 
+                onValueChange={(value) => {
+                  setItemsPerPage(parseInt(value));
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="w-[120px] h-8 text-xs">
+                  <SelectValue placeholder="10 per page" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5 per page</SelectItem>
+                  <SelectItem value="10">10 per page</SelectItem>
+                  <SelectItem value="20">20 per page</SelectItem>
+                  <SelectItem value="50">50 per page</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select 
+                value={transactionFilter} 
+                onValueChange={(value) => {
+                  setTransactionFilter(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="w-[140px] h-8 text-xs">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="processing">Processing</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => toast({ title: "Filter applied" })}>
-                <FileText className="h-4 w-4 mr-2" /> Filter
-              </Button>
               <Button variant="outline" size="sm" onClick={() => toast({ title: "Report generated", description: "Transaction report downloaded." })}>
                 <Download className="h-4 w-4 mr-2" /> Export
               </Button>
@@ -304,32 +373,118 @@ const DoctorPayout = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockTransactions.map((tx) => (
-                    <TableRow key={tx.id} className="hover:bg-muted/20">
-                      <TableCell className="text-sm">{tx.type}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{tx.patient}</TableCell>
-                      <TableCell className="text-sm text-right font-medium">₦{tx.amount.toLocaleString()}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{tx.date}</TableCell>
-                      <TableCell className="text-center">{getStatusBadge(tx.status)}</TableCell>
-                      <TableCell className="text-center">
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-8 w-8 p-0"
-                          onClick={() => {
-                            setSelectedTransaction(tx);
-                            setShowTransactionDetail(true);
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                  {currentTransactions.length > 0 ? (
+                    currentTransactions.map((tx) => (
+                      <TableRow key={tx.id} className="hover:bg-muted/20">
+                        <TableCell className="text-sm">{tx.type}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{tx.patient}</TableCell>
+                        <TableCell className="text-sm text-right font-medium">₦{tx.amount.toLocaleString()}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{tx.date}</TableCell>
+                        <TableCell className="text-center">{getStatusBadge(tx.status)}</TableCell>
+                        <TableCell className="text-center">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-8 w-8 p-0"
+                            onClick={() => {
+                              setSelectedTransaction(tx);
+                              setShowTransactionDetail(true);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        No transactions found
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
+
+          {/* Pagination Controls */}
+          {filteredTransactions.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </p>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => goToPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronsLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                {/* Page numbers */}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        className="h-8 w-8 p-0 text-xs"
+                        onClick={() => goToPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => goToPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronsRight className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Total: {filteredTransactions.length} transactions</span>
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         {/* Referrals Tab */}
