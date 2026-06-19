@@ -23,7 +23,8 @@ import {
   PlusCircle,
   CalendarCheck,
   Building2,
-  ShieldCheck, // Add this for Coverage Requests icon
+  ShieldCheck,
+  Wallet, // Add this for Payment icon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,7 +40,8 @@ const items = [
   { to: "/dashboard/users", label: "Users", icon: Users },
   { to: "/dashboard/patients", label: "Patients", icon: HeartPulse },
   { to: "/dashboard/doctors", label: "Doctors", icon: Stethoscope },
-  { to: "/dashboard/coverage-requests", label: "Coverage Requests", icon: ShieldCheck }, // NEW MENU ITEM
+  { to: "/dashboard/coverage-requests", label: "Coverage Requests", icon: ShieldCheck },
+  { to: "/dashboard/payments", label: "Admin Payment", icon: Wallet }, // NEW MENU ITEM
   { to: "/dashboard/contacts", label: "Contact Messages", icon: MessageSquare },
   { to: "/dashboard/blog", label: "Health Adverts", icon: Megaphone },
   { to: "/dashboard/news", label: "News", icon: Newspaper },

@@ -1,4 +1,4 @@
-import { LayoutDashboard, CalendarClock, Stethoscope, Users, Pill, FlaskConical, Send, Settings as SettingsIcon, ClipboardList } from "lucide-react";
+import { LayoutDashboard, CalendarClock, Stethoscope, Users, Pill, FlaskConical, Send, Settings as SettingsIcon, ClipboardList, DollarSign } from "lucide-react";
 import type { PortalNavItem } from "@/components/portal/PortalLayout";
 
 export const doctorNav: PortalNavItem[] = [
@@ -10,5 +10,6 @@ export const doctorNav: PortalNavItem[] = [
   // { title: "Prescriptions", url: "/doctor/prescriptions", icon: Pill },
   // { title: "Investigations", url: "/doctor/investigations", icon: FlaskConical },
   { title: "Referrals", url: "/doctor/referrals", icon: Send },
+  { title: "Payout & Earnings", url: "/doctor/payout", icon: DollarSign }, // NEW
   { title: "Settings", url: "/doctor/settings", icon: SettingsIcon },
 ];

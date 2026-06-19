@@ -53,7 +53,8 @@ const DashSubscribers = lazy(() => import("./pages/dashboard/Subscribers.tsx"));
 const DashSubscriberCreate = lazy(() => import("./pages/dashboard/CreateSubscriptionPage.tsx"));
 const DashAppointments = lazy(() => import("./pages/dashboard/Appointments.tsx"));
 const HmoProviders = lazy(() => import("./pages/dashboard/HMOProviders.tsx"));
-const CoverageRequests = lazy(() => import("./pages/dashboard/CoverageRequests.tsx")); // NEW IMPORT
+const CoverageRequests = lazy(() => import("./pages/dashboard/CoverageRequests.tsx"));
+const AdminPaymentDashboard = lazy(() => import("./pages/dashboard/AdminPaymentDashboard.tsx"));
 const PatientDashboard = lazy(() => import("./pages/patient/Dashboard.tsx"));
 const PatientAppointments = lazy(() => import("./pages/patient/Appointments.tsx"));
 const PatientConsultations = lazy(() => import("./pages/patient/ConsultationHistory.tsx"));
@@ -71,6 +72,7 @@ const DoctorInvestigations = lazy(() => import("./pages/doctor/Misc.tsx").then((
 const DoctorReferrals = lazy(() => import("./pages/doctor/Misc.tsx").then((module) => ({ default: module.DoctorReferrals })));
 const DoctorSettings = lazy(() => import("./pages/doctor/Misc.tsx").then((module) => ({ default: module.DoctorSettings })));
 const DoctorClinical = lazy(() => import("./pages/doctor/Clinical.tsx"));
+const DoctorPayout = lazy(() => import("./pages/doctor/DoctorPayout.tsx")); // NEW IMPORT
 const OrgDashboard = lazy(() => import("./pages/organization/Dashboard.tsx"));
 const OrgStaff = lazy(() => import("./pages/organization/Staff.tsx"));
 const OrgUsage = lazy(() => import("./pages/organization/Usage.tsx"));
@@ -278,7 +280,8 @@ const App = () => {
                 <Route path="/dashboard/create-subscriber-page" element={<AdminGuard><DashSubscriberCreate /></AdminGuard>} />
                 <Route path="/dashboard/appointments" element={<AdminGuard><DashAppointments /></AdminGuard>} />
                 <Route path="/dashboard/hmo-providers" element={<AdminGuard><HmoProviders /></AdminGuard>} />
-                <Route path="/dashboard/coverage-requests" element={<AdminGuard><CoverageRequests /></AdminGuard>} /> {/* NEW ROUTE */}
+                <Route path="/dashboard/coverage-requests" element={<AdminGuard><CoverageRequests /></AdminGuard>} />
+                <Route path="/dashboard/payments" element={<AdminGuard><AdminPaymentDashboard /></AdminGuard>} />
                 <Route path="/dashboard/notifications" element={<AdminGuard><DashNotifications /></AdminGuard>} />
                 <Route path="/patient" element={<PatientGuard><PatientDashboard /></PatientGuard>} />
                 <Route path="/patient/appointments" element={<PatientGuard><PatientAppointments /></PatientGuard>} />
@@ -296,6 +299,7 @@ const App = () => {
                 <Route path="/doctor/prescriptions" element={<DoctorPrescriptions />} />
                 <Route path="/doctor/investigations" element={<DoctorInvestigations />} />
                 <Route path="/doctor/referrals" element={<DoctorReferrals />} />
+                <Route path="/doctor/payout" element={<DoctorPayout />} /> {/* NEW ROUTE */}
                 <Route path="/doctor/settings" element={<DoctorSettings />} />
                 <Route path="/organization" element={<OrgDashboard />} />
                 <Route path="/organization/staff" element={<OrgStaff />} />
