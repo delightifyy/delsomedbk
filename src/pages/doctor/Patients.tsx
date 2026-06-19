@@ -112,7 +112,6 @@ const Patients = () => {
   
   const filtered = doctorMock.patients.filter((p) => 
     p.name.toLowerCase().includes(q.toLowerCase()) || 
-    p.condition.toLowerCase().includes(q.toLowerCase()) ||
     p.id.toLowerCase().includes(q.toLowerCase())
   );
 
@@ -142,7 +141,7 @@ const Patients = () => {
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
-            placeholder="Search by name, condition, or ID..." 
+            placeholder="Search by name or ID..." 
             className="pl-9 max-w-md" 
             value={q} 
             onChange={(e) => setQ(e.target.value)} 
@@ -156,7 +155,6 @@ const Patients = () => {
                 <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Name</TableHead>
                 <TableHead className="hidden sm:table-cell font-semibold text-xs uppercase tracking-wider text-muted-foreground">Age/Sex</TableHead>
                 <TableHead className="hidden md:table-cell font-semibold text-xs uppercase tracking-wider text-muted-foreground">Last Visit</TableHead>
-                <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Condition</TableHead>
                 <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground text-center">Records</TableHead>
                 <TableHead className="text-center font-semibold text-xs uppercase tracking-wider text-muted-foreground">Action</TableHead>
               </TableRow>
@@ -166,11 +164,10 @@ const Patients = () => {
                 const record = getPatientRecordByName(p.name);
                 const totalRecords = (record.prescriptions?.length || 0) + (record.clinicalNotes?.length || 0);
                 return (
-                  <TableRow key={p.id} className="cursor-pointer hover:bg-muted/40 transition-colors" onClick={() => setSelectedPatient(p)}>
+                  <TableRow key={p.id} className="hover:bg-muted/40 transition-colors">
                     <TableCell className="font-medium">{p.name}</TableCell>
                     <TableCell className="hidden sm:table-cell text-muted-foreground">{p.age} / {p.gender}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">{p.lastVisit}</TableCell>
-                    <TableCell><Badge variant="outline">{p.condition}</Badge></TableCell>
                     <TableCell className="text-center">
                       <Badge variant="secondary" className="text-xs">
                         {totalRecords} record{totalRecords !== 1 ? 's' : ''}
@@ -178,10 +175,12 @@ const Patients = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-center">
-                        <Button size="sm" variant="ghost" className="text-xs" onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedPatient(p);
-                        }}>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="text-xs hover:bg-primary/10 hover:text-primary"
+                          onClick={() => setSelectedPatient(p)}
+                        >
                           View
                         </Button>
                       </div>
@@ -248,9 +247,6 @@ const Patients = () => {
                       <span className="text-muted-foreground">Last Visit: {selectedPatient.lastVisit}</span>
                     </div>
                   </div>
-                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-3 py-1">
-                    {selectedPatient.condition}
-                  </Badge>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4 pt-3 border-t border-primary/10">
                   <div className="flex items-center gap-2 text-sm">
