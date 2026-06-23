@@ -59,23 +59,251 @@ const mockDoctorData = {
   signature: "Dr. C. Okafor"
 };
 
-// Drug categories with sub-drugs
+// Comprehensive drug categories with dosage forms and routes
 const drugCategories = {
-  "Antibiotics": ["Amoxicillin 500mg", "Azithromycin 250mg", "Ciprofloxacin 500mg", "Doxycycline 100mg", "Metronidazole 400mg", "Cloxacillin 500mg", "Ceftriaxone 1g"],
-  "Antihypertensives": ["Lisinopril 10mg", "Amlodipine 5mg", "Losartan 50mg", "Hydrochlorothiazide 25mg", "Metoprolol 25mg", "Enalapril 5mg", "Nifedipine 30mg"],
-  "Antidiabetics": ["Metformin 500mg", "Gliclazide 80mg", "Insulin Regular", "Insulin NPH", "Glimepiride 2mg", "Pioglitazone 15mg"],
-  "Bronchodilators": ["Salbutamol 100mcg", "Budesonide 200mcg", "Formoterol 12mcg", "Ipratropium 40mcg"],
-  "PPI & Antacids": ["Omeprazole 20mg", "Pantoprazole 40mg", "Esomeprazole 40mg", "Ranitidine 150mg", "Aluminum Hydroxide"],
-  "Antidepressants": ["Sertraline 50mg", "Fluoxetine 20mg", "Citalopram 20mg", "Escitalopram 10mg", "Amitriptyline 25mg"],
-  "Antianxiety": ["Diazepam 5mg", "Alprazolam 0.5mg", "Lorazepam 1mg", "Clonazepam 0.5mg"],
-  "Analgesics": ["Tramadol 50mg", "Ibuprofen 400mg", "Paracetamol 500mg", "Diclofenac 50mg", "Naproxen 250mg", "Morphine 10mg"],
-  "Statins": ["Atorvastatin 20mg", "Rosuvastatin 10mg", "Simvastatin 20mg"],
-  "Anticoagulants": ["Warfarin 5mg", "Apixaban 2.5mg", "Rivaroxaban 15mg", "Heparin"],
-  "Antifungals": ["Fluconazole 150mg", "Itraconazole 100mg", "Clotrimazole", "Miconazole"],
-  "Antivirals": ["Acyclovir 400mg", "Valacyclovir 500mg", "Oseltamivir 75mg"],
-  "Steroids": ["Prednisone 40mg", "Dexamethasone 4mg", "Hydrocortisone", "Beclomethasone"],
-  "Vitamins & Supplements": ["Vitamin D 1000IU", "Vitamin C 500mg", "Vitamin B12", "Iron 65mg", "Calcium 500mg", "Multivitamin"]
+  "Analgesics & Antipyretics": [
+    "Paracetamol", "Aspirin", "Ibuprofen", "Diclofenac", "Naproxen", "Mefenamic Acid",
+    "Ketorolac", "Piroxicam", "Celecoxib", "Etoricoxib", "Indomethacin", "Tramadol",
+    "Morphine", "Codeine", "Pethidine", "Fentanyl", "Buprenorphine", "Nalbuphine",
+    "Pentazocine"
+  ],
+  "NSAIDs": [
+    "Ibuprofen", "Diclofenac", "Naproxen", "Mefenamic Acid", "Ketorolac", "Piroxicam",
+    "Celecoxib", "Etoricoxib", "Indomethacin", "Meloxicam", "Aceclofenac", "Nimesulide"
+  ],
+  "Opioid Analgesics": [
+    "Tramadol", "Morphine", "Codeine", "Pethidine", "Fentanyl", "Buprenorphine",
+    "Nalbuphine", "Pentazocine", "Oxycodone", "Hydrocodone", "Methadone"
+  ],
+  "Anaesthetics": [
+    "Lidocaine", "Bupivacaine", "Prilocaine", "Tetracaine", "Benzocaine", "Procaine",
+    "Ropivacaine", "Levobupivacaine", "Articaine"
+  ],
+  "Antibacterials": [
+    "Amoxicillin", "Amoxicillin-Clavulanate", "Ampicillin", "Cloxacillin", "Flucloxacillin",
+    "Piperacillin-Tazobactam", "Cefalexin", "Cefuroxime", "Ceftriaxone", "Cefotaxime",
+    "Ceftazidime", "Cefepime", "Cefixime", "Ceftriaxone", "Meropenem", "Imipenem",
+    "Ertapenem", "Gentamicin", "Amikacin", "Tobramycin", "Ciprofloxacin", "Levofloxacin",
+    "Moxifloxacin", "Ofloxacin", "Azithromycin", "Clarithromycin", "Erythromycin",
+    "Doxycycline", "Minocycline", "Tetracycline", "Clindamycin", "Metronidazole",
+    "Vancomycin", "Teicoplanin", "Linezolid", "Rifampicin", "Fusidic Acid", "Cotrimoxazole",
+    "Nitrofurantoin", "Fosfomycin", "Chloramphenicol", "Colistin", "Polymyxin B"
+  ],
+  "Antituberculosis Medicines": [
+    "Rifampicin", "Isoniazid", "Pyrazinamide", "Ethambutol", "Streptomycin",
+    "Rifabutin", "Rifapentine", "Moxifloxacin", "Levofloxacin", "Bedaquiline",
+    "Delamanid", "Pretomanid", "Linezolid", "Clofazimine"
+  ],
+  "Antifungals": [
+    "Fluconazole", "Itraconazole", "Voriconazole", "Posaconazole", "Caspofungin",
+    "Micafungin", "Anidulafungin", "Amphotericin B", "Nystatin", "Clotrimazole",
+    "Miconazole", "Ketoconazole", "Terbinafine", "Griseofulvin", "Echinocandins"
+  ],
+  "Antivirals & Antiretrovirals": [
+    "Acyclovir", "Valacyclovir", "Famciclovir", "Ganciclovir", "Oseltamivir",
+    "Zanamivir", "Remdesivir", "Ribavirin", "Tenofovir", "Emtricitabine", "Lamivudine",
+    "Zidovudine", "Abacavir", "Dolutegravir", "Raltegravir", "Efavirenz", "Nevirapine",
+    "Ritonavir", "Lopinavir", "Darunavir", "Atazanavir", "Entecavir", "Sofosbuvir",
+    "Daclatasvir", "Velpatasvir", "Glecaprevir", "Pibrentasvir"
+  ],
+  "Antiparasitics & Antimalarials": [
+    "Artemether-Lumefantrine", "Artemisinin", "Artesunate", "Dihydroartemisinin",
+    "Chloroquine", "Hydroxychloroquine", "Quinine", "Mefloquine", "Primaquine",
+    "Proguanil", "Doxycycline", "Atovaquone", "Piperaquine", "Praziquantel", "Albendazole",
+    "Mebendazole", "Ivermectin", "Diethylcarbamazine", "Metronidazole", "Tinidazole",
+    "Nitazoxanide", "Sulfadoxine-Pyrimethamine"
+  ],
+  "Cardiovascular Medicines": [
+    "Lisinopril", "Enalapril", "Ramipril", "Perindopril", "Losartan", "Valsartan",
+    "Candesartan", "Irbesartan", "Amlodipine", "Nifedipine", "Felodipine", "Diltiazem",
+    "Verapamil", "Metoprolol", "Atenolol", "Bisoprolol", "Carvedilol", "Propranolol",
+    "Furosemide", "Hydrochlorothiazide", "Spironolactone", "Bumetanide", "Torasemide",
+    "Digoxin", "Dobutamine", "Dopamine", "Noradrenaline", "Adrenaline", "Nitroglycerin",
+    "Isosorbide Dinitrate", "Molsidomine", "Hydralazine", "Prazosin", "Doxazosin",
+    "Clonidine", "Methyldopa", "Moxonidine", "Atorvastatin", "Rosuvastatin", "Simvastatin",
+    "Pravastatin", "Fenofibrate", "Gemfibrozil", "Ezetimibe", "Aspirin", "Clopidogrel",
+    "Ticagrelor", "Prasugrel", "Warfarin", "Apixaban", "Rivaroxaban", "Dabigatran",
+    "Edoxaban", "Heparin", "Enoxaparin", "Dalteparin", "Fondaparinux"
+  ],
+  "Anticoagulants & Haemostasis": [
+    "Warfarin", "Apixaban", "Rivaroxaban", "Dabigatran", "Edoxaban", "Heparin",
+    "Enoxaparin", "Dalteparin", "Fondaparinux", "Aspirin", "Clopidogrel", "Ticagrelor",
+    "Prasugrel", "Dipyridamole", "Cilostazol", "Tranexamic Acid", "Aminocaproic Acid",
+    "Vitamin K", "Protamine Sulfate", "Andexanet Alfa", "Idarucizumab"
+  ],
+  "Diabetes Medicines": [
+    "Metformin", "Gliclazide", "Glimepiride", "Glibenclamide", "Pioglitazone",
+    "Rosiglitazone", "Sitagliptin", "Vildagliptin", "Saxagliptin", "Linagliptin",
+    "Dapagliflozin", "Empagliflozin", "Canagliflozin", "Exenatide", "Liraglutide",
+    "Semaglutide", "Dulaglutide", "Insulin Regular", "Insulin NPH", "Insulin Glargine",
+    "Insulin Detemir", "Insulin Degludec", "Insulin Lispro", "Insulin Aspart",
+    "Insulin Glulisine", "Acarbose", "Miglitol", "Pramlintide"
+  ],
+  "Endocrine & Corticosteroids": [
+    "Prednisone", "Prednisolone", "Methylprednisolone", "Dexamethasone", "Betamethasone",
+    "Hydrocortisone", "Cortisone", "Fludrocortisone", "Levothyroxine", "Liothyronine",
+    "Carbimazole", "Propylthiouracil", "Methimazole", "Levothyroxine", "Desmopressin",
+    "Vasopressin", "Oxytocin", "Somatostatin", "Octreotide", "Lanreotide"
+  ],
+  "Respiratory Medicines": [
+    "Salbutamol", "Terbutaline", "Fenoterol", "Formoterol", "Salmeterol", "Indacaterol",
+    "Vilanterol", "Olodaterol", "Ipratropium", "Tiotropium", "Budesonide", "Fluticasone",
+    "Beclomethasone", "Mometasone", "Ciclesonide", "Theophylline", "Aminophylline",
+    "Montelukast", "Zafirlukast", "Zileuton", "Cromolyn", "Nedocromil", "Omalizumab",
+    "Mepolizumab", "Reslizumab", "Benralizumab", "Dupilumab", "Acetylcysteine",
+    "Carbocisteine", "Erdosteine", "Dornase Alfa"
+  ],
+  "Gastrointestinal Medicines": [
+    "Omeprazole", "Pantoprazole", "Esomeprazole", "Lansoprazole", "Rabeprazole",
+    "Ranitidine", "Famotidine", "Nizatidine", "Sucralfate", "Misoprostol", "Bismuth Subsalicylate",
+    "Metoclopramide", "Domperidone", "Ondansetron", "Granisetron", "Palonosetron",
+    "Loperamide", "Diphenoxylate", "Budesonide", "Mesalamine", "Sulfasalazine",
+    "Olmesartan", "Lactulose", "Polyethylene Glycol", "Senna", "Bisacodyl",
+    "Docusate Sodium", "Psyllium", "Alginic Acid", "Simethicone"
+  ],
+  "Neurology & Antiseizure Medicines": [
+    "Phenytoin", "Carbamazepine", "Oxcarbazepine", "Valproic Acid", "Sodium Valproate",
+    "Lamotrigine", "Levetiracetam", "Topiramate", "Gabapentin", "Pregabalin",
+    "Phenobarbital", "Primidone", "Ethosuximide", "Vigabatrin", "Tiagabine",
+    "Zonisamide", "Lacosamide", "Rufinamide", "Perampanel", "Brivaracetam",
+    "Levodopa", "Carbidopa", "Bromocriptine", "Pramipexole", "Ropinirole",
+    "Selegiline", "Entacapone", "Tolcapone", "Amantadine", "Rivastigmine",
+    "Donepezil", "Galantamine", "Memantine", "Tizanidine", "Baclofen", "Diazepam",
+    "Clonazepam", "Lorazepam", "Midazolam", "Chloral Hydrate", "Melatonin"
+  ],
+  "Psychiatry Medicines": [
+    "Sertraline", "Fluoxetine", "Paroxetine", "Citalopram", "Escitalopram",
+    "Fluvoxamine", "Vortioxetine", "Amitriptyline", "Nortriptyline", "Imipramine",
+    "Clomipramine", "Doxepin", "Mirtazapine", "Venlafaxine", "Duloxetine",
+    "Desvenlafaxine", "Bupropion", "Trazodone", "Reboxetine", "Moclobemide",
+    "Olanzapine", "Risperidone", "Quetiapine", "Aripiprazole", "Clozapine",
+    "Ziprasidone", "Paliperidone", "Lurasidone", "Haloperidol", "Chlorpromazine",
+    "Lithium", "Carbamazepine", "Valproic Acid", "Lamotrigine", "Diazepam",
+    "Alprazolam", "Clonazepam", "Lorazepam", "Oxazepam", "Buspirone",
+    "Zopiclone", "Zolpidem", "Eszopiclone", "Ramelteon", "Suvorexant"
+  ],
+  "Antihistamines & Allergy": [
+    "Cetirizine", "Loratadine", "Desloratadine", "Fexofenadine", "Levocetirizine",
+    "Bilastine", "Rupatadine", "Chlorpheniramine", "Promethazine", "Hydroxyzine",
+    "Cyproheptadine", "Diphenhydramine", "Doxylamine", "Adrenaline", "Ephedrine",
+    "Pseudoephedrine", "Cromolyn", "Montelukast", "Omalizumab", "Dupilumab"
+  ],
+  "Rheumatology & Immunology": [
+    "Prednisolone", "Methylprednisolone", "Dexamethasone", "Hydrocortisone",
+    "Methotrexate", "Azathioprine", "Mycophenolate Mofetil", "Cyclophosphamide",
+    "Cyclosporine", "Tacrolimus", "Leflunomide", "Sulfasalazine", "Hydroxychloroquine",
+    "Adalimumab", "Infliximab", "Etanercept", "Certolizumab", "Golimumab",
+    "Rituximab", "Tocilizumab", "Abatacept", "Anakinra", "Canakinumab",
+    "Ustekinumab", "Secukinumab", "Ixekizumab", "Brodalumab", "Guselkumab",
+    "Tofacitinib", "Baricitinib", "Upadacitinib", "Filgotinib", "Colchicine"
+  ],
+  "Oncology Medicines": [
+    "Cyclophosphamide", "Methotrexate", "Fluorouracil", "Doxorubicin", "Daunorubicin",
+    "Epirubicin", "Mitoxantrone", "Bleomycin", "Vincristine", "Vinblastine",
+    "Paclitaxel", "Docetaxel", "Carboplatin", "Cisplatin", "Oxaliplatin",
+    "Etoposide", "Teniposide", "Ifosfamide", "Mesna", "Gemcitabine", "Capecitabine",
+    "Temozolomide", "Imatinib", "Dasatinib", "Nilotinib", "Erlotinib", "Gefitinib",
+    "Osimertinib", "Crizotinib", "Alectinib", "Bevacizumab", "Trastuzumab",
+    "Rituximab", "Cetuximab", "Panitumumab", "Pembrolizumab", "Nivolumab",
+    "Ipilimumab", "Durvalumab", "Atezolizumab", "Lenalidomide", "Bortezomib",
+    "Thalidomide", "Tamoxifen", "Anastrozole", "Letrozole", "Exemestane",
+    "Leuprorelin", "Goserelin", "Flutamide", "Bicalutamide", "Abiraterone"
+  ],
+  "Obstetrics & Gynaecology": [
+    "Oxytocin", "Ergometrine", "Misoprostol", "Prostaglandin E2", "Dinoprostone",
+    "Mifepristone", "Medroxyprogesterone", "Norethisterone", "Levonorgestrel",
+    "Desogestrel", "Ethinylestradiol", "Drospirenone", "Clomiphene", "Letrozole",
+    "Gonadotropins", "FSH", "hCG", "GnRH Agonists", "Danazol", "Tranexamic Acid"
+  ],
+  "Urology Medicines": [
+    "Tamsulosin", "Alfuzosin", "Terazosin", "Doxazosin", "Finasteride",
+    "Dutasteride", "Solifenacin", "Darifenacin", "Oxybutynin", "Tolterodine",
+    "Trospium", "Fesoterodine", "Mirabegron", "Vibegron", "Sildenafil",
+    "Tadalafil", "Vardenafil", "Avanafil", "Desmopressin", "Potassium Citrate"
+  ],
+  "Ophthalmology Medicines": [
+    "Latanoprost", "Bimatoprost", "Travoprost", "Tafluprost", "Timolol",
+    "Betaxolol", "Dorzolamide", "Brinzolamide", "Brimonidine", "Apraclonidine",
+    "Pilocarpine", "Carbachol", "Atropine", "Cyclopentolate", "Tropicamide",
+    "Prednisolone", "Dexamethasone", "Fluorometholone", "Loteprednol", "Ciprofloxacin",
+    "Ofloxacin", "Gatifloxacin", "Moxifloxacin", "Gentamicin", "Tobramycin",
+    "Azithromycin", "Ceftazidime", "Vancomycin", "Acyclovir", "Ganciclovir"
+  ],
+  "Dermatology Medicines": [
+    "Hydrocortisone", "Betamethasone", "Clobetasol", "Mometasone", "Triamcinolone",
+    "Fluocinolone", "Clotrimazole", "Miconazole", "Terbinafine", "Ketoconazole",
+    "Econazole", "Sertaconazole", "Acyclovir", "Penciclovir", "Imiquimod",
+    "Podophyllotoxin", "Salicylic Acid", "Benzoyl Peroxide", "Adapalene",
+    "Tretinoin", "Isotretinoin", "Dapsone", "Azelaic Acid", "Calcipotriol",
+    "Tacrolimus", "Pimecrolimus", "Methotrexate", "Acitretin", "Capsaicin"
+  ],
+  "ENT Medicines": [
+    "Amoxicillin", "Amoxicillin-Clavulanate", "Cefuroxime", "Ceftriaxone",
+    "Azithromycin", "Clarithromycin", "Fluconazole", "Itraconazole", "Betamethasone",
+    "Dexamethasone", "Prednisolone", "Desloratadine", "Cetirizine", "Fexofenadine",
+    "Oxymetazoline", "Xylometazoline", "Fluticasone", "Mometasone", "Budesonide"
+  ],
+  "Fluids, Electrolytes & Nutrition": [
+    "Normal Saline (0.9% NaCl)", "Half Normal Saline (0.45% NaCl)", "Dextrose 5%",
+    "Dextrose 10%", "Dextrose 25%", "Dextrose 50%", "Ringer's Lactate",
+    "Hartmann's Solution", "Sodium Chloride 3%", "Sodium Chloride 7.5%",
+    "Potassium Chloride", "Sodium Bicarbonate", "Calcium Gluconate",
+    "Magnesium Sulfate", "Phosphate", "Multivitamin Infusion", "Trace Elements"
+  ],
+  "Vitamins, Minerals & Haematinics": [
+    "Vitamin B1 (Thiamine)", "Vitamin B2 (Riboflavin)", "Vitamin B3 (Niacin)",
+    "Vitamin B5 (Pantothenic Acid)", "Vitamin B6 (Pyridoxine)", "Vitamin B7 (Biotin)",
+    "Vitamin B9 (Folic Acid)", "Vitamin B12 (Cyanocobalamin)", "Vitamin C (Ascorbic Acid)",
+    "Vitamin A (Retinol)", "Vitamin D3 (Cholecalciferol)", "Vitamin E (Tocopherol)",
+    "Vitamin K1 (Phytomenadione)", "Iron Sulfate", "Iron Fumarate", "Iron Sucrose",
+    "Ferric Carboxymaltose", "Ferumoxytol", "Zinc Sulfate", "Zinc Acetate",
+    "Selenium", "Copper", "Manganese", "Chromium", "Iodine", "Molybdenum",
+    "Calcium Carbonate", "Calcium Citrate", "Calcium Gluconate", "Magnesium Oxide"
+  ],
+  "Emergency & Critical Care": [
+    "Adrenaline", "Noradrenaline", "Dopamine", "Dobutamine", "Vasopressin",
+    "Atropine", "Naloxone", "Flumazenil", "Glucagon", "Sodium Bicarbonate",
+    "Calcium Chloride", "Magnesium Sulfate", "Amiodarone", "Lidocaine",
+    "Adenosine", "Diltiazem", "Esmolol", "Nitroglycerin", "Nitroprusside",
+    "Mannitol", "Hypertonic Saline", "Dexamethasone", "Methylprednisolone"
+  ],
+  "Vaccines & Immunoglobulins": [
+    "Diphtheria-Tetanus-Pertussis (DTP)", "Tetanus Toxoid", "Tdap",
+    "Measles-Mumps-Rubella (MMR)", "Varicella", "Hepatitis B", "Hepatitis A",
+    "Human Papillomavirus (HPV)", "Pneumococcal Conjugate", "Pneumococcal Polysaccharide",
+    "Influenza", "COVID-19", "Meningococcal", "BCG", "Rotavirus", "Polio (IPV/OPV)",
+    "Rabies", "Yellow Fever", "Cholera", "Typhoid", "Human Rabies Immunoglobulin",
+    "Tetanus Immunoglobulin", "Varicella-Zoster Immunoglobulin", "Hepatitis B Immunoglobulin"
+  ]
 };
+
+// Dosage forms
+const dosageForms = [
+  "Tablet", "Capsule", "Caplet", "Suspension", "Syrup", "Elixir", "Drops",
+  "Injection (IV)", "Injection (IM)", "Injection (SC)", "Infusion",
+  "Ointment", "Cream", "Lotion", "Gel", "Topical Solution", "Patch",
+  "Inhalation", "Inhaler", "Nebuliser Solution", "Aerosol",
+  "Eye Drops", "Ear Drops", "Nasal Drops", "Nasal Spray",
+  "Suppository", "Enema", "Vaginal Tablet", "Vaginal Cream",
+  "Sublingual Tablet", "Buccal Tablet", "Chewable Tablet",
+  "Transdermal Patch", "Implant", "Intrauterine Device",
+  "Granules", "Powder", "Effervescent Tablet", "Dispersible Tablet"
+];
+
+// Routes of administration
+const routesOfAdministration = [
+  "Oral", "Intravenous (IV)", "Intramuscular (IM)", "Subcutaneous (SC)",
+  "IV/IM", "IV/IM/SC", "Inhalation", "Topical", "Ophthalmic", "Otic",
+  "Nasal", "Rectal", "Vaginal", "Sublingual", "Buccal", "Intradermal",
+  "Parenteral", "Epidural", "Intrathecal", "Intra-articular", "Intraosseous"
+];
+
+// Units
+const units = [
+  "mg", "g", "mcg", "µg", "mg/ml", "g/ml", "mcg/ml", "IU", "IU/ml",
+  "mmol/L", "mEq", "unit", "units/ml", "%", "mg/kg", "mcg/kg",
+  "mg/kg/day", "mcg/kg/min", "mg/kg/hr", "unit/kg"
+];
 
 const ConsultationRoom = () => {
   const { id } = useParams();
@@ -135,8 +363,28 @@ const ConsultationRoom = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedDrug, setSelectedDrug] = useState("");
   const [manualDrug, setManualDrug] = useState("");
-  const [meds, setMeds] = useState<{ id: string; name: string; dosage: string; frequency: string; duration: string; instructions: string; }[]>([
-    { id: crypto.randomUUID(), name: "", dosage: "", frequency: "", duration: "", instructions: "" },
+  const [meds, setMeds] = useState<{
+    id: string;
+    name: string;
+    dosageForm: string;
+    strength: string;
+    unit: string;
+    route: string;
+    frequency: string;
+    duration: string;
+    instructions: string;
+  }[]>([
+    {
+      id: crypto.randomUUID(),
+      name: "",
+      dosageForm: "",
+      strength: "",
+      unit: "",
+      route: "",
+      frequency: "",
+      duration: "",
+      instructions: ""
+    },
   ]);
   const [selectedPharmacy, setSelectedPharmacy] = useState("");
   const [refills, setRefills] = useState("0");
@@ -367,10 +615,30 @@ const ConsultationRoom = () => {
     const firstEmpty = meds.findIndex(m => !m.name);
     if (firstEmpty !== -1) {
       const updated = [...meds];
-      updated[firstEmpty] = { ...updated[firstEmpty], name: drugName };
+      updated[firstEmpty] = {
+        ...updated[firstEmpty],
+        name: drugName,
+        dosageForm: "",
+        strength: "",
+        unit: "",
+        route: "",
+        frequency: "",
+        duration: "",
+        instructions: ""
+      };
       setMeds(updated);
     } else {
-      setMeds([...meds, { id: crypto.randomUUID(), name: drugName, dosage: "", frequency: "", duration: "", instructions: "" }]);
+      setMeds([...meds, {
+        id: crypto.randomUUID(),
+        name: drugName,
+        dosageForm: "",
+        strength: "",
+        unit: "",
+        route: "",
+        frequency: "",
+        duration: "",
+        instructions: ""
+      }]);
     }
     setSelectedDrug("");
     setSelectedCategory("");
@@ -749,7 +1017,7 @@ const ConsultationRoom = () => {
 
                 {/* Prescription - Meds */}
                 <TabsContent value="rx" className="space-y-4">
-                  {/* Patient & Doctor Info - Updated with Phone and Email */}
+                  {/* Patient & Doctor Info */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/5 rounded-lg border border-border/60">
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground">Patient Information</p>
@@ -858,15 +1126,75 @@ const ConsultationRoom = () => {
                           )}
                         </div>
                         <Input placeholder="Medication name" value={m.name} onChange={(e) => setMeds(meds.map(x => x.id === m.id ? { ...x, name: e.target.value } : x))} />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <Input placeholder="Dosage (e.g., 500mg)" value={m.dosage} onChange={(e) => setMeds(meds.map(x => x.id === m.id ? { ...x, dosage: e.target.value } : x))} />
-                          <Input placeholder="Frequency (e.g., 3x daily)" value={m.frequency} onChange={(e) => setMeds(meds.map(x => x.id === m.id ? { ...x, frequency: e.target.value } : x))} />
+                        
+                        {/* Dosage Form, Strength, Unit */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Dosage Form</Label>
+                            <Select value={m.dosageForm} onValueChange={(val) => setMeds(meds.map(x => x.id === m.id ? { ...x, dosageForm: val } : x))}>
+                              <SelectTrigger className="h-9 text-xs">
+                                <SelectValue placeholder="Form" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {dosageForms.map((form) => (
+                                  <SelectItem key={form} value={form}>{form}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Strength</Label>
+                            <Input placeholder="e.g., 500, 10" value={m.strength} onChange={(e) => setMeds(meds.map(x => x.id === m.id ? { ...x, strength: e.target.value } : x))} className="h-9 text-xs" />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Unit</Label>
+                            <Select value={m.unit} onValueChange={(val) => setMeds(meds.map(x => x.id === m.id ? { ...x, unit: val } : x))}>
+                              <SelectTrigger className="h-9 text-xs">
+                                <SelectValue placeholder="Unit" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {units.map((unit) => (
+                                  <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
-                        <Input placeholder="Duration (e.g., 7 days)" value={m.duration} onChange={(e) => setMeds(meds.map(x => x.id === m.id ? { ...x, duration: e.target.value } : x))} />
+
+                        {/* Route */}
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">Route of Administration</Label>
+                          <Select value={m.route} onValueChange={(val) => setMeds(meds.map(x => x.id === m.id ? { ...x, route: val } : x))}>
+                            <SelectTrigger className="h-9 text-xs">
+                              <SelectValue placeholder="Select route..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {routesOfAdministration.map((route) => (
+                                <SelectItem key={route} value={route}>{route}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Frequency and Duration */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <Input placeholder="Frequency (e.g., 3x daily)" value={m.frequency} onChange={(e) => setMeds(meds.map(x => x.id === m.id ? { ...x, frequency: e.target.value } : x))} />
+                          <Input placeholder="Duration (e.g., 7 days)" value={m.duration} onChange={(e) => setMeds(meds.map(x => x.id === m.id ? { ...x, duration: e.target.value } : x))} />
+                        </div>
                         <Textarea rows={2} placeholder="Special instructions" value={m.instructions} onChange={(e) => setMeds(meds.map(x => x.id === m.id ? { ...x, instructions: e.target.value } : x))} />
                       </div>
                     ))}
-                    <Button size="sm" variant="outline" className="w-full" onClick={() => setMeds([...meds, { id: crypto.randomUUID(), name: "", dosage: "", frequency: "", duration: "", instructions: "" }])}>
+                    <Button size="sm" variant="outline" className="w-full" onClick={() => setMeds([...meds, {
+                      id: crypto.randomUUID(),
+                      name: "",
+                      dosageForm: "",
+                      strength: "",
+                      unit: "",
+                      route: "",
+                      frequency: "",
+                      duration: "",
+                      instructions: ""
+                    }])}>
                       <Plus className="h-3.5 w-3.5" /> Add another medication
                     </Button>
                   </div>
@@ -1010,11 +1338,6 @@ const ConsultationRoom = () => {
 
                     {/* SECTION 1: LABORATORY TESTS */}
                     <div className="border border-border/60 rounded-lg p-4 bg-primary/5">
-                      <p className="text-sm font-bold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
-                        <Microscope className="h-4 w-4" />
-                        SECTION 1: LABORATORY TESTS
-                      </p>
-
                       {/* Sample Sources */}
                       <div className="mb-4">
                         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Sample Source(s) (Select all that apply)</p>
@@ -1320,10 +1643,6 @@ const ConsultationRoom = () => {
 
                     {/* SECTION 2: DIAGNOSTIC IMAGING & PROCEDURES */}
                     <div className="border border-border/60 rounded-lg p-4 bg-primary/5">
-                      <p className="text-sm font-bold uppercase tracking-wider text-primary mb-3 flex items-center gap-2">
-                        <Scan className="h-4 w-4" />
-                        SECTION 2: DIAGNOSTIC IMAGING & PROCEDURES
-                      </p>
 
                       {/* X-Ray */}
                       <div className="mb-4">

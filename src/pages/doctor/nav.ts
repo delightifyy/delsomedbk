@@ -8,8 +8,8 @@ export const doctorNav: PortalNavItem[] = [
   // { title: "Clinical Notes", url: "/doctor/clinical", icon: ClipboardList },
   { title: "Patients", url: "/doctor/patients", icon: Users },
   // { title: "Prescriptions", url: "/doctor/prescriptions", icon: Pill },
-  // { title: "Investigations", url: "/doctor/investigations", icon: FlaskConical },
-  { title: "Referrals", url: "/doctor/referrals", icon: Send },
-  { title: "Payout & Earnings", url: "/doctor/payout", icon: DollarSign }, // NEW
+  { title: "Investigations", url: "/doctor/investigations", icon: FlaskConical },
+  // { title: "Referrals", url: "/doctor/referrals", icon: Send },
+  { title: "Payment History", url: "/doctor/payout", icon: DollarSign }, // NEW
   { title: "Settings", url: "/doctor/settings", icon: SettingsIcon },
 ];
