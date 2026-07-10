@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { api, ApiError, setStoredAuthToken } from "@/lib/api";
+import { api, ApiError, extractAuthPayload, setStoredAuthToken, setStoredAuthUser } from "@/lib/api";
+import { hasNonPatientRoleSignal, hasPatientAccess, normalizePatientAuthUser } from "@/lib/authRoles";
 
 const PatientLogin = () => {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ const PatientLogin = () => {
   }, [searchParams]);
 
   useEffect(() => {
-    if (!loading && user && !isAdmin) {
+    if (!loading && user && !isAdmin && hasPatientAccess(user)) {
       navigate(redirect, { replace: true });
     }
   }, [isAdmin, loading, navigate, redirect, user]);
@@ -39,8 +40,16 @@ const PatientLogin = () => {
         password 
       });
       
-      if (response.data?.token) {
-        setStoredAuthToken(response.data.token);
+      const payload = extractAuthPayload(response);
+      
+      if (payload.token) {
+        if (hasNonPatientRoleSignal(payload.user)) {
+          throw new Error("Please use a patient account to access the patient portal.");
+        }
+
+        const patientUser = normalizePatientAuthUser(payload.user, email.trim());
+        setStoredAuthToken(payload.token);
+        setStoredAuthUser(patientUser);
         
         await new Promise(resolve => setTimeout(resolve, 100));
         
@@ -143,7 +152,7 @@ const PatientLogin = () => {
 
             <div className="text-center">
               <Link
-                to="/forgot-password"
+                to={`/forgot-password?context=patient&return=${encodeURIComponent("/patient/login")}${email.trim() ? `&email=${encodeURIComponent(email.trim())}` : ""}`}
                 className="text-xs text-muted-foreground hover:text-primary transition-colors"
               >
                 Forgot password?

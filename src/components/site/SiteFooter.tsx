@@ -94,12 +94,12 @@ export const SiteFooter = () => {
             <li><Link to="/about" className="hover:text-foreground transition-colors">About DesolMed</Link></li>
             <li><Link to="/contact" className="hover:text-foreground transition-colors">Talk to our team</Link></li>
             <li>
-              <Link
+              {/* <Link
                 to={DOCTOR_PORTAL_PATH}
                 className="inline-flex items-center gap-1 text-primary font-semibold hover:text-secondary transition-colors"
               >
                 Doctor Website <ArrowRight className="h-3 w-3" />
-              </Link>
+              </Link> */}
             </li>
             {patientPortalLinks.map((portal) => (
               <li key={portal.to}>
@@ -141,7 +141,7 @@ export const SiteFooter = () => {
             </div>
             <div className="w-full md:w-auto">
               <ul className="flex flex-col md:flex-row items-center md:items-center justify-center md:justify-end gap-2 md:gap-x-5">
-                <li><Link to="/dashboard" className="hover:text-foreground transition-colors">Admin</Link></li>
+                <li><Link to="/auth" className="hover:text-foreground transition-colors">Admin</Link></li>
               </ul>
             </div>
           </div>

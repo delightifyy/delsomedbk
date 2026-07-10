@@ -40,8 +40,10 @@ const tokenStyles = `
 .ms-accent-terracotta { color: hsl(var(--mc-sage)); }
 `;
 
-const MediCareServices = () => {
-  const settings = useMediCareSettings();
+const MediCareServices = ({ doctorSlug }: { doctorSlug?: string } = {}) => {
+  const settings = useMediCareSettings(doctorSlug);
+  const basePath = doctorSlug ? "" : "/doctor-portal";
+  const activeHref = `${basePath}/services` || "/services";
   const [priceServices, setPriceServices] = useState<Service[]>([]);
   const [pricesLoading, setPricesLoading] = useState(true);
   const services = useMemo(
@@ -101,7 +103,7 @@ const MediCareServices = () => {
     <div className="medicare-services min-h-screen" style={themeStyle}>
       <style>{tokenStyles}</style>
 
-      <MedicareSimpleHeader settings={settings} activeHref="/doctor-portal/services" />
+      <MedicareSimpleHeader settings={settings} activeHref={activeHref} basePath={basePath} />
 
       <section className="mx-auto max-w-7xl px-4 sm:px-6 pt-14 pb-8">
         <h1 className="text-4xl sm:text-5xl lg:text-6xl text-[hsl(var(--mc-ink))]">
@@ -147,7 +149,7 @@ const MediCareServices = () => {
         )}
       </section>
 
-      <MedicareFooter settings={settings} />
+      <MedicareFooter settings={settings} basePath={basePath} />
     </div>
   );
 };

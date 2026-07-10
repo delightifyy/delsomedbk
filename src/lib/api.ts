@@ -32,6 +32,7 @@ export const API_FALLBACK_TO_LOCAL =
   (import.meta.env.VITE_API_FALLBACK_TO_LOCAL as string | undefined) === "true";
 
 const TOKEN_KEY = "carehub:api-token";
+const USER_KEY = "carehub:api-user";
 const SESSION_KEY = "carehub-local-session";
 const AUTH_EVENT = "carehub-auth-change";
 
@@ -49,19 +50,133 @@ export type PaginationMeta = {
   total: number;
 };
 
+const VALIDATION_MESSAGE_LIMIT = 8;
+const detailKeys = new Set(["message", "messages", "error", "errors", "detail", "details"]);
+const directDetailKeys = ["errors", "details", "messages", "error", "detail", "message"];
+const fieldKeys = new Set(["field", "attribute", "path", "param", "parameter", "name"]);
+
+const humanizeErrorField = (field: string) => {
+  const label = field
+    .replace(/\[(\d+)\]/g, ".$1")
+    .split(".")
+    .filter((part) => part && !/^\d+$/.test(part))
+    .map((part) => part.replace(/[_-]+/g, " "))
+    .join(" ")
+    .trim();
+
+  if (!label) return "";
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};
+
+const firstApiString = (...values: unknown[]) => {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+};
+
+const getDirectErrorDetail = (record: Record<string, unknown>) => {
+  for (const key of directDetailKeys) {
+    if (key in record) return record[key];
+  }
+  return undefined;
+};
+
+const collectApiErrorLines = (value: unknown, field?: string): string[] => {
+  const prefix = (message: string) => {
+    const clean = message.trim();
+    const label = field ? humanizeErrorField(field) : "";
+    return label && clean ? `${label}: ${clean}` : clean;
+  };
+
+  if (value === null || value === undefined || value === "") return [];
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return [prefix(String(value))].filter(Boolean);
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => collectApiErrorLines(item, field));
+  }
+  if (typeof value !== "object") return [];
+
+  const record = value as Record<string, unknown>;
+  const keys = Object.keys(record);
+  const explicitField = firstApiString(
+    record.field,
+    record.attribute,
+    record.path,
+    record.param,
+    record.parameter,
+    record.name,
+  );
+  const nextField = explicitField || field;
+  const directDetail = getDirectErrorDetail(record);
+  const onlyDirectDetail = keys.every((key) => detailKeys.has(key) || fieldKeys.has(key));
+
+  if (directDetail !== undefined && onlyDirectDetail) {
+    return collectApiErrorLines(directDetail, nextField);
+  }
+
+  return Object.entries(record).flatMap(([key, child]) => {
+    if (fieldKeys.has(key)) return [];
+    if (detailKeys.has(key)) return collectApiErrorLines(child, nextField);
+    return collectApiErrorLines(child, nextField ? `${nextField}.${key}` : key);
+  });
+};
+
+export const formatApiErrorDetails = (errors: unknown, limit = VALIDATION_MESSAGE_LIMIT) => {
+  const uniqueMessages = Array.from(
+    new Set(collectApiErrorLines(errors).map((line) => line.trim()).filter(Boolean)),
+  );
+  if (!uniqueMessages.length) return "";
+
+  const visible = uniqueMessages.slice(0, limit);
+  const remaining = uniqueMessages.length - visible.length;
+  return `${visible.join(" ")}${remaining > 0 ? ` ${remaining} more issue${remaining === 1 ? "" : "s"}.` : ""}`;
+};
+
+const composeApiErrorMessage = (message: string, errors?: unknown) => {
+  const base = message.trim();
+  const details = formatApiErrorDetails(errors);
+  if (!details) return base;
+
+  const lowerBase = base.toLowerCase();
+  const lowerDetails = details.toLowerCase();
+  if (lowerDetails.includes(lowerBase)) return details;
+  if (lowerBase.includes(lowerDetails)) return base;
+  if (/^(validation failed|the given data was invalid\.?|invalid data|unprocessable entity)$/i.test(base)) {
+    return details;
+  }
+
+  return `${base}: ${details}`;
+};
+
+export const getApiErrorMessage = (error: unknown, fallback = "Something went wrong.") => {
+  if (error instanceof ApiError) return error.message || fallback;
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+};
+
 export class ApiError extends Error {
   status: number;
   errors: unknown;
 
   constructor(message: string, status: number, errors?: unknown) {
-    super(message);
+    super(composeApiErrorMessage(message, errors));
     this.name = "ApiError";
     this.status = status;
     this.errors = errors;
   }
 }
 
-type QueryParams = Record<string, string | number | boolean | null | undefined>;
+export type QueryParams = Record<string, string | number | boolean | null | undefined>;
+
+export type AuthLoginPayload = {
+  token: string;
+  token_type?: string;
+  expires_in?: number;
+  user?: any;
+  roles?: string[];
+};
 
 type ApiRequestOptions = Omit<RequestInit, "body"> & {
   auth?: boolean;
@@ -82,11 +197,86 @@ export const setStoredAuthToken = (token: string | null) => {
 
 export const clearStoredAuthToken = () => setStoredAuthToken(null);
 
+export const getStoredAuthUser = <T = any>() => {
+  if (typeof window === "undefined") return null;
+  const raw = window.localStorage.getItem(USER_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+};
+
+export const setStoredAuthUser = (user: unknown | null) => {
+  if (typeof window === "undefined") return;
+  if (user) window.localStorage.setItem(USER_KEY, JSON.stringify(user));
+  else window.localStorage.removeItem(USER_KEY);
+};
+
 export const clearApiAuthState = () => {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(TOKEN_KEY);
+  window.localStorage.removeItem(USER_KEY);
   window.localStorage.removeItem(SESSION_KEY);
   window.dispatchEvent(new Event(AUTH_EVENT));
+};
+
+export const normalizeRoleList = (roles: unknown): string[] => {
+  const source = Array.isArray(roles) ? roles : roles ? [roles] : [];
+  return source
+    .map((role) => {
+      if (typeof role === "string") return role;
+      if (role && typeof role === "object") {
+        const record = role as Record<string, unknown>;
+        return String(record.name ?? record.role ?? record.slug ?? record.key ?? "");
+      }
+      return "";
+    })
+    .map((role) => role.trim().toLowerCase())
+    .filter(Boolean);
+};
+
+const firstString = (...values: unknown[]) => {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+};
+
+export const extractAuthPayload = (response: unknown): AuthLoginPayload => {
+  const root = response && typeof response === "object" ? response as Record<string, any> : {};
+  const data = root.data && typeof root.data === "object" ? root.data as Record<string, any> : {};
+  const authorization =
+    data.authorization && typeof data.authorization === "object"
+      ? data.authorization
+      : root.authorization && typeof root.authorization === "object"
+        ? root.authorization
+        : {};
+
+  const token = firstString(
+    data.token,
+    data.access_token,
+    data.plainTextToken,
+    data.plain_text_token,
+    authorization.token,
+    authorization.access_token,
+    root.token,
+    root.access_token,
+    root.plainTextToken,
+    root.plain_text_token,
+  );
+
+  const user = data.user ?? data.doctor ?? root.user ?? root.doctor ?? null;
+  const roles = normalizeRoleList(user?.roles ?? data.roles ?? root.roles);
+
+  return {
+    token,
+    token_type: firstString(data.token_type, authorization.token_type, root.token_type) || undefined,
+    expires_in: Number(data.expires_in ?? authorization.expires_in ?? root.expires_in) || undefined,
+    user,
+    roles,
+  };
 };
 
 const queryString = (query?: QueryParams) => {
@@ -295,27 +485,59 @@ export const api = {
   auth: {
     registerPatient: (body: Record<string, unknown>) =>
       apiRequest("/auth/patients/register", { method: "POST", body }),
+    
     patientLogin: (body: { email: string; password: string }) =>
       apiRequest<{ token: string; token_type: string; expires_in: number; user: any }>("/auth/patients/login", {
         method: "POST",
         body,
       }),
-    adminLogin: (body: { email: string; password: string }) =>
-      apiRequest<{ token: string; token_type: string; expires_in: number; user: any }>("/auth/admin/login", {
+
+    doctorOnboard: (body: { token: string; email: string; password: string; password_confirmation: string }) =>
+      apiRequest("/auth/doctors/onboard", {
         method: "POST",
         body,
       }),
-    forgotPassword: (email: string) => apiRequest("/auth/password/forgot", { method: "POST", body: { email } }),
+    
+    // Doctor Login endpoint
+    doctorLogin: (body: { email: string; password: string }) =>
+      apiRequest<AuthLoginPayload | { access_token?: string; user?: any }>("/auth/doctors/login", {
+        method: "POST",
+        body,
+      }),
+    
+    // Admin Login endpoint (for super_admin)
+    adminLogin: (body: { email: string; password: string }) =>
+      apiRequest<AuthLoginPayload | { access_token?: string; user?: any }>("/auth/admin/login", {
+        method: "POST",
+        body,
+      }),
+
+    doctorCmsLogin: (body: { email: string; password: string }) =>
+      apiRequest<AuthLoginPayload | { access_token?: string; user?: any }>("/auth/doctors/cms/login", {
+        method: "POST",
+        body,
+      }),
+    
+    forgotPassword: (email: string) => 
+      apiRequest("/auth/password/forgot", { method: "POST", body: { email } }),
+    
     resetPassword: (body: Record<string, unknown>) =>
       apiRequest("/auth/password/reset", { method: "POST", body }),
-    resendVerification: () => apiRequest("/auth/email/verify/resend", { method: "POST", auth: true }),
-    me: () => apiRequest("/auth/me", { auth: true }),
+    
+    resendVerification: () => 
+      apiRequest("/auth/email/verify/resend", { method: "POST", auth: true }),
+    
+    me: () => 
+      apiRequest("/auth/me", { auth: true }),
+    
     refresh: () =>
       apiRequest<{ token: string; token_type: string; expires_in: number }>("/auth/refresh", {
         method: "POST",
         auth: true,
       }),
-    logout: () => apiRequest("/auth/logout", { method: "POST", auth: true }),
+    
+    logout: () => 
+      apiRequest("/auth/logout", { method: "POST", auth: true }),
   },
 
   applications: {
@@ -635,10 +857,10 @@ export const api = {
           member_name?: string;
           member_dob?: string;
           organization_id?: string;
-          employee_id?: string;
-          authorization_letter_url?: string;
+          staff_id?: string;
+          letter_path?: string;
         };
-        location_id?: string;
+        clinic_location_id?: string;
         appointment_type?: "physical" | "online";
         doctor_user_uuid?: string;
         mini_site_slug?: string;
@@ -689,6 +911,154 @@ export const api = {
     },
   },
 
+  doctorPortal: {
+    catalog: () => apiRequest("/clinical-catalog"),
+
+    dashboard: () => apiRequest("/me/doctor/dashboard", { auth: true }),
+
+    schedule: (query?: { week_of?: string }) =>
+      apiRequest("/me/doctor/schedule", { auth: true, query }),
+
+    appointments: {
+      list: (query?: {
+        status?: "confirmed" | "pending" | "completed" | "cancelled" | "no_show" | string;
+        page?: number;
+        per_page?: number;
+      }) => apiRequest("/me/doctor/appointments", { auth: true, query }),
+
+      detail: (appointmentUuid: string) =>
+        apiRequest(`/me/doctor/appointments/${appointmentUuid}`, { auth: true }),
+
+      complete: (appointmentUuid: string, body: {
+        type?: string;
+        diagnosis?: string;
+        reason_for_visit?: string;
+        clinical_notes?: string;
+        summary?: string;
+      }) =>
+        apiRequest(`/me/doctor/appointments/${appointmentUuid}/complete`, {
+          method: "POST",
+          auth: true,
+          body,
+        }),
+
+      noShow: (appointmentUuid: string) =>
+        apiRequest(`/me/doctor/appointments/${appointmentUuid}/no-show`, {
+          method: "POST",
+          auth: true,
+        }),
+    },
+
+    consultations: {
+      detail: (consultationUuid: string) =>
+        apiRequest(`/me/doctor/consultations/${consultationUuid}`, { auth: true }),
+
+      saveClinicalNotes: (consultationUuid: string, body: Record<string, unknown>) =>
+        apiRequest(`/me/doctor/consultations/${consultationUuid}/clinical-notes`, {
+          method: "PATCH",
+          auth: true,
+          body,
+        }),
+
+      createPrescription: (consultationUuid: string, body: Record<string, unknown>) =>
+        apiRequest(`/me/doctor/consultations/${consultationUuid}/prescription-documents`, {
+          method: "POST",
+          auth: true,
+          body,
+        }),
+
+      createLabRequisition: (consultationUuid: string, body: Record<string, unknown>) =>
+        apiRequest(`/me/doctor/consultations/${consultationUuid}/lab-requisitions`, {
+          method: "POST",
+          auth: true,
+          body,
+        }),
+
+      createDiagnosticRequest: (consultationUuid: string, body: Record<string, unknown>) =>
+        apiRequest(`/me/doctor/consultations/${consultationUuid}/diagnostic-requests`, {
+          method: "POST",
+          auth: true,
+          body,
+        }),
+
+      createReferral: (consultationUuid: string, body: Record<string, unknown>) =>
+        apiRequest(`/me/doctor/consultations/${consultationUuid}/referrals`, {
+          method: "POST",
+          auth: true,
+          body,
+        }),
+    },
+
+    requisitions: {
+      prescriptionPdf: (prescriptionDocUuid: string) =>
+        apiFileRequest(`/me/doctor/requisitions/prescription-documents/${prescriptionDocUuid}/pdf`, { auth: true }),
+      labPdf: (labUuid: string) =>
+        apiFileRequest(`/me/doctor/requisitions/lab-requisitions/${labUuid}/pdf`, { auth: true }),
+      diagnosticPdf: (imagingUuid: string) =>
+        apiFileRequest(`/me/doctor/requisitions/diagnostic-requests/${imagingUuid}/pdf`, { auth: true }),
+      referralPdf: (referralUuid: string) =>
+        apiFileRequest(`/me/doctor/requisitions/referrals/${referralUuid}/pdf`, { auth: true }),
+    },
+
+    patients: {
+      list: (query?: { search?: string; page?: number; per_page?: number }) =>
+        apiRequest("/me/doctor/patients", { auth: true, query }),
+      detail: (patientUserUuid: string) =>
+        apiRequest(`/me/doctor/patients/${patientUserUuid}`, { auth: true }),
+    },
+
+    investigations: {
+      list: (query?: { status?: string; kind?: "lab" | "imaging" | string; page?: number; per_page?: number }) =>
+        apiRequest("/me/doctor/investigations", { auth: true, query }),
+      lab: (labUuid: string) =>
+        apiRequest(`/me/doctor/investigations/lab/${labUuid}`, { auth: true }),
+      imaging: (imagingUuid: string) =>
+        apiRequest(`/me/doctor/investigations/imaging/${imagingUuid}`, { auth: true }),
+      updateLabStatus: (labUuid: string, status: string) =>
+        apiRequest(`/me/doctor/investigations/lab/${labUuid}/status`, {
+          method: "PATCH",
+          auth: true,
+          body: { status },
+        }),
+      updateImagingStatus: (imagingUuid: string, status: string) =>
+        apiRequest(`/me/doctor/investigations/imaging/${imagingUuid}/status`, {
+          method: "PATCH",
+          auth: true,
+          body: { status },
+        }),
+    },
+
+    settings: {
+      get: () => apiRequest("/me/doctor/settings", { auth: true }),
+      update: (body: Record<string, unknown>) =>
+        apiRequest("/me/doctor/settings", { method: "PATCH", auth: true, body }),
+      uploadSignature: (form: FormData) =>
+        apiRequest("/me/doctor/settings/signature", { method: "POST", auth: true, body: form }),
+    },
+
+    payments: {
+      overview: () => apiRequest("/me/doctor/payments/overview", { auth: true }),
+      earnings: (query?: { type?: string; from?: string; to?: string; page?: number; per_page?: number }) =>
+        apiRequest("/me/doctor/payments/earnings", { auth: true, query }),
+      earningsExport: (query?: QueryParams) =>
+        apiFileRequest("/me/doctor/payments/earnings/export", { auth: true, query }),
+      referrals: (query?: { page?: number; per_page?: number }) =>
+        apiRequest("/me/doctor/payments/referrals", { auth: true, query }),
+      payouts: (query?: { page?: number; per_page?: number }) =>
+        apiRequest("/me/doctor/payments/payouts", { auth: true, query }),
+      reconciliation: {
+        list: (query?: { status?: string; page?: number; per_page?: number }) =>
+          apiRequest("/me/doctor/payments/reconciliation", { auth: true, query }),
+        submit: (body: { expected_amount_kobo: number; reason: string; details?: string }) =>
+          apiRequest("/me/doctor/payments/reconciliation", {
+            method: "POST",
+            auth: true,
+            body,
+          }),
+      },
+    },
+  },
+
   admin: {
     applications: {
       list: (query?: QueryParams) => apiRequest<any[], PaginationMeta>("/admin/applications", { auth: true, query }),
@@ -732,6 +1102,61 @@ export const api = {
           regenerated_at?: string | null;
           regenerated_by?: { uuid: string; name: string } | null;
         }>(`/admin/doctors/${userUuid}/mini-site/regenerate`, { method: "POST", auth: true }),
+    },
+
+    payments: {
+      rates: {
+        get: () => apiRequest("/admin/payments/rates", { auth: true }),
+        update: (body: Record<string, unknown>) =>
+          apiRequest("/admin/payments/rates", { method: "PATCH", auth: true, body }),
+      },
+      hmoRates: {
+        list: () => apiRequest<any[]>("/admin/payments/hmo-rates", { auth: true }),
+        update: (hmoProviderId: string | number, body: { amount_kobo?: number; is_active?: boolean }) =>
+          apiRequest(`/admin/payments/hmo-rates/${hmoProviderId}`, {
+            method: "PUT",
+            auth: true,
+            body,
+          }),
+      },
+      partnerRates: {
+        update: (
+          type: "pharmacy" | "diagnostic" | "doctor" | string,
+          userUuid: string,
+          body: { referral_commission_kobo: number },
+        ) =>
+          apiRequest(`/admin/payments/partner-rates/${type}/${userUuid}`, {
+            method: "PUT",
+            auth: true,
+            body,
+          }),
+      },
+      doctorPayouts: {
+        list: (doctorUserUuid: string, query?: QueryParams) =>
+          apiRequest(`/admin/payments/doctors/${doctorUserUuid}/payouts`, { auth: true, query }),
+        create: (doctorUserUuid: string, body: Record<string, unknown>) =>
+          apiRequest(`/admin/payments/doctors/${doctorUserUuid}/payouts`, {
+            method: "POST",
+            auth: true,
+            body,
+          }),
+      },
+      reconciliation: {
+        list: (query?: { status?: string; page?: number; per_page?: number }) =>
+          apiRequest("/admin/payments/reconciliation", { auth: true, query }),
+        resolve: (reconciliationUuid: string, resolution_note: string) =>
+          apiRequest(`/admin/payments/reconciliation/${reconciliationUuid}/resolve`, {
+            method: "POST",
+            auth: true,
+            body: { resolution_note },
+          }),
+        reject: (reconciliationUuid: string, resolution_note: string) =>
+          apiRequest(`/admin/payments/reconciliation/${reconciliationUuid}/reject`, {
+            method: "POST",
+            auth: true,
+            body: { resolution_note },
+          }),
+      },
     },
 
     users: {
@@ -881,7 +1306,6 @@ export const api = {
         }),
     },
 
-    // ✅ NEW COVERAGE ENDPOINTS FOR ADMIN ✅
     coverage: {
       hmo: {
         list: (query?: { status?: string; page?: number; per_page?: number }) =>
@@ -1161,8 +1585,12 @@ export default {
   buildApiUrl,
   clearStoredAuthToken,
   clearApiAuthState,
+  extractAuthPayload,
   fetchJson,
+  getStoredAuthUser,
   getStoredAuthToken,
+  normalizeRoleList,
   resolveApiAssetUrl,
+  setStoredAuthUser,
   setStoredAuthToken,
 };

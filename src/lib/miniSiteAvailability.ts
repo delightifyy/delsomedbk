@@ -185,10 +185,12 @@ const normalizePublicSlot = (value: unknown): PublicAvailabilitySlot | null => {
   }
 
   const record = asRecord(value);
-  const start = textOf(record.start ?? record.start_time ?? record.slot_time ?? record.time);
-  const end = textOf(record.end ?? record.end_time ?? record.slot_end_time);
-  const label = start && end ? `${start} - ${end}` : start || textOf(record.label);
-  return label ? { start, end, label } : null;
+  const start = textOf(record.start ?? record.start_time ?? record.slot_start_time ?? record.slot_time ?? record.time);
+  const end = textOf(record.end ?? record.end_time ?? record.slot_end_time ?? record.slot_end);
+  const rawLabel = textOf(record.label);
+  const label = start && end ? `${start} - ${end}` : start || rawLabel;
+  const labelStart = label.split(/\s+-\s+/)[0]?.trim() ?? "";
+  return label ? { start: start || labelStart || label, end, label } : null;
 };
 
 export const normalizePublicAvailability = (value: unknown): {
@@ -216,9 +218,13 @@ export const normalizePublicAvailability = (value: unknown): {
           : textOf(rawDay) || dayNameFromDateValue(dateValue);
       const rawSlots = Array.isArray(record.slots)
         ? record.slots
-        : Array.isArray(record.times)
-          ? record.times
-          : [];
+        : Array.isArray(record.available_slots)
+          ? record.available_slots
+          : Array.isArray(record.time_slots)
+            ? record.time_slots
+            : Array.isArray(record.times)
+              ? record.times
+              : [];
       const slotRanges = rawSlots.map(normalizePublicSlot).filter(Boolean) as PublicAvailabilitySlot[];
 
       return {

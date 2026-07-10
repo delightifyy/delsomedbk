@@ -105,8 +105,11 @@ const ContactCard = ({
 
 const normalizePhone = (phone: string) => phone.replace(/[^\d]/g, "");
 
-const MediCareContact = () => {
-  const settings = useMediCareSettings();
+const MediCareContact = ({ doctorSlug }: { doctorSlug?: string } = {}) => {
+  const settings = useMediCareSettings(doctorSlug);
+  const basePath = doctorSlug ? "" : "/doctor-portal";
+  const homeHref = basePath || "/";
+  const activeHref = `${basePath}/contact` || "/contact";
   const themeStyle = useMemo(
     () => medicareThemeStyle(settings),
     [settings.primaryColor, settings.accentColor],
@@ -176,11 +179,11 @@ const MediCareContact = () => {
   return (
     <div className="medicare-contact min-h-screen" style={themeStyle}>
       <style>{tokenStyles}</style>
-      <MedicareSimpleHeader settings={settings} activeHref="/doctor-portal/contact" />
+      <MedicareSimpleHeader settings={settings} activeHref={activeHref} basePath={basePath} />
 
       <section className="border-b border-[hsl(var(--mc-border))] bg-[linear-gradient(135deg,hsl(var(--mc-primary)/.08),hsl(var(--mc-accent)/.08))]">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-          <Link to="/doctor-portal" className="inline-flex items-center gap-2 text-xs font-semibold text-[hsl(var(--mc-muted))] transition hover:text-[hsl(var(--mc-primary))]">
+          <Link to={homeHref} className="inline-flex items-center gap-2 text-xs font-semibold text-[hsl(var(--mc-muted))] transition hover:text-[hsl(var(--mc-primary))]">
             <ArrowLeft className="h-3.5 w-3.5" /> Back to home
           </Link>
           <h1 className="mt-5 max-w-3xl font-display text-4xl font-bold leading-tight sm:text-6xl">
@@ -259,7 +262,7 @@ const MediCareContact = () => {
         </div>
       </section>
 
-      <MedicareFooter settings={settings} />
+      <MedicareFooter settings={settings} basePath={basePath} />
     </div>
   );
 };

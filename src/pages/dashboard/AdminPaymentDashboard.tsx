@@ -1,101 +1,653 @@
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { PageHeader, SectionCard } from "@/components/portal/PortalUI";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/portal/PortalUI";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  DollarSign, Users, Building2, Calendar, Download, Send, Eye, 
-  Clock, Filter, Search, X, FileText, CreditCard,
-  Wallet, AlertCircle
+import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
+import { collection, userProfileFromApi } from "@/lib/backendAdapters";
+import {
+  AlertCircle,
+  Building2,
+  CheckCircle2,
+  Clock,
+  Loader2,
+  Save,
+  Send,
+  ShieldCheck,
+  SlidersHorizontal,
+  Wallet,
+  XCircle,
 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
 
-// Mock data for doctors
-const mockDoctors = [
-  { id: "DOC001", name: "Dr. Chinedu Okafor", specialty: "Cardiologist", totalEarnings: 42500, platformCommission: 6375, netEarnings: 36125, referrals: 2, referralCommission: 850, payoutStatus: "Paid" },
-  { id: "DOC002", name: "Dr. Amina Bello", specialty: "Pediatrician", totalEarnings: 38700, platformCommission: 5805, netEarnings: 32895, referrals: 1, referralCommission: 387, payoutStatus: "Pending" },
-  { id: "DOC003", name: "Dr. Tunde Adeyemi", specialty: "Orthopedic Surgeon", totalEarnings: 52300, platformCommission: 7845, netEarnings: 44455, referrals: 3, referralCommission: 1569, payoutStatus: "Processing" },
-  { id: "DOC004", name: "Dr. Ngozi Eze", specialty: "Gynecologist", totalEarnings: 45900, platformCommission: 6885, netEarnings: 39015, referrals: 2, referralCommission: 918, payoutStatus: "Paid" },
-  { id: "DOC005", name: "Dr. Samuel Idris", specialty: "General Practitioner", totalEarnings: 31200, platformCommission: 4680, netEarnings: 26520, referrals: 0, referralCommission: 0, payoutStatus: "Pending" },
-];
+type AnyRecord = Record<string, any>;
 
-// Mock data for 3rd parties
-const mockThirdParties = [
-  { id: "TP001", name: "Lagos Diagnostic Lab", type: "Laboratory", totalEarnings: 28600, platformCommission: 4290, doctorCommission: 2860, netEarnings: 21450, referrals: 1, referralCommission: 286, payoutStatus: "Paid" },
-  { id: "TP002", name: "MediScan Radiology", type: "Imaging Center", totalEarnings: 34100, platformCommission: 5115, doctorCommission: 3410, netEarnings: 25575, referrals: 2, referralCommission: 682, payoutStatus: "Processing" },
-  { id: "TP003", name: "City Pharmacy Ltd", type: "Pharmacy", totalEarnings: 19800, platformCommission: 2970, doctorCommission: 1980, netEarnings: 14850, referrals: 0, referralCommission: 0, payoutStatus: "Pending" },
-  { id: "TP004", name: "Nigerian Health Services", type: "Home Care", totalEarnings: 22400, platformCommission: 3360, doctorCommission: 2240, netEarnings: 16800, referrals: 1, referralCommission: 224, payoutStatus: "Paid" },
-];
+type RateForm = {
+  card_commission_percent: string;
+  subscription_consultation_fee: string;
+  organization_consultation_fee: string;
+  referral_default_lab: string;
+  referral_default_diagnostic: string;
+  referral_default_pharmacy: string;
+  referral_default_doctor: string;
+};
 
-// Mock data for organizations/HMOs
-const mockOrganizations = [
-  { id: "ORG001", name: "Shell Nigeria", type: "Corporate", staffCount: 450, monthlyUsage: 87600, invoiceAmount: 87600, paymentStatus: "Paid", dueDate: "2026-06-30" },
-  { id: "ORG002", name: "MTN Nigeria", type: "Corporate", staffCount: 320, monthlyUsage: 62400, invoiceAmount: 62400, paymentStatus: "Pending", dueDate: "2026-07-15" },
-  { id: "ORG003", name: "Hygeia HMO", type: "HMO", staffCount: 280, monthlyUsage: 54800, invoiceAmount: 54800, paymentStatus: "Overdue", dueDate: "2026-06-05" },
-  { id: "ORG004", name: "Axa Mansard", type: "HMO", staffCount: 210, monthlyUsage: 41200, invoiceAmount: 41200, paymentStatus: "Paid", dueDate: "2026-06-20" },
-  { id: "ORG005", name: "Dangote Group", type: "Corporate", staffCount: 380, monthlyUsage: 74300, invoiceAmount: 74300, paymentStatus: "Pending", dueDate: "2026-07-10" },
-];
+type HmoRateEdit = {
+  amount: string;
+  is_active: boolean;
+};
+
+type DoctorOption = {
+  uuid: string;
+  name: string;
+  email: string;
+  specialty: string;
+};
+
+type PayoutForm = {
+  amount: string;
+  paid_on: string;
+  period_start: string;
+  period_end: string;
+  notes: string;
+};
+
+type PartnerRateForm = {
+  type: "pharmacy" | "diagnostic" | "doctor";
+  userUuid: string;
+  amount: string;
+};
+
+const emptyRateForm: RateForm = {
+  card_commission_percent: "",
+  subscription_consultation_fee: "",
+  organization_consultation_fee: "",
+  referral_default_lab: "",
+  referral_default_diagnostic: "",
+  referral_default_pharmacy: "",
+  referral_default_doctor: "",
+};
+
+const todayIso = () => new Date().toISOString().slice(0, 10);
+
+const monthStartIso = () => {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+};
+
+const asRecord = (value: unknown): AnyRecord =>
+  value && typeof value === "object" && !Array.isArray(value) ? (value as AnyRecord) : {};
+
+const unwrapData = (value: unknown) => {
+  const root = asRecord(value);
+  return root.data ?? value;
+};
+
+const listFrom = (value: unknown, keys: string[] = []) => {
+  if (Array.isArray(value)) return value;
+
+  const direct = collection(value);
+  if (direct.length) return direct;
+
+  const source = asRecord(value);
+  for (const key of keys) {
+    const candidate = source[key];
+    if (Array.isArray(candidate)) return candidate;
+    const candidateList = collection(candidate);
+    if (candidateList.length) return candidateList;
+  }
+
+  if (source.data && source.data !== value) return listFrom(source.data, keys);
+  return [];
+};
+
+const textOf = (value: unknown) => {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return value.map(textOf).filter(Boolean).join(", ");
+  const record = asRecord(value);
+  return textOf(record.name ?? record.full_name ?? record.title ?? record.label ?? record.email ?? record.uuid ?? record.id);
+};
+
+const nestedValue = (source: AnyRecord, key: string) => {
+  if (!key.includes(".")) return source[key];
+  return key.split(".").reduce((current: unknown, part) => asRecord(current)[part], source);
+};
+
+const pickText = (source: AnyRecord, keys: string[], fallback = "") => {
+  for (const key of keys) {
+    const text = textOf(nestedValue(source, key)).trim();
+    if (text) return text;
+  }
+  return fallback;
+};
+
+const pickNumber = (source: AnyRecord, keys: string[], fallback = 0) => {
+  for (const key of keys) {
+    const value = nestedValue(source, key);
+    const number = Number(value);
+    if (Number.isFinite(number)) return number;
+  }
+  return fallback;
+};
+
+const pickBoolean = (source: AnyRecord, keys: string[], fallback = false) => {
+  for (const key of keys) {
+    const value = nestedValue(source, key);
+    if (typeof value === "boolean") return value;
+    if (typeof value === "number") return value === 1;
+    if (typeof value === "string") {
+      const normal = value.toLowerCase();
+      if (["1", "true", "yes", "active", "enabled"].includes(normal)) return true;
+      if (["0", "false", "no", "inactive", "disabled"].includes(normal)) return false;
+    }
+  }
+  return fallback;
+};
+
+const moneyKobo = (source: AnyRecord, koboKeys: string[], amountKeys: string[] = []) => {
+  const kobo = pickNumber(source, koboKeys, Number.NaN);
+  if (Number.isFinite(kobo)) return kobo;
+  const amount = pickNumber(source, amountKeys, 0);
+  return Math.round(amount * 100);
+};
+
+const nairaToKobo = (value: string) => Math.round((Number(value) || 0) * 100);
+
+const koboToInput = (value: number) => {
+  if (!Number.isFinite(value) || value <= 0) return "";
+  return String(value / 100);
+};
+
+const formatMoney = (kobo: number) => {
+  const amount = Number.isFinite(kobo) ? kobo / 100 : 0;
+  return `NGN ${amount.toLocaleString("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+};
+
+const formatDate = (value?: string | null) => {
+  if (!value) return "Not set";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+};
+
+const statusBadge = (status: string) => {
+  const normal = status.toLowerCase();
+  if (["resolved", "paid", "completed", "approved"].includes(normal)) {
+    return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Resolved</Badge>;
+  }
+  if (["rejected", "failed", "declined"].includes(normal)) {
+    return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Rejected</Badge>;
+  }
+  if (["processing", "in_progress"].includes(normal)) {
+    return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Processing</Badge>;
+  }
+  return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">{status || "Open"}</Badge>;
+};
+
+const hmoRateId = (rate: AnyRecord, index: number) =>
+  pickText(rate, ["hmo_provider_id", "provider_id", "id", "uuid", "hmoProvider.id", "hmo_provider.id"], `hmo-${index}`);
+
+const hmoRateName = (rate: AnyRecord) =>
+  pickText(rate, ["hmo_provider.name", "provider.name", "name", "hmo_name", "provider_name"], "Unnamed HMO");
+
+const payoutId = (payout: AnyRecord, index: number) =>
+  pickText(payout, ["uuid", "id", "reference"], `payout-${index}`);
+
+const reconciliationId = (item: AnyRecord, index: number) =>
+  pickText(item, ["uuid", "id", "reconciliation_uuid"], `reconciliation-${index}`);
+
+const normalizeDoctor = (entry: unknown): DoctorOption | null => {
+  const source = asRecord(entry);
+  const profile = userProfileFromApi(entry);
+  const uuid = profile.id || pickText(source, ["uuid", "id", "user_uuid", "user.id"]);
+  if (!uuid) return null;
+
+  return {
+    uuid,
+    name: profile.full_name || pickText(source, ["name", "full_name", "profile.full_name"], "Unnamed doctor"),
+    email: profile.email || pickText(source, ["email", "user.email", "profile.email"], ""),
+    specialty: pickText(source, ["specialty", "specialty_name", "profile.specialty", "doctor_profile.specialty"], "Doctor"),
+  };
+};
 
 const AdminPaymentDashboard = () => {
-  const [activeTab, setActiveTab] = useState("doctors");
-  const [selectedDoctor, setSelectedDoctor] = useState<typeof mockDoctors[0] | null>(null);
-  const [selectedThirdParty, setSelectedThirdParty] = useState<typeof mockThirdParties[0] | null>(null);
-  const [selectedOrg, setSelectedOrg] = useState<typeof mockOrganizations[0] | null>(null);
-  const [showPayoutDialog, setShowPayoutDialog] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [payoutAmount, setPayoutAmount] = useState("");
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("rates");
 
-  // Stats calculations
-  const totalDoctorEarnings = mockDoctors.reduce((sum, d) => sum + d.totalEarnings, 0);
-  const totalThirdPartyEarnings = mockThirdParties.reduce((sum, t) => sum + t.totalEarnings, 0);
-  const totalPlatformCommission = mockDoctors.reduce((sum, d) => sum + d.platformCommission, 0) + 
-                                  mockThirdParties.reduce((sum, t) => sum + t.platformCommission, 0);
-  const totalOrgBilling = mockOrganizations.reduce((sum, o) => sum + o.invoiceAmount, 0);
-  const totalPendingPayouts = mockDoctors.filter(d => d.payoutStatus !== "Paid").length + 
-                             mockThirdParties.filter(t => t.payoutStatus !== "Paid").length;
+  const [rates, setRates] = useState<AnyRecord | null>(null);
+  const [rateForm, setRateForm] = useState<RateForm>(emptyRateForm);
+  const [ratesLoading, setRatesLoading] = useState(true);
+  const [ratesSaving, setRatesSaving] = useState(false);
 
-  const getStatusBadge = (status: string) => {
-    switch(status.toLowerCase()) {
-      case 'paid':
-      case 'completed':
-        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Paid</Badge>;
-      case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">Pending</Badge>;
-      case 'processing':
-        return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Processing</Badge>;
-      case 'overdue':
-        return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">Overdue</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+  const [hmoRates, setHmoRates] = useState<AnyRecord[]>([]);
+  const [hmoEdits, setHmoEdits] = useState<Record<string, HmoRateEdit>>({});
+  const [hmoLoading, setHmoLoading] = useState(true);
+  const [savingHmoId, setSavingHmoId] = useState<string | null>(null);
+
+  const [partnerForm, setPartnerForm] = useState<PartnerRateForm>({
+    type: "pharmacy",
+    userUuid: "",
+    amount: "",
+  });
+  const [partnerSaving, setPartnerSaving] = useState(false);
+
+  const [doctors, setDoctors] = useState<DoctorOption[]>([]);
+  const [doctorsLoading, setDoctorsLoading] = useState(true);
+  const [doctorSearch, setDoctorSearch] = useState("");
+  const [selectedDoctorUuid, setSelectedDoctorUuid] = useState("");
+  const [payouts, setPayouts] = useState<AnyRecord[]>([]);
+  const [payoutSummary, setPayoutSummary] = useState<AnyRecord>({});
+  const [payoutsLoading, setPayoutsLoading] = useState(false);
+  const [payoutSaving, setPayoutSaving] = useState(false);
+  const [payoutForm, setPayoutForm] = useState<PayoutForm>({
+    amount: "",
+    paid_on: todayIso(),
+    period_start: monthStartIso(),
+    period_end: todayIso(),
+    notes: "",
+  });
+
+  const [reconciliationStatus, setReconciliationStatus] = useState("open");
+  const [reconciliations, setReconciliations] = useState<AnyRecord[]>([]);
+  const [reconciliationLoading, setReconciliationLoading] = useState(true);
+  const [decision, setDecision] = useState<{ item: AnyRecord; action: "resolve" | "reject" } | null>(null);
+  const [resolutionNote, setResolutionNote] = useState("");
+  const [decisionSaving, setDecisionSaving] = useState(false);
+
+  const selectedDoctor = doctors.find((doctor) => doctor.uuid === selectedDoctorUuid) ?? null;
+
+  const filteredDoctors = useMemo(() => {
+    const query = doctorSearch.trim().toLowerCase();
+    if (!query) return doctors;
+    return doctors.filter((doctor) =>
+      [doctor.name, doctor.email, doctor.specialty].some((value) => value.toLowerCase().includes(query)),
+    );
+  }, [doctorSearch, doctors]);
+
+  const outstandingKobo = useMemo(
+    () =>
+      moneyKobo(payoutSummary, [
+        "outstanding_kobo",
+        "outstanding_amount_kobo",
+        "available_balance_kobo",
+        "available_payout_kobo",
+        "net_payable_kobo",
+      ]),
+    [payoutSummary],
+  );
+
+  const openReconciliationCount = reconciliations.filter((item) => {
+    const status = pickText(item, ["status"], "open").toLowerCase();
+    return status === "open" || status === "pending";
+  }).length;
+
+  const activeHmoCount = hmoRates.filter((rate, index) => {
+    const key = hmoRateId(rate, index);
+    return hmoEdits[key]?.is_active ?? pickBoolean(rate, ["is_active", "active"], false);
+  }).length;
+
+  const loadRates = useCallback(async () => {
+    setRatesLoading(true);
+    try {
+      const response = await api.admin.payments.rates.get();
+      const data = asRecord(unwrapData(response));
+      setRates(data);
+      setRateForm({
+        card_commission_percent: String(data.card_commission_percent ?? ""),
+        subscription_consultation_fee: koboToInput(pickNumber(data, ["subscription_consultation_fee_kobo"])),
+        organization_consultation_fee: koboToInput(pickNumber(data, ["organization_consultation_fee_kobo"])),
+        referral_default_lab: koboToInput(pickNumber(data, ["referral_default_lab_kobo"])),
+        referral_default_diagnostic: koboToInput(pickNumber(data, ["referral_default_diagnostic_kobo"])),
+        referral_default_pharmacy: koboToInput(pickNumber(data, ["referral_default_pharmacy_kobo"])),
+        referral_default_doctor: koboToInput(pickNumber(data, ["referral_default_doctor_kobo"])),
+      });
+    } catch (error) {
+      toast({
+        title: "Could not load payment settings",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setRatesLoading(false);
     }
+  }, [toast]);
+
+  const loadHmoRates = useCallback(async () => {
+    setHmoLoading(true);
+    try {
+      const response = await api.admin.payments.hmoRates.list();
+      const rows = listFrom(unwrapData(response), ["hmo_rates", "rates", "items"]);
+      setHmoRates(rows);
+      setHmoEdits(
+        rows.reduce<Record<string, HmoRateEdit>>((acc, row, index) => {
+          const rate = asRecord(row);
+          const key = hmoRateId(rate, index);
+          acc[key] = {
+            amount: koboToInput(moneyKobo(rate, ["amount_kobo", "consultation_fee_kobo", "rate_kobo"], ["amount", "rate"])),
+            is_active: pickBoolean(rate, ["is_active", "active"], true),
+          };
+          return acc;
+        }, {}),
+      );
+    } catch (error) {
+      toast({
+        title: "Could not load HMO rates",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setHmoLoading(false);
+    }
+  }, [toast]);
+
+  const loadDoctors = useCallback(async () => {
+    setDoctorsLoading(true);
+    try {
+      const response = await api.admin.users.list({ role: "doctor", per_page: 100 });
+      const rows = collection(response.data)
+        .map(normalizeDoctor)
+        .filter(Boolean) as DoctorOption[];
+      setDoctors(rows);
+      setSelectedDoctorUuid((current) => current || rows[0]?.uuid || "");
+    } catch (error) {
+      toast({
+        title: "Could not load doctors",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDoctorsLoading(false);
+    }
+  }, [toast]);
+
+  const loadPayouts = useCallback(async () => {
+    if (!selectedDoctorUuid) {
+      setPayouts([]);
+      setPayoutSummary({});
+      return;
+    }
+
+    setPayoutsLoading(true);
+    try {
+      const response = await api.admin.payments.doctorPayouts.list(selectedDoctorUuid);
+      const data = unwrapData(response);
+      const summary = asRecord(data);
+      const rows = listFrom(data, ["payouts", "items", "history"]);
+      setPayoutSummary(summary);
+      setPayouts(rows);
+
+      const available = moneyKobo(summary, [
+        "outstanding_kobo",
+        "outstanding_amount_kobo",
+        "available_balance_kobo",
+        "available_payout_kobo",
+        "net_payable_kobo",
+      ]);
+      if (available > 0) {
+        setPayoutForm((current) => ({ ...current, amount: current.amount || koboToInput(available) }));
+      }
+    } catch (error) {
+      toast({
+        title: "Could not load doctor payouts",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setPayoutsLoading(false);
+    }
+  }, [selectedDoctorUuid, toast]);
+
+  const loadReconciliations = useCallback(async () => {
+    setReconciliationLoading(true);
+    try {
+      const response = await api.admin.payments.reconciliation.list({
+        status: reconciliationStatus === "all" ? undefined : reconciliationStatus,
+        per_page: 50,
+      });
+      const rows = listFrom(unwrapData(response), ["reconciliation", "reconciliations", "items"]);
+      setReconciliations(rows);
+    } catch (error) {
+      toast({
+        title: "Could not load reconciliation queue",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setReconciliationLoading(false);
+    }
+  }, [reconciliationStatus, toast]);
+
+  useEffect(() => {
+    loadRates();
+    loadHmoRates();
+    loadDoctors();
+  }, [loadRates, loadHmoRates, loadDoctors]);
+
+  useEffect(() => {
+    loadPayouts();
+  }, [loadPayouts]);
+
+  useEffect(() => {
+    loadReconciliations();
+  }, [loadReconciliations]);
+
+  const saveRates = async () => {
+    setRatesSaving(true);
+    try {
+      await api.admin.payments.rates.update({
+        card_commission_percent: Number(rateForm.card_commission_percent) || 0,
+        subscription_consultation_fee_kobo: nairaToKobo(rateForm.subscription_consultation_fee),
+        organization_consultation_fee_kobo: nairaToKobo(rateForm.organization_consultation_fee),
+        referral_default_lab_kobo: nairaToKobo(rateForm.referral_default_lab),
+        referral_default_diagnostic_kobo: nairaToKobo(rateForm.referral_default_diagnostic),
+        referral_default_pharmacy_kobo: nairaToKobo(rateForm.referral_default_pharmacy),
+        referral_default_doctor_kobo: nairaToKobo(rateForm.referral_default_doctor),
+      });
+      toast({ title: "Payment settings saved", description: "The payment rates were updated." });
+      await loadRates();
+    } catch (error) {
+      toast({
+        title: "Could not save payment settings",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setRatesSaving(false);
+    }
+  };
+
+  const saveHmoRate = async (rate: AnyRecord, index: number) => {
+    const key = hmoRateId(rate, index);
+    const providerId = pickText(rate, ["hmo_provider_id", "provider_id", "id", "uuid", "hmoProvider.id", "hmo_provider.id"]);
+    const edit = hmoEdits[key];
+    if (!edit) return;
+    if (!providerId) {
+      toast({
+        title: "HMO fee cannot be saved",
+        description: "This HMO is missing the account ID needed to update it.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSavingHmoId(key);
+    try {
+      await api.admin.payments.hmoRates.update(providerId, {
+        amount_kobo: nairaToKobo(edit.amount),
+        is_active: edit.is_active,
+      });
+      toast({ title: "HMO rate saved", description: `${hmoRateName(rate)} was updated.` });
+      await loadHmoRates();
+    } catch (error) {
+      toast({
+        title: "Could not save HMO rate",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingHmoId(null);
+    }
+  };
+
+  const savePartnerRate = async () => {
+    if (!partnerForm.userUuid.trim() || !partnerForm.amount.trim()) {
+      toast({
+        title: "Missing partner details",
+        description: "Enter the partner account ID and referral commission amount.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setPartnerSaving(true);
+    try {
+      await api.admin.payments.partnerRates.update(partnerForm.type, partnerForm.userUuid.trim(), {
+        referral_commission_kobo: nairaToKobo(partnerForm.amount),
+      });
+      toast({ title: "Partner rate saved", description: "The referral commission was updated." });
+      setPartnerForm((current) => ({ ...current, userUuid: "", amount: "" }));
+    } catch (error) {
+      toast({
+        title: "Could not save partner rate",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setPartnerSaving(false);
+    }
+  };
+
+  const recordPayout = async () => {
+    if (!selectedDoctorUuid || !payoutForm.amount || !payoutForm.paid_on || !payoutForm.period_start || !payoutForm.period_end) {
+      toast({
+        title: "Missing payout details",
+        description: "Select a doctor and complete the amount and date fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setPayoutSaving(true);
+    try {
+      await api.admin.payments.doctorPayouts.create(selectedDoctorUuid, {
+        amount_kobo: nairaToKobo(payoutForm.amount),
+        paid_on: payoutForm.paid_on,
+        period_start: payoutForm.period_start,
+        period_end: payoutForm.period_end,
+        notes: payoutForm.notes || undefined,
+      });
+      toast({ title: "Payout recorded", description: "The doctor payout has been saved." });
+      setPayoutForm({
+        amount: "",
+        paid_on: todayIso(),
+        period_start: monthStartIso(),
+        period_end: todayIso(),
+        notes: "",
+      });
+      await loadPayouts();
+    } catch (error) {
+      toast({
+        title: "Could not record payout",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setPayoutSaving(false);
+    }
+  };
+
+  const submitDecision = async () => {
+    if (!decision || !resolutionNote.trim()) {
+      toast({
+        title: "Resolution note required",
+        description: "Add a note before resolving or rejecting the request.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const uuid = pickText(decision.item, ["uuid", "id", "reconciliation_uuid"]);
+    if (!uuid) {
+      toast({
+        title: "Missing reconciliation ID",
+        description: "This request is missing the record ID needed to update it.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setDecisionSaving(true);
+    try {
+      if (decision.action === "resolve") {
+        await api.admin.payments.reconciliation.resolve(uuid, resolutionNote.trim());
+      } else {
+        await api.admin.payments.reconciliation.reject(uuid, resolutionNote.trim());
+      }
+      toast({
+        title: decision.action === "resolve" ? "Reconciliation resolved" : "Reconciliation rejected",
+        description: "The queue has been updated.",
+      });
+      setDecision(null);
+      setResolutionNote("");
+      await loadReconciliations();
+    } catch (error) {
+      toast({
+        title: "Could not update reconciliation",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDecisionSaving(false);
+    }
+  };
+
+  const updateHmoEdit = (key: string, patch: Partial<HmoRateEdit>) => {
+    setHmoEdits((current) => ({
+      ...current,
+      [key]: {
+        amount: current[key]?.amount ?? "",
+        is_active: current[key]?.is_active ?? true,
+        ...patch,
+      },
+    }));
   };
 
   return (
     <DashboardLayout>
-      <PageHeader 
-        title="Payment Management" 
-        description="Manage doctor payouts, 3rd party settlements, and organization billing"
+      <PageHeader
+        title="Payment Management"
+        description="Set service fees, pay doctors, and review payment complaints."
       />
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
         <Card className="border-border/60">
           <CardContent className="p-4">
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Earnings</p>
-                <p className="text-2xl font-bold mt-1">₦{(totalDoctorEarnings + totalThirdPartyEarnings).toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground mt-1">All time revenue</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Card Commission</p>
+                <p className="text-2xl font-bold mt-1">{ratesLoading ? "..." : `${rates?.card_commission_percent ?? 0}%`}</p>
+                <p className="text-xs text-muted-foreground mt-1">Global platform rate</p>
               </div>
               <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <DollarSign className="h-5 w-5 text-primary" />
+                <SlidersHorizontal className="h-5 w-5 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -103,14 +655,14 @@ const AdminPaymentDashboard = () => {
 
         <Card className="border-border/60">
           <CardContent className="p-4">
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Platform Commission</p>
-                <p className="text-2xl font-bold mt-1">₦{totalPlatformCommission.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground mt-1">15% average commission</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active HMO Rates</p>
+                <p className="text-2xl font-bold mt-1">{hmoLoading ? "..." : activeHmoCount}</p>
+                <p className="text-xs text-muted-foreground mt-1">{hmoRates.length} total HMO fees</p>
               </div>
               <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                <CreditCard className="h-5 w-5 text-blue-500" />
+                <ShieldCheck className="h-5 w-5 text-blue-500" />
               </div>
             </div>
           </CardContent>
@@ -118,14 +670,14 @@ const AdminPaymentDashboard = () => {
 
         <Card className="border-border/60">
           <CardContent className="p-4">
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Organization Billing</p>
-                <p className="text-2xl font-bold mt-1">₦{totalOrgBilling.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground mt-1">Monthly invoices</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Selected Outstanding</p>
+                <p className="text-2xl font-bold mt-1">{payoutsLoading ? "..." : formatMoney(outstandingKobo)}</p>
+                <p className="text-xs text-muted-foreground mt-1">{selectedDoctor?.name || "Choose a doctor"}</p>
               </div>
-              <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                <Building2 className="h-5 w-5 text-purple-500" />
+              <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                <Wallet className="h-5 w-5 text-emerald-500" />
               </div>
             </div>
           </CardContent>
@@ -133,487 +685,594 @@ const AdminPaymentDashboard = () => {
 
         <Card className="border-border/60">
           <CardContent className="p-4">
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Pending Payouts</p>
-                <p className="text-2xl font-bold mt-1">{totalPendingPayouts}</p>
-                <p className="text-xs text-muted-foreground mt-1">Awaiting processing</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Open Reconciliation</p>
+                <p className="text-2xl font-bold mt-1">{reconciliationLoading ? "..." : openReconciliationCount}</p>
+                <p className="text-xs text-muted-foreground mt-1">Requests awaiting admin action</p>
               </div>
               <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                <Clock className="h-5 w-5 text-amber-500" />
+                <AlertCircle className="h-5 w-5 text-amber-500" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Main Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full grid grid-cols-3 mb-6">
-          <TabsTrigger value="doctors" className="flex items-center gap-2">
-            <Users className="h-4 w-4" /> Doctor Payouts
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto">
+          <TabsTrigger value="rates" className="gap-2">
+            <SlidersHorizontal className="h-4 w-4" /> Payment Rates
           </TabsTrigger>
-          <TabsTrigger value="thirdparties" className="flex items-center gap-2">
-            <Building2 className="h-4 w-4" /> 3rd Party Payouts
+          <TabsTrigger value="hmo" className="gap-2">
+            <ShieldCheck className="h-4 w-4" /> HMO Fees
           </TabsTrigger>
-          <TabsTrigger value="organizations" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" /> Organization/HMO Billing
+          <TabsTrigger value="partners" className="gap-2">
+            <Building2 className="h-4 w-4" /> Referral Fees
+          </TabsTrigger>
+          <TabsTrigger value="payouts" className="gap-2">
+            <Wallet className="h-4 w-4" /> Doctor Payouts
+          </TabsTrigger>
+          <TabsTrigger value="reconciliation" className="gap-2">
+            <Clock className="h-4 w-4" /> Payment Reviews
           </TabsTrigger>
         </TabsList>
 
-        {/* Doctor Payouts Tab */}
-        <TabsContent value="doctors" className="space-y-4">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search doctors..." 
-                className="pl-9" 
-                value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)} 
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => toast({ title: "Filter applied", description: "Filtering by status." })}>
-                <Filter className="h-4 w-4 mr-2" /> Filter
-              </Button>
-              <Button size="sm" onClick={() => toast({ title: "Processing payouts", description: "Bulk payout processing started." })}>
-                <Send className="h-4 w-4 mr-2" /> Process All
-              </Button>
-            </div>
-          </div>
+        <TabsContent value="rates" className="space-y-4">
+          <Card className="border-border/60">
+            <CardContent className="p-5 space-y-5">
+              <div>
+                <div>
+                  <h2 className="text-lg font-semibold">Payment Rates</h2>
+                  <p className="text-sm text-muted-foreground">Set the default fees and commissions used for bookings and referrals.</p>
+                </div>
+              </div>
 
+              {ratesLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[...Array(6)].map((_, index) => <Skeleton key={index} className="h-20 rounded-lg" />)}
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="card_commission_percent">Card commission percent</Label>
+                      <Input
+                        id="card_commission_percent"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={rateForm.card_commission_percent}
+                        onChange={(event) => setRateForm((current) => ({ ...current, card_commission_percent: event.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="subscription_consultation_fee">Subscription consultation fee (NGN)</Label>
+                      <Input
+                        id="subscription_consultation_fee"
+                        type="number"
+                        min="0"
+                        value={rateForm.subscription_consultation_fee}
+                        onChange={(event) => setRateForm((current) => ({ ...current, subscription_consultation_fee: event.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="organization_consultation_fee">Organization consultation fee (NGN)</Label>
+                      <Input
+                        id="organization_consultation_fee"
+                        type="number"
+                        min="0"
+                        value={rateForm.organization_consultation_fee}
+                        onChange={(event) => setRateForm((current) => ({ ...current, organization_consultation_fee: event.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="referral_default_lab">Default lab referral (NGN)</Label>
+                      <Input
+                        id="referral_default_lab"
+                        type="number"
+                        min="0"
+                        value={rateForm.referral_default_lab}
+                        onChange={(event) => setRateForm((current) => ({ ...current, referral_default_lab: event.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="referral_default_diagnostic">Default diagnostic referral (NGN)</Label>
+                      <Input
+                        id="referral_default_diagnostic"
+                        type="number"
+                        min="0"
+                        value={rateForm.referral_default_diagnostic}
+                        onChange={(event) => setRateForm((current) => ({ ...current, referral_default_diagnostic: event.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="referral_default_pharmacy">Default pharmacy referral (NGN)</Label>
+                      <Input
+                        id="referral_default_pharmacy"
+                        type="number"
+                        min="0"
+                        value={rateForm.referral_default_pharmacy}
+                        onChange={(event) => setRateForm((current) => ({ ...current, referral_default_pharmacy: event.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="referral_default_doctor">Default doctor referral (NGN)</Label>
+                      <Input
+                        id="referral_default_doctor"
+                        type="number"
+                        min="0"
+                        value={rateForm.referral_default_doctor}
+                        onChange={(event) => setRateForm((current) => ({ ...current, referral_default_doctor: event.target.value }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button onClick={saveRates} disabled={ratesSaving}>
+                      {ratesSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                      Save Payment Rates
+                    </Button>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="hmo" className="space-y-4">
           <Card className="border-border/60">
             <CardContent className="p-0">
+              <div className="p-5 flex items-center justify-between gap-3 border-b border-border">
+                <div>
+                  <h2 className="text-lg font-semibold">HMO Fees</h2>
+                  <p className="text-sm text-muted-foreground">Set the consultation fee each HMO should cover.</p>
+                </div>
+              </div>
+
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow>
-                    <TableHead className="text-xs font-semibold">Doctor</TableHead>
-                    <TableHead className="text-xs font-semibold">Specialty</TableHead>
-                    <TableHead className="text-xs font-semibold text-right">Total Earnings</TableHead>
-                    <TableHead className="text-xs font-semibold text-right">Platform Commission (15%)</TableHead>
-                    <TableHead className="text-xs font-semibold text-right">Referral Commission</TableHead>
-                    <TableHead className="text-xs font-semibold text-right">Net Payable</TableHead>
-                    <TableHead className="text-xs font-semibold text-center">Status</TableHead>
-                    <TableHead className="text-xs font-semibold text-center">Action</TableHead>
+                    <TableHead>HMO Provider</TableHead>
+                    <TableHead>Rate (NGN)</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockDoctors.map((doctor) => (
-                    <TableRow key={doctor.id} className="hover:bg-muted/20">
-                      <TableCell className="font-medium text-sm">{doctor.name}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{doctor.specialty}</TableCell>
-                      <TableCell className="text-sm text-right font-medium">₦{doctor.totalEarnings.toLocaleString()}</TableCell>
-                      <TableCell className="text-sm text-right text-red-500">-₦{doctor.platformCommission.toLocaleString()}</TableCell>
-                      <TableCell className="text-sm text-right text-green-500">+₦{doctor.referralCommission.toLocaleString()}</TableCell>
-                      <TableCell className="text-sm text-right font-bold text-primary">₦{doctor.netEarnings.toLocaleString()}</TableCell>
-                      <TableCell className="text-center">{getStatusBadge(doctor.payoutStatus)}</TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="h-8 w-8 p-0"
-                            onClick={() => {
-                              setSelectedDoctor(doctor);
-                              setPayoutAmount(doctor.netEarnings.toString());
-                              setShowPayoutDialog(true);
-                            }}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {doctor.payoutStatus !== "Paid" && (
-                            <Button 
-                              size="sm" 
-                              variant="default" 
-                              className="h-8 px-2 text-xs"
-                              onClick={() => {
-                                toast({ title: "Payout initiated", description: `₦${doctor.netEarnings.toLocaleString()} sent to ${doctor.name}.` });
-                              }}
-                            >
-                              <Send className="h-3 w-3 mr-1" /> Pay
-                            </Button>
-                          )}
-                        </div>
+                  {hmoLoading ? (
+                    [...Array(4)].map((_, index) => (
+                      <TableRow key={index}>
+                        <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                        <TableCell><Skeleton className="h-10 w-32" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-9 w-20 ml-auto" /></TableCell>
+                      </TableRow>
+                    ))
+                  ) : hmoRates.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="py-10 text-center text-muted-foreground">
+                        No HMO fees were found.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    hmoRates.map((row, index) => {
+                      const rate = asRecord(row);
+                      const key = hmoRateId(rate, index);
+                      const edit = hmoEdits[key] ?? { amount: "", is_active: true };
+                      return (
+                        <TableRow key={key}>
+                          <TableCell>
+                            <div className="font-medium">{hmoRateName(rate)}</div>
+                            <div className="text-xs text-muted-foreground">ID: {key}</div>
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={edit.amount}
+                              onChange={(event) => updateHmoEdit(key, { amount: event.target.value })}
+                              className="max-w-[160px]"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Switch checked={edit.is_active} onCheckedChange={(value) => updateHmoEdit(key, { is_active: value })} />
+                              <span className="text-sm">{edit.is_active ? "Active" : "Inactive"}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button size="sm" onClick={() => saveHmoRate(rate, index)} disabled={savingHmoId === key}>
+                              {savingHmoId === key ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                              Save
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
 
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Showing {mockDoctors.length} doctors</p>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">Total Payable:</span>
-                <span className="font-bold">₦{mockDoctors.reduce((sum, d) => sum + d.netEarnings, 0).toLocaleString()}</span>
+        <TabsContent value="partners" className="space-y-4">
+          <Card className="border-border/60">
+            <CardContent className="p-5 space-y-5">
+              <div>
+                <h2 className="text-lg font-semibold">Referral Fee</h2>
+                <p className="text-sm text-muted-foreground">Set how much a partner or referred doctor earns from referrals.</p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => toast({ title: "Report generated", description: "Doctor payout report downloaded." })}>
-                <Download className="h-4 w-4 mr-2" /> Export
-              </Button>
-            </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Partner type</Label>
+                  <Select
+                    value={partnerForm.type}
+                    onValueChange={(value) => setPartnerForm((current) => ({ ...current, type: value as PartnerRateForm["type"] }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pharmacy">Pharmacy</SelectItem>
+                      <SelectItem value="diagnostic">Diagnostic</SelectItem>
+                      <SelectItem value="doctor">Doctor</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="partner_user_uuid">Partner account ID</Label>
+                  <Input
+                    id="partner_user_uuid"
+                    value={partnerForm.userUuid}
+                    onChange={(event) => setPartnerForm((current) => ({ ...current, userUuid: event.target.value }))}
+                    placeholder="Paste account ID from the partner profile"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="partner_amount">Referral commission (NGN)</Label>
+                  <Input
+                    id="partner_amount"
+                    type="number"
+                    min="0"
+                    value={partnerForm.amount}
+                    onChange={(event) => setPartnerForm((current) => ({ ...current, amount: event.target.value }))}
+                    placeholder="150"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <Button onClick={savePartnerRate} disabled={partnerSaving}>
+                  {partnerSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                  Save Referral Fee
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="payouts" className="space-y-4">
+          <div className="grid grid-cols-1 xl:grid-cols-[minmax(260px,360px)_1fr] gap-4">
+            <Card className="border-border/60">
+              <CardContent className="p-5 space-y-4">
+                <div>
+                  <h2 className="text-lg font-semibold">Pay a Doctor</h2>
+                  <p className="text-sm text-muted-foreground">Choose a doctor, enter the amount paid, and save the payout record.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="doctor_search">Find doctor</Label>
+                  <Input
+                    id="doctor_search"
+                    value={doctorSearch}
+                    onChange={(event) => setDoctorSearch(event.target.value)}
+                    placeholder="Search name, email, specialty"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Doctor</Label>
+                  <Select value={selectedDoctorUuid} onValueChange={setSelectedDoctorUuid} disabled={doctorsLoading || filteredDoctors.length === 0}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={doctorsLoading ? "Loading doctors..." : "Select doctor"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredDoctors.map((doctor) => (
+                        <SelectItem key={doctor.uuid} value={doctor.uuid}>
+                          {doctor.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedDoctor && (
+                    <p className="text-xs text-muted-foreground truncate">{selectedDoctor.email || selectedDoctor.specialty}</p>
+                  )}
+                </div>
+
+                <div className="rounded-lg border border-border p-3">
+                  <p className="text-xs text-muted-foreground">Amount currently owed</p>
+                  <p className="text-xl font-bold">{payoutsLoading ? "Loading..." : formatMoney(outstandingKobo)}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="payout_amount">Amount (NGN)</Label>
+                  <Input
+                    id="payout_amount"
+                    type="number"
+                    min="0"
+                    value={payoutForm.amount}
+                    onChange={(event) => setPayoutForm((current) => ({ ...current, amount: event.target.value }))}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="paid_on">Paid on</Label>
+                    <Input
+                      id="paid_on"
+                      type="date"
+                      value={payoutForm.paid_on}
+                      onChange={(event) => setPayoutForm((current) => ({ ...current, paid_on: event.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="period_start">Period start</Label>
+                    <Input
+                      id="period_start"
+                      type="date"
+                      value={payoutForm.period_start}
+                      onChange={(event) => setPayoutForm((current) => ({ ...current, period_start: event.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="period_end">Period end</Label>
+                    <Input
+                      id="period_end"
+                      type="date"
+                      value={payoutForm.period_end}
+                      onChange={(event) => setPayoutForm((current) => ({ ...current, period_end: event.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="payout_notes">Notes</Label>
+                  <Textarea
+                    id="payout_notes"
+                    rows={3}
+                    value={payoutForm.notes}
+                    onChange={(event) => setPayoutForm((current) => ({ ...current, notes: event.target.value }))}
+                    placeholder="June batch"
+                  />
+                </div>
+
+                <Button className="w-full" onClick={recordPayout} disabled={payoutSaving || !selectedDoctorUuid}>
+                  {payoutSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                  Record Payout
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/60">
+              <CardContent className="p-0">
+                <div className="p-5 flex items-center justify-between gap-3 border-b border-border">
+                  <div>
+                    <h2 className="text-lg font-semibold">Payout History</h2>
+                    <p className="text-sm text-muted-foreground">{selectedDoctor?.name || "Select a doctor to load payouts"}</p>
+                  </div>
+                </div>
+
+                <Table>
+                  <TableHeader className="bg-muted/30">
+                    <TableRow>
+                      <TableHead>Reference</TableHead>
+                      <TableHead>Period</TableHead>
+                      <TableHead>Paid On</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {payoutsLoading ? (
+                      [...Array(5)].map((_, index) => (
+                        <TableRow key={index}>
+                          <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                          <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                          <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                          <TableCell><Skeleton className="h-5 w-24 ml-auto" /></TableCell>
+                          <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                        </TableRow>
+                      ))
+                    ) : payouts.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
+                          No payouts found for this doctor.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      payouts.map((row, index) => {
+                        const payout = asRecord(row);
+                        const amount = moneyKobo(payout, ["amount_kobo", "paid_amount_kobo"], ["amount", "paid_amount"]);
+                        return (
+                          <TableRow key={payoutId(payout, index)}>
+                            <TableCell className="font-mono text-xs">
+                              {pickText(payout, ["reference", "payout_reference", "uuid", "id"], "No reference")}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {formatDate(pickText(payout, ["period_start", "start_date"]))} - {formatDate(pickText(payout, ["period_end", "end_date"]))}
+                            </TableCell>
+                            <TableCell>{formatDate(pickText(payout, ["paid_on", "paid_at", "created_at"]))}</TableCell>
+                            <TableCell className="text-right font-semibold">{formatMoney(amount)}</TableCell>
+                            <TableCell>{statusBadge(pickText(payout, ["status"], "paid"))}</TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
-        {/* 3rd Party Payouts Tab */}
-        <TabsContent value="thirdparties" className="space-y-4">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search 3rd parties..." 
-                className="pl-9" 
-                value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)} 
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => toast({ title: "Filter applied" })}>
-                <Filter className="h-4 w-4 mr-2" /> Filter
-              </Button>
-              <Button size="sm" onClick={() => toast({ title: "Processing payouts", description: "Bulk 3rd party payout processing started." })}>
-                <Send className="h-4 w-4 mr-2" /> Process All
-              </Button>
-            </div>
-          </div>
-
+        <TabsContent value="reconciliation" className="space-y-4">
           <Card className="border-border/60">
             <CardContent className="p-0">
+              <div className="p-5 flex items-center justify-between gap-3 border-b border-border flex-wrap">
+                <div>
+                  <h2 className="text-lg font-semibold">Payment Review Requests</h2>
+                  <p className="text-sm text-muted-foreground">Review doctor payment complaints and close each request after checking.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select value={reconciliationStatus} onValueChange={setReconciliationStatus}>
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="resolved">Resolved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                      <SelectItem value="all">All</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow>
-                    <TableHead className="text-xs font-semibold">Name</TableHead>
-                    <TableHead className="text-xs font-semibold">Type</TableHead>
-                    <TableHead className="text-xs font-semibold text-right">Total Earnings</TableHead>
-                    <TableHead className="text-xs font-semibold text-right">Platform Commission (15%)</TableHead>
-                    <TableHead className="text-xs font-semibold text-right">Doctor Commission (10%)</TableHead>
-                    <TableHead className="text-xs font-semibold text-right">Referral Commission</TableHead>
-                    <TableHead className="text-xs font-semibold text-right">Net Payable</TableHead>
-                    <TableHead className="text-xs font-semibold text-center">Status</TableHead>
-                    <TableHead className="text-xs font-semibold text-center">Action</TableHead>
+                    <TableHead>Doctor</TableHead>
+                    <TableHead>Reason</TableHead>
+                    <TableHead className="text-right">Expected Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Submitted</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockThirdParties.map((party) => (
-                    <TableRow key={party.id} className="hover:bg-muted/20">
-                      <TableCell className="font-medium text-sm">{party.name}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{party.type}</TableCell>
-                      <TableCell className="text-sm text-right font-medium">₦{party.totalEarnings.toLocaleString()}</TableCell>
-                      <TableCell className="text-sm text-right text-red-500">-₦{party.platformCommission.toLocaleString()}</TableCell>
-                      <TableCell className="text-sm text-right text-red-400">-₦{party.doctorCommission.toLocaleString()}</TableCell>
-                      <TableCell className="text-sm text-right text-green-500">+₦{party.referralCommission.toLocaleString()}</TableCell>
-                      <TableCell className="text-sm text-right font-bold text-primary">₦{party.netEarnings.toLocaleString()}</TableCell>
-                      <TableCell className="text-center">{getStatusBadge(party.payoutStatus)}</TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="h-8 w-8 p-0"
-                            onClick={() => {
-                              setSelectedThirdParty(party);
-                              setPayoutAmount(party.netEarnings.toString());
-                              setShowPayoutDialog(true);
-                            }}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {party.payoutStatus !== "Paid" && (
-                            <Button 
-                              size="sm" 
-                              variant="default" 
-                              className="h-8 px-2 text-xs"
-                              onClick={() => {
-                                toast({ title: "Payout initiated", description: `₦${party.netEarnings.toLocaleString()} sent to ${party.name}.` });
-                              }}
-                            >
-                              <Send className="h-3 w-3 mr-1" /> Pay
-                            </Button>
-                          )}
-                        </div>
+                  {reconciliationLoading ? (
+                    [...Array(5)].map((_, index) => (
+                      <TableRow key={index}>
+                        <TableCell><Skeleton className="h-5 w-36" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-44" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-24 ml-auto" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-9 w-32 ml-auto" /></TableCell>
+                      </TableRow>
+                    ))
+                  ) : reconciliations.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                        No reconciliation requests found.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    reconciliations.map((row, index) => {
+                      const item = asRecord(row);
+                      const status = pickText(item, ["status"], "open").toLowerCase();
+                      const amount = moneyKobo(item, ["expected_amount_kobo", "amount_kobo", "requested_amount_kobo"], ["expected_amount", "amount"]);
+                      return (
+                        <TableRow key={reconciliationId(item, index)}>
+                          <TableCell>
+                            <div className="font-medium">
+                              {pickText(item, ["doctor.name", "doctor.full_name", "doctor_name", "user.name", "user.full_name"], "Unknown doctor")}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {pickText(item, ["doctor.email", "user.email", "email", "doctor_uuid"], reconciliationId(item, index))}
+                            </div>
+                          </TableCell>
+                          <TableCell className="max-w-[260px]">
+                            <div className="font-medium truncate">{pickText(item, ["reason"], "Review requested")}</div>
+                            <div className="text-xs text-muted-foreground line-clamp-2">{pickText(item, ["details", "description", "note"], "")}</div>
+                          </TableCell>
+                          <TableCell className="text-right font-semibold">{formatMoney(amount)}</TableCell>
+                          <TableCell>{statusBadge(status)}</TableCell>
+                          <TableCell>{formatDate(pickText(item, ["created_at", "submitted_at"]))}</TableCell>
+                          <TableCell className="text-right">
+                            {["resolved", "rejected"].includes(status) ? (
+                              <span className="text-sm text-muted-foreground">Closed</span>
+                            ) : (
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setDecision({ item, action: "resolve" });
+                                    setResolutionNote("");
+                                  }}
+                                >
+                                  <CheckCircle2 className="h-4 w-4 mr-1" /> Resolve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => {
+                                    setDecision({ item, action: "reject" });
+                                    setResolutionNote("");
+                                  }}
+                                >
+                                  <XCircle className="h-4 w-4 mr-1" /> Reject
+                                </Button>
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
-
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Showing {mockThirdParties.length} 3rd parties</p>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">Total Payable:</span>
-                <span className="font-bold">₦{mockThirdParties.reduce((sum, t) => sum + t.netEarnings, 0).toLocaleString()}</span>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => toast({ title: "Report generated", description: "3rd party payout report downloaded." })}>
-                <Download className="h-4 w-4 mr-2" /> Export
-              </Button>
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* Organization/HMO Billing Tab */}
-        <TabsContent value="organizations" className="space-y-4">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search organizations..." 
-                className="pl-9" 
-                value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)} 
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => toast({ title: "Filter applied" })}>
-                <Filter className="h-4 w-4 mr-2" /> Filter
-              </Button>
-              <Button size="sm" variant="default" onClick={() => toast({ title: "Generating invoices", description: "Monthly invoices generated for all organizations." })}>
-                <FileText className="h-4 w-4 mr-2" /> Generate Invoices
-              </Button>
-            </div>
-          </div>
-
-          <Card className="border-border/60">
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader className="bg-muted/30">
-                  <TableRow>
-                    <TableHead className="text-xs font-semibold">Organization/HMO</TableHead>
-                    <TableHead className="text-xs font-semibold">Type</TableHead>
-                    <TableHead className="text-xs font-semibold text-center">Staff Count</TableHead>
-                    <TableHead className="text-xs font-semibold text-right">Monthly Usage</TableHead>
-                    <TableHead className="text-xs font-semibold text-right">Invoice Amount</TableHead>
-                    <TableHead className="text-xs font-semibold text-center">Payment Status</TableHead>
-                    <TableHead className="text-xs font-semibold text-center">Due Date</TableHead>
-                    <TableHead className="text-xs font-semibold text-center">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockOrganizations.map((org) => (
-                    <TableRow key={org.id} className="hover:bg-muted/20">
-                      <TableCell className="font-medium text-sm">{org.name}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{org.type}</TableCell>
-                      <TableCell className="text-sm text-center">{org.staffCount}</TableCell>
-                      <TableCell className="text-sm text-right">₦{org.monthlyUsage.toLocaleString()}</TableCell>
-                      <TableCell className="text-sm text-right font-medium">₦{org.invoiceAmount.toLocaleString()}</TableCell>
-                      <TableCell className="text-center">{getStatusBadge(org.paymentStatus)}</TableCell>
-                      <TableCell className="text-sm text-center">{org.dueDate}</TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="h-8 w-8 p-0"
-                            onClick={() => setSelectedOrg(org)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {org.paymentStatus === "Overdue" && (
-                            <Button 
-                              size="sm" 
-                              variant="destructive" 
-                              className="h-8 px-2 text-xs"
-                              onClick={() => {
-                                toast({ title: "Reminder sent", description: `Payment reminder sent to ${org.name}.` });
-                              }}
-                            >
-                              <AlertCircle className="h-3 w-3 mr-1" /> Remind
-                            </Button>
-                          )}
-                          {org.paymentStatus === "Pending" && (
-                            <Button 
-                              size="sm" 
-                              variant="default" 
-                              className="h-8 px-2 text-xs"
-                              onClick={() => {
-                                toast({ title: "Invoice sent", description: `Invoice sent to ${org.name}.` });
-                              }}
-                            >
-                              <Send className="h-3 w-3 mr-1" /> Send
-                            </Button>
-                          )}
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="h-8 px-2 text-xs"
-                            onClick={() => {
-                              toast({ title: "Invoice downloaded", description: `Invoice for ${org.name} downloaded.` });
-                            }}
-                          >
-                            <Download className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Showing {mockOrganizations.length} organizations</p>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">Total Invoiced:</span>
-                <span className="font-bold">₦{mockOrganizations.reduce((sum, o) => sum + o.invoiceAmount, 0).toLocaleString()}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">Overdue:</span>
-                <span className="font-bold text-red-500">
-                  ₦{mockOrganizations.filter(o => o.paymentStatus === "Overdue").reduce((sum, o) => sum + o.invoiceAmount, 0).toLocaleString()}
-                </span>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => toast({ title: "Report generated", description: "Billing report downloaded." })}>
-                <Download className="h-4 w-4 mr-2" /> Export
-              </Button>
-            </div>
-          </div>
         </TabsContent>
       </Tabs>
 
-      {/* Payout Dialog */}
-      <Dialog open={showPayoutDialog} onOpenChange={setShowPayoutDialog}>
-        <DialogContent className="max-w-md">
+      <Dialog open={Boolean(decision)} onOpenChange={(open) => !open && setDecision(null)}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Wallet className="h-5 w-5 text-primary" />
-              Process Payout
+              {decision?.action === "resolve" ? <CheckCircle2 className="h-5 w-5 text-green-600" /> : <XCircle className="h-5 w-5 text-red-600" />}
+              {decision?.action === "resolve" ? "Resolve reconciliation" : "Reject reconciliation"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="p-4 bg-muted/30 rounded-lg">
-              <p className="text-sm text-muted-foreground">Recipient</p>
-              <p className="font-semibold">{selectedDoctor?.name || selectedThirdParty?.name}</p>
-              <p className="text-sm text-muted-foreground mt-1">ID: {selectedDoctor?.id || selectedThirdParty?.id}</p>
-            </div>
 
-            <div className="space-y-2">
-              <Label>Amount (₦)</Label>
-              <Input 
-                type="number" 
-                value={payoutAmount} 
-                onChange={(e) => setPayoutAmount(e.target.value)}
-                className="text-lg font-bold"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Payment Method</Label>
-              <Select defaultValue="bank">
-                <SelectTrigger>
-                  <SelectValue placeholder="Select payment method" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="bank">Bank Transfer</SelectItem>
-                  <SelectItem value="card">Card Payment</SelectItem>
-                  <SelectItem value="wallet">Wallet Transfer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-              <p className="text-sm text-amber-800 dark:text-amber-400 flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                <span>Please confirm the payout details before proceeding. This action cannot be undone.</span>
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPayoutDialog(false)}>Cancel</Button>
-            <Button onClick={() => {
-              toast({ 
-                title: "Payout processed", 
-                description: `₦${parseInt(payoutAmount).toLocaleString()} sent to ${selectedDoctor?.name || selectedThirdParty?.name}.` 
-              });
-              setShowPayoutDialog(false);
-            }}>
-              <Send className="h-4 w-4 mr-2" /> Process Payout
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Organization Detail Dialog */}
-      <Dialog open={!!selectedOrg} onOpenChange={(open) => !open && setSelectedOrg(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-primary" />
-              Organization Details
-            </DialogTitle>
-          </DialogHeader>
-          {selectedOrg && (
+          {decision && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <p className="text-xs text-muted-foreground">Organization</p>
-                  <p className="font-semibold">{selectedOrg.name}</p>
-                </div>
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <p className="text-xs text-muted-foreground">Type</p>
-                  <p className="font-semibold">{selectedOrg.type}</p>
-                </div>
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <p className="text-xs text-muted-foreground">Staff Count</p>
-                  <p className="font-semibold">{selectedOrg.staffCount}</p>
-                </div>
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <p className="text-xs text-muted-foreground">Monthly Usage</p>
-                  <p className="font-semibold">₦{selectedOrg.monthlyUsage.toLocaleString()}</p>
-                </div>
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <p className="text-xs text-muted-foreground">Invoice Amount</p>
-                  <p className="font-semibold text-primary">₦{selectedOrg.invoiceAmount.toLocaleString()}</p>
-                </div>
-                <div className="p-3 bg-muted/30 rounded-lg">
-                  <p className="text-xs text-muted-foreground">Payment Status</p>
-                  <div>{getStatusBadge(selectedOrg.paymentStatus)}</div>
-                </div>
+              <div className="rounded-lg border border-border p-3">
+                <p className="text-xs text-muted-foreground">Request</p>
+                <p className="font-medium">
+                  {pickText(decision.item, ["reason"], "Payment reconciliation")} -{" "}
+                  {formatMoney(moneyKobo(decision.item, ["expected_amount_kobo", "amount_kobo"], ["expected_amount", "amount"]))}
+                </p>
               </div>
-
-              <div className="border-t border-border/60 pt-4">
-                <h4 className="text-sm font-semibold mb-3">Recent Usage Summary</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Total Consultations</span>
-                    <span className="font-medium">1,247</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Lab Tests</span>
-                    <span className="font-medium">892</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Prescriptions</span>
-                    <span className="font-medium">1,564</span>
-                  </div>
-                  <div className="flex justify-between text-sm border-t border-border/60 pt-2">
-                    <span className="text-muted-foreground">Total Usage Cost</span>
-                    <span className="font-bold">₦{selectedOrg.monthlyUsage.toLocaleString()}</span>
-                  </div>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="resolution_note">Resolution note</Label>
+                <Textarea
+                  id="resolution_note"
+                  rows={4}
+                  value={resolutionNote}
+                  onChange={(event) => setResolutionNote(event.target.value)}
+                  placeholder={decision.action === "resolve" ? "Adjusted; paid next batch." : "No discrepancy found."}
+                />
               </div>
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setSelectedOrg(null)}>Close</Button>
-                <Button variant="outline" onClick={() => {
-                  toast({ title: "Invoice downloaded", description: `Invoice for ${selectedOrg.name} downloaded.` });
-                }}>
-                  <Download className="h-4 w-4 mr-2" /> Download Invoice
-                </Button>
-                <Button onClick={() => {
-                  toast({ title: "Invoice sent", description: `Invoice sent to ${selectedOrg.name}.` });
-                  setSelectedOrg(null);
-                }}>
-                  <Send className="h-4 w-4 mr-2" /> Send Invoice
-                </Button>
-              </DialogFooter>
             </div>
           )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDecision(null)}>Cancel</Button>
+            <Button
+              variant={decision?.action === "reject" ? "destructive" : "default"}
+              onClick={submitDecision}
+              disabled={decisionSaving}
+            >
+              {decisionSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Submit
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </DashboardLayout>

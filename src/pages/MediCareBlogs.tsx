@@ -5,6 +5,8 @@ import { useMediCareSettings } from "@/lib/medicareSettings";
 import { MedicareFooter, MedicareSimpleHeader, medicareThemeStyle } from "@/components/medicare/MediCareChrome";
 import { BLOG_POSTS, BLOG_CATEGORIES, type BlogPost } from "@/data/blogs";
 import { supabase } from "@/integrations/supabase/client";
+import { api, resolveApiAssetUrl } from "@/lib/api";
+import { collection } from "@/lib/backendAdapters";
 
 const tokenStyles = `
 .medicare-blogs {
@@ -45,8 +47,47 @@ const tokenStyles = `
 .mb-accent { color: hsl(var(--mc-sage)); }
 `;
 
-const MediCareBlogs = () => {
-  const settings = useMediCareSettings();
+const asRecord = (value: unknown): Record<string, any> =>
+  value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, any> : {};
+
+const text = (value: unknown, fallback = "") => {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  const record = asRecord(value);
+  return String(record.name ?? record.title ?? record.label ?? fallback);
+};
+
+const dateLabel = (value: unknown) => {
+  if (!value) return "";
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString(undefined, { month: "short", day: "2-digit", year: "numeric" });
+};
+
+const normalizeMiniSitePost = (value: unknown): BlogPost => {
+  const row = asRecord(value);
+  const category = row.category ?? row.post_category;
+  const minutes = Number(row.read_time_minutes ?? row.readTimeMinutes);
+  return {
+    id: text(row.id ?? row.uuid ?? row.slug, crypto.randomUUID()),
+    slug: text(row.slug ?? row.id ?? row.uuid, crypto.randomUUID()),
+    title: text(row.title, "Untitled article"),
+    excerpt: text(row.excerpt ?? row.summary ?? row.description),
+    category: (text(category, "Wellness") as BlogPost["category"]) || "Wellness",
+    author: text(row.author_name ?? row.author?.name, "MediCare Team"),
+    authorRole: text(row.author_role ?? row.author?.role),
+    date: dateLabel(row.published_at ?? row.publish_date ?? row.created_at),
+    readTime: Number.isFinite(minutes) && minutes > 0 ? `${minutes} min read` : text(row.read_time, "5 min read"),
+    cover: resolveApiAssetUrl(text(row.cover_image_url ?? row.cover_image ?? row.image_url ?? row.hero_image_url)),
+    featured: row.is_featured === true || row.featured === true,
+  };
+};
+
+const MediCareBlogs = ({ doctorSlug }: { doctorSlug?: string } = {}) => {
+  const settings = useMediCareSettings(doctorSlug);
+  const basePath = doctorSlug ? "" : "/doctor-portal";
+  const homeHref = basePath || "/";
+  const blogsHref = `${basePath}/blogs` || "/blogs";
   const [query, setQuery] = useState("");
   const [activeCat, setActiveCat] = useState<string>("All");
   const [posts, setPosts] = useState<BlogPost[]>(BLOG_POSTS);
@@ -58,6 +99,19 @@ const MediCareBlogs = () => {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      if (doctorSlug) {
+        try {
+          const response = await api.medicare.public.posts(doctorSlug, { per_page: 50 });
+          if (!cancelled) {
+            const miniSitePosts = collection(response.data).map(normalizeMiniSitePost);
+            setPosts(miniSitePosts.length ? miniSitePosts : []);
+          }
+        } catch {
+          if (!cancelled) setPosts([]);
+        }
+        return;
+      }
+
       const { data } = await supabase
         .from("blog_posts")
         .select("id, slug, title, excerpt, cover_image, category, author_name, author_role, read_time, featured, publish_date, published")
@@ -82,7 +136,7 @@ const MediCareBlogs = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [doctorSlug]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -105,11 +159,11 @@ const MediCareBlogs = () => {
     <div className="medicare-blogs min-h-screen" style={themeStyle}>
       <style>{tokenStyles}</style>
 
-      <MedicareSimpleHeader settings={settings} activeHref="/doctor-portal/blogs" />
+      <MedicareSimpleHeader settings={settings} activeHref={blogsHref} basePath={basePath} />
 
       {/* Hero */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 pt-14 pb-10">
-        <Link to="/doctor-portal" className="inline-flex items-center gap-2 text-xs font-semibold text-[hsl(var(--mc-muted))] mb-5 hover:text-[hsl(var(--mc-sage))]">
+        <Link to={homeHref} className="inline-flex items-center gap-2 text-xs font-semibold text-[hsl(var(--mc-muted))] mb-5 hover:text-[hsl(var(--mc-sage))]">
           <ArrowLeft className="h-3.5 w-3.5" /> Back to home
         </Link>
         <div className="grid md:grid-cols-[1.2fr_1fr] gap-10 items-end">
@@ -161,7 +215,7 @@ const MediCareBlogs = () => {
       {/* Featured */}
       {activeCat === "All" && !query && featured && (
         <section className="mx-auto max-w-7xl px-4 sm:px-6 pb-12">
-          <Link to={`/doctor-portal/blogs/${featured.slug}`} className="block mb-card group">
+          <Link to={`${blogsHref}/${featured.slug}`} className="block mb-card group">
             <div className="grid md:grid-cols-2">
               <div className="aspect-[16/10] md:aspect-auto overflow-hidden bg-[hsl(var(--mc-cream))]">
                 <img src={featured.cover} alt={featured.title} loading="lazy"
@@ -207,7 +261,7 @@ const MediCareBlogs = () => {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {rest.map((p: BlogPost) => (
-              <Link key={p.id} to={`/doctor-portal/blogs/${p.slug}`} className="mb-card group flex flex-col">
+              <Link key={p.id} to={`${blogsHref}/${p.slug}`} className="mb-card group flex flex-col">
                 <div className="aspect-[16/10] overflow-hidden bg-[hsl(var(--mc-cream))]">
                   <img src={p.cover} alt={p.title} loading="lazy"
                     className="h-full w-full object-cover group-hover:scale-[1.05] transition-transform duration-500" />
@@ -235,7 +289,7 @@ const MediCareBlogs = () => {
 
 
       {/* Footer */}
-      <MedicareFooter settings={settings} />
+      <MedicareFooter settings={settings} basePath={basePath} />
       <footer className="hidden">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-12 grid sm:grid-cols-2 gap-6 items-center">
           <div className="space-y-1 text-sm">

@@ -140,6 +140,14 @@ const Auth = () => {
             {busy ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             {busy ? "Signing in..." : "Sign in"}
           </Button>
+          <p className="text-center text-xs text-muted-foreground">
+            <Link
+              to={`/forgot-password?context=admin&return=${encodeURIComponent("/auth")}${email.trim() ? `&email=${encodeURIComponent(email.trim())}` : ""}`}
+              className="hover:text-primary"
+            >
+              Forgot password?
+            </Link>
+          </p>
           <p className="text-xs text-muted-foreground text-center">
             <Link to="/" className="hover:text-foreground">← Back to site</Link>
           </p>

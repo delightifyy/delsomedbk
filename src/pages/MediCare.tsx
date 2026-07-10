@@ -13,7 +13,7 @@ import {
   useMediCareSettings,
 } from "@/lib/medicareSettings";
 import { Icon as McIcon } from "@/components/medicare-admin/icons";
-import { getMedicareNavItems, MedicareFooter, medicareThemeStyle } from "@/components/medicare/MediCareChrome";
+import { getMedicareNavItems, MedicareFooter, medicareThemeStyle, normalizeMedicareHref } from "@/components/medicare/MediCareChrome";
 import AdvancedBookingFlow from "@/components/medicare/AdvancedBookingFlow";
 import AccessMethodModal, { type AccessMethod } from "@/components/medicare/AccessMethodModal";
 import { DOCTORS, type Doctor } from "@/data/doctors";
@@ -551,12 +551,14 @@ const MediCare = ({ doctorSlug }: MediCareProps = {}) => {
   const [accessMethod, setAccessMethod] = useState<AccessMethod | null>(null);
   // Pass the doctorSlug to the settings hook so it loads the correct doctor's settings
   const settings = useMediCareSettings(doctorSlug);
+  const basePath = doctorSlug ? "" : "/doctor-portal";
+  const servicesHref = `${basePath}/services` || "/services";
 
   const handleBookClick = () => {
     setAccessOpen(true);
   };
   const handleHeroButtonClick = () => {
-    const href = settings.hero.ctaHref?.trim();
+    const href = normalizeMedicareHref(settings.hero.ctaHref?.trim() || "", basePath);
     if (!href || href === "#cta" || href === "/doctor-portal?book=1") {
       handleBookClick();
       return;
@@ -583,7 +585,7 @@ const MediCare = ({ doctorSlug }: MediCareProps = {}) => {
     () => DOCTORS.find((doctor) => doctor.id === selectedDoctorId) ?? DOCTORS[0],
     [selectedDoctorId],
   );
-  const navLinks = useMemo(() => getMedicareNavItems(settings), [settings]);
+  const navLinks = useMemo(() => getMedicareNavItems(settings, basePath), [basePath, settings]);
 
   const themeStyle = useMemo(
     () => medicareThemeStyle(settings),
@@ -649,10 +651,18 @@ const MediCare = ({ doctorSlug }: MediCareProps = {}) => {
                 <Stethoscope className="h-5 w-5 text-white" />
               )}
             </span>
-            <span className="font-display font-bold text-xl tracking-tight">{settings.siteName}</span>
+            <span
+              className={`font-display text-xl font-bold tracking-tight transition-colors ${
+                scrolled
+                  ? "text-[hsl(var(--mc-primary))]"
+                  : "text-white/95 drop-shadow-[0_1px_8px_hsl(222_47%_8%/.35)]"
+              }`}
+            >
+              {settings.siteName}
+            </span>
           </a>
 
-          <ul className="hidden lg:flex items-center gap-1 text-sm font-semibold text-white">
+          <ul className={`hidden lg:flex items-center gap-1 text-sm font-semibold transition-colors ${scrolled ? "text-[hsl(var(--mc-muted))]" : "text-white"}`}>
             {navLinks.map((l) => (
               <li key={l.href}>
                 <a href={l.href} className="px-3 py-2 rounded-full inline-flex items-center gap-1 hover:text-[hsl(var(--mc-primary))] transition-colors">
@@ -845,7 +855,7 @@ const MediCare = ({ doctorSlug }: MediCareProps = {}) => {
                     {svc.ctaLabel} <ArrowRight className="h-4 w-4" />
                   </a>
                 )}
-                <Link to="/doctor-portal/services" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[hsl(var(--mc-primary))]">
+                <Link to={servicesHref} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[hsl(var(--mc-primary))]">
                   Read more <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
@@ -858,7 +868,7 @@ const MediCare = ({ doctorSlug }: MediCareProps = {}) => {
 
 
       {/* ============ FOOTER (premium dark) ============ */}
-      <MedicareFooter settings={settings} showAdminLink />
+      <MedicareFooter settings={settings} showAdminLink adminHref={doctorSlug ? "/admin" : "/doctor-portal/admin"} basePath={basePath} />
       <footer className="hidden">
         <div className="absolute inset-0 mc-grid-pattern opacity-10" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
@@ -912,7 +922,7 @@ const MediCare = ({ doctorSlug }: MediCareProps = {}) => {
               <p>© {new Date().getFullYear()} MediCare. All rights reserved In Partnership With Desolmedical Solution Limited.</p>
               <div className="flex items-center gap-3">
                 
-                <Link to="/doctor-portal/admin" className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 hover:text-white hover:border-white/40 transition">
+                <Link to={doctorSlug ? "/admin" : "/doctor-portal/admin"} className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1.5 hover:text-white hover:border-white/40 transition">
                   <Settings className="h-3.5 w-3.5" /> Admin
                 </Link>
               </div>
@@ -936,6 +946,8 @@ const MediCare = ({ doctorSlug }: MediCareProps = {}) => {
           setAccessMethod(null);
         }}
         method={accessMethod}
+        doctorUserUuid={settings.miniSite?.doctorUuid}
+        miniSiteSlug={doctorSlug || settings.miniSite?.slug}
       />
     </div>
   );

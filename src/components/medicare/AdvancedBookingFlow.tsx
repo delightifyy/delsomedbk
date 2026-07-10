@@ -10,7 +10,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { api, getStoredAuthToken, setStoredAuthToken } from "@/lib/api";
+import {
+  api,
+  extractAuthPayload,
+  getStoredAuthToken,
+  getStoredAuthUser,
+  setStoredAuthToken,
+  setStoredAuthUser,
+} from "@/lib/api";
+import {
+  addDays,
+  formatDateValue,
+  normalizePublicAvailability,
+  type PublicAvailabilityDate,
+} from "@/lib/miniSiteAvailability";
+import {
+  hasNonPatientRoleSignal,
+  normalizePatientAuthUser,
+} from "@/lib/authRoles";
 
 const fmtNGN = (n: number) => `₦${n.toLocaleString("en-NG")}`;
 
@@ -78,18 +95,18 @@ type Props = {
 
 type SubMode = "physical" | "online" | null;
 
-const generateDates = () => {
-  const arr: { value: string; label: string }[] = [];
-  for (let i = 1; i <= 10; i++) {
-    const d = new Date(Date.now() + i * 86400000);
-    arr.push({
-      value: d.toISOString().slice(0, 10),
-      label: d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }),
-    });
+const BOOKING_WINDOW_DAYS = 60;
+
+const verifyPatientSession = async (fallbackEmail = "") => {
+  const response = await api.me.patient.profile();
+  if (hasNonPatientRoleSignal(response.data)) {
+    throw new Error("Please use a patient account to book an appointment.");
   }
-  return arr;
+
+  const patientUser = normalizePatientAuthUser(response.data, fallbackEmail);
+  setStoredAuthUser(patientUser);
+  return patientUser;
 };
-const TIMES = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "14:00", "14:30", "15:00", "15:30", "16:00"];
 
 export default function AdvancedBookingFlow({ open, onClose, method, doctorUserUuid, miniSiteSlug }: Props) {
   const navigate = useNavigate();
@@ -104,6 +121,9 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
   // Clinic locations from API
   const [clinicLocations, setClinicLocations] = useState<ClinicLocation[]>([]);
   const [loadingLocations, setLoadingLocations] = useState(false);
+  const [availabilityDates, setAvailabilityDates] = useState<PublicAvailabilityDate[]>([]);
+  const [loadingAvailability, setLoadingAvailability] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState<string | null>(null);
 
   // shared
   const [step, setStep] = useState(0);
@@ -146,16 +166,14 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
     if (open) {
       const token = getStoredAuthToken();
       if (token) {
-        // Validate token by fetching profile
-        api.me.profile()
-          .then((response) => {
+        verifyPatientSession(getStoredAuthUser()?.email)
+          .then((patientUser) => {
             setIsAuthenticated(true);
-            setAuthUser(response.data);
+            setAuthUser(patientUser);
           })
           .catch(() => {
-            // Token invalid, clear it
-            setStoredAuthToken(null);
             setIsAuthenticated(false);
+            setAuthUser(null);
           });
       }
     }
@@ -171,9 +189,19 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
     return SERVICES;
   }, [method, hmoProviderId]);
 
+  const selectedAvailabilityDate = useMemo(
+    () => availabilityDates.find((entry) => entry.value === date) ?? null,
+    [availabilityDates, date],
+  );
+
+  const availableSlots = useMemo(
+    () => selectedAvailabilityDate?.slotRanges ?? [],
+    [selectedAvailabilityDate],
+  );
+
   // Fetch clinic locations from API when modal opens or when doctor/slug changes
   useEffect(() => {
-    if (open && doctorUserUuid && miniSiteSlug) {
+    if (open && (doctorUserUuid || miniSiteSlug)) {
       fetchClinicLocations();
     }
   }, [open, doctorUserUuid, miniSiteSlug]);
@@ -219,6 +247,53 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
     }
   };
 
+  const fetchAvailability = async () => {
+    if (!miniSiteSlug && !doctorUserUuid) {
+      setAvailabilityDates([]);
+      setAvailabilityError("This doctor's availability is not configured yet.");
+      return;
+    }
+
+    const from = formatDateValue(new Date());
+    const to = formatDateValue(addDays(new Date(), BOOKING_WINDOW_DAYS));
+
+    setLoadingAvailability(true);
+    setAvailabilityError(null);
+
+    try {
+      let dates: PublicAvailabilityDate[] = [];
+      let loadedFromMiniSite = false;
+
+      if (miniSiteSlug) {
+        try {
+          const response = await api.medicare.public.availability(miniSiteSlug, { from, to });
+          dates = normalizePublicAvailability(response.data).dates;
+          loadedFromMiniSite = true;
+        } catch (error) {
+          if (!doctorUserUuid) throw error;
+        }
+      }
+
+      if (!loadedFromMiniSite && doctorUserUuid) {
+        const response = await api.doctors.availability(doctorUserUuid, { from, to });
+        dates = normalizePublicAvailability(response.data).dates;
+      }
+
+      const openDates = dates.filter((entry) => entry.slotRanges.length > 0);
+      setAvailabilityDates(openDates);
+      setDate((current) =>
+        openDates.some((entry) => entry.value === current) ? current : openDates[0]?.value ?? "",
+      );
+    } catch (error) {
+      console.error("Failed to fetch availability:", error);
+      setAvailabilityDates([]);
+      setDate("");
+      setAvailabilityError("Could not load this doctor's available appointment times.");
+    } finally {
+      setLoadingAvailability(false);
+    }
+  };
+
   // Build dynamic step list
   const steps = useMemo(() => {
     const baseSteps = ["Login", "Service", "Mode", "Schedule", "Consent"];
@@ -261,8 +336,22 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
       setCardNumber("");
       setCardExp("");
       setCardCvc("");
+      setAvailabilityDates([]);
+      setAvailabilityError(null);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (open && (doctorUserUuid || miniSiteSlug)) {
+      fetchAvailability();
+    }
+  }, [open, doctorUserUuid, miniSiteSlug]);
+
+  useEffect(() => {
+    setTime((current) =>
+      date && availableSlots.some((slot) => slot.start === current) ? current : "",
+    );
+  }, [date, availableSlots]);
 
   if (!open || !method) return null;
 
@@ -344,11 +433,18 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
         email: authEmail,
         password: authPassword,
       });
+      const payload = extractAuthPayload(response);
       
-      if (response.data?.token) {
-        setStoredAuthToken(response.data.token);
+      if (payload.token) {
+        if (hasNonPatientRoleSignal(payload.user)) {
+          throw new Error("Please use a patient account to book an appointment.");
+        }
+
+        const patientUser = normalizePatientAuthUser(payload.user, authEmail.trim());
+        setStoredAuthToken(payload.token);
+        setStoredAuthUser(patientUser);
         setIsAuthenticated(true);
-        setAuthUser(response.data.user);
+        setAuthUser(patientUser);
         toast.success("Logged in successfully!");
       } else {
         throw new Error("No token received");
@@ -374,6 +470,18 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
         setStep(0);
         return;
       }
+
+      try {
+        const patientUser = await verifyPatientSession(authEmail.trim());
+        setAuthUser(patientUser);
+        setIsAuthenticated(true);
+      } catch {
+        toast.error("Please login with a patient account to book an appointment.");
+        setIsAuthenticated(false);
+        setAuthUser(null);
+        setStep(0);
+        return;
+      }
       
       // Map consents to API expected format
       const apiConsents = CONSENTS
@@ -391,7 +499,7 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
       
       // Add location if physical appointment
       if (subMode === "physical" && location) {
-        requestBody.location_id = location;
+        requestBody.clinic_location_id = location;
         requestBody.appointment_type = "physical";
       } else if (subMode === "online") {
         requestBody.appointment_type = "online";
@@ -424,8 +532,8 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
       if (method === "organization" && orgStatus === "approved") {
         requestBody.access_method_payload = {
           organization_id: organizationId,
-          employee_id: employeeId,
-          authorization_letter_url: uploadedFileUrl
+          staff_id: employeeId,
+          letter_path: uploadedFileUrl
         };
       }
       
@@ -476,7 +584,7 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
       case "Mode": 
         if (subMode === "online") return true;
         return subMode === "physical" && !!location;
-      case "Schedule": return !!date && !!time;
+      case "Schedule": return !loadingAvailability && !!date && !!time;
       case "Consent": return CONSENTS.every((c) => agreed[c.key]);
       case "Payment": return cardNumber.length >= 12 && cardExp.length >= 4 && cardCvc.length >= 3;
       case "Subscription": return !!subscriptionId.trim();
@@ -892,38 +1000,66 @@ export default function AdvancedBookingFlow({ open, onClose, method, doctorUserU
         {currentLabel === "Schedule" && (
           <div className="space-y-4">
             <h3 className="font-display text-xl font-semibold">Pick a date & time</h3>
-            <div>
-              <Label className="mb-2 block">Available dates</Label>
-              <div className="flex flex-wrap gap-2">
-                {generateDates().map((d) => (
-                  <button
-                    key={d.value}
-                    type="button"
-                    onClick={() => setDate(d.value)}
-                    className={`px-3 py-2 rounded-lg border text-sm transition ${date === d.value ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary/50"}`}
-                  >
-                    <CalendarDays className="h-3 w-3 inline mr-1" />
-                    {d.label}
-                  </button>
-                ))}
+            {loadingAvailability ? (
+              <div className="flex items-center justify-center rounded-lg border border-border bg-muted/20 py-10">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <span className="ml-2 text-sm text-muted-foreground">Loading available appointment times...</span>
               </div>
-            </div>
-            {date && (
-              <div>
-                <Label className="mb-2 block">Available times</Label>
-                <div className="flex flex-wrap gap-2">
-                  {TIMES.map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setTime(t)}
-                      className={`px-3 py-2 rounded-lg border text-sm transition ${time === t ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary/50"}`}
-                    >
-                      <Clock className="h-3 w-3 inline mr-1" />
-                      {t}
-                    </button>
-                  ))}
+            ) : availabilityError ? (
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 text-center">
+                <AlertTriangle className="h-5 w-5 text-amber-600 mx-auto mb-2" />
+                <p className="text-sm text-amber-700">{availabilityError}</p>
+              </div>
+            ) : availabilityDates.length > 0 ? (
+              <>
+                <div>
+                  <Label className="mb-2 block">Available dates</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {availabilityDates.map((d) => (
+                      <button
+                        key={d.value}
+                        type="button"
+                        onClick={() => {
+                          setDate(d.value);
+                          setTime("");
+                        }}
+                        className={`px-3 py-2 rounded-lg border text-sm transition ${date === d.value ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary/50"}`}
+                      >
+                        <CalendarDays className="h-3 w-3 inline mr-1" />
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+                {date && (
+                  <div>
+                    <Label className="mb-2 block">Available times</Label>
+                    {availableSlots.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {availableSlots.map((slot) => (
+                          <button
+                            key={`${date}-${slot.start}-${slot.end || slot.label}`}
+                            type="button"
+                            onClick={() => setTime(slot.start)}
+                            className={`px-3 py-2 rounded-lg border text-sm transition ${time === slot.start ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary/50"}`}
+                          >
+                            <Clock className="h-3 w-3 inline mr-1" />
+                            {slot.label}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="rounded-lg border border-border bg-muted/20 p-4 text-sm text-muted-foreground">
+                        No times are available for this date.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 text-center">
+                <AlertTriangle className="h-5 w-5 text-amber-600 mx-auto mb-2" />
+                <p className="text-sm text-amber-700">No appointment times are currently available for this doctor.</p>
               </div>
             )}
           </div>

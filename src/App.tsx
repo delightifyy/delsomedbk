@@ -8,7 +8,9 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { AdminGuard } from "@/components/dashboard/AdminGuard";
 import { PatientGuard } from "@/components/portal/PatientGuard";
 import { DoctorGuard } from "@/components/doctor/DoctorGuard";
+import { MiniSiteAdminGate } from "@/components/medicare-admin/MiniSiteAdminGate";
 import { api } from "@/lib/api";
+import { pickMiniSiteDisplayName } from "@/lib/medicareSettings";
 import desolmedLogo from "@/assets/desolmed-logo.png";
 
 const queryClient = new QueryClient();
@@ -36,6 +38,12 @@ const RegisterPatient = lazy(() => import("./pages/RegisterPatient.tsx"));
 const Register = lazy(() => import("./pages/Register.tsx"));
 const Auth = lazy(() => import("./pages/Auth.tsx"));
 const PatientLogin = lazy(() => import("./pages/PatientLogin.tsx"));
+const PatientEmailVerification = lazy(() => import("./pages/PatientEmailVerification.tsx"));
+const DoctorLogin = lazy(() => import("./pages/DoctorLogin.tsx"));
+const DoctorOnboard = lazy(() => import("./pages/DoctorOnboard.tsx"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword.tsx"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword.tsx"));
+
 const DashOverview = lazy(() => import("./pages/dashboard/Overview.tsx"));
 const DashUsers = lazy(() => import("./pages/dashboard/Users.tsx"));
 const DashPatients = lazy(() => import("./pages/dashboard/Patients.tsx"));
@@ -71,8 +79,8 @@ const DoctorPrescriptions = lazy(() => import("./pages/doctor/Misc.tsx").then((m
 const DoctorInvestigations = lazy(() => import("./pages/doctor/Misc.tsx").then((module) => ({ default: module.DoctorInvestigations })));
 const DoctorReferrals = lazy(() => import("./pages/doctor/Misc.tsx").then((module) => ({ default: module.DoctorReferrals })));
 const DoctorSettings = lazy(() => import("./pages/doctor/Misc.tsx").then((module) => ({ default: module.DoctorSettings })));
-const DoctorClinical = lazy(() => import("./pages/doctor/Clinical.tsx"));
-const DoctorPayout = lazy(() => import("./pages/doctor/DoctorPayout.tsx")); // NEW IMPORT
+const DoctorClinical = lazy(() => import("./pages/doctor/Misc.tsx").then((module) => ({ default: module.DoctorClinical })));
+const DoctorPayout = lazy(() => import("./pages/doctor/DoctorPayout.tsx"));
 const OrgDashboard = lazy(() => import("./pages/organization/Dashboard.tsx"));
 const OrgStaff = lazy(() => import("./pages/organization/Staff.tsx"));
 const OrgUsage = lazy(() => import("./pages/organization/Usage.tsx"));
@@ -104,7 +112,7 @@ const LoadingScreen = ({ message = "Loading..." }: { message?: string }) => (
         <div className="absolute inset-0 rounded-full border-4 border-t-blue-600 border-r-teal-500 border-b-blue-600 border-l-teal-500 animate-spin"></div>
       </div>
       <p className="text-gray-600 font-medium text-lg animate-pulse">{message}</p>
-      <p className="text-gray-400 text-sm mt-2">Please wait while we prepare your experience</p>
+      {/* <p className="text-gray-400 text-sm mt-2">Please wait while we prepare your experience</p> */}
     </div>
   </div>
 );
@@ -149,11 +157,32 @@ const App = () => {
 
   useEffect(() => {
     const host = window.location.hostname;
+    const pathname = window.location.pathname;
     const baseDomain = import.meta.env.VITE_MINI_SITE_BASE_DOMAIN || 'delsomeds.itl.ng';
+    const platformRoutePrefixes = [
+      "/onboard",
+      "/doctor/onboard",
+      "/doctor/login",
+      "/forgot-password",
+      "/reset-password",
+      "/email/verify",
+      "/email/verified",
+      "/email-verification",
+      "/email-verification-success",
+      "/verify-email",
+      "/auth/email/verify",
+      "/auth/verify-email",
+      "/patient/email/verify",
+      "/patient/email/verified",
+      "/patient/verify-email",
+    ];
+    const isPlatformRoute = platformRoutePrefixes.some((prefix) =>
+      pathname === prefix || pathname.startsWith(`${prefix}/`),
+    );
     
     let slug: string | null = null;
     
-    if (host === baseDomain || host === `www.${baseDomain}`) {
+    if (isPlatformRoute || host === baseDomain || host === `www.${baseDomain}`) {
       slug = null;
     } else if (host.endsWith(`.${baseDomain}`)) {
       slug = host.slice(0, -baseDomain.length - 1);
@@ -247,13 +276,13 @@ const App = () => {
                 <Route path="/health-news/:slug" element={<HealthNewsArticle />} />
                 <Route path="/adverts/:id" element={<AdvertArticle />} />
                 <Route path="/doctor-portal" element={<DoctorPortal />} />
-                <Route path="/doctor-portal/admin" element={<DoctorGuard><MediCareAdmin /></DoctorGuard>} />
-                <Route path="/doctor-portal/admin/booking" element={<DoctorGuard><BookingAdmin /></DoctorGuard>} />
+                <Route path="/doctor-portal/admin" element={<MiniSiteAdminGate><MediCareAdmin /></MiniSiteAdminGate>} />
+                <Route path="/doctor-portal/admin/booking" element={<MiniSiteAdminGate><BookingAdmin /></MiniSiteAdminGate>} />
                 <Route path="/doctor-portal/services" element={<MediCareServices />} />
                 <Route path="/doctor-portal/blogs" element={<MediCareBlogs />} />
                 <Route path="/doctor-portal/blogs/:slug" element={<MediCareBlogArticle />} />
                 <Route path="/doctor-portal/contact" element={<MediCareContact />} />
-                <Route path="/doctor-portal/admin/services" element={<DoctorGuard><MediCareServicesAdmin /></DoctorGuard>} />
+                <Route path="/doctor-portal/admin/services" element={<MiniSiteAdminGate><MediCareServicesAdmin /></MiniSiteAdminGate>} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/register/doctor" element={<Navigate to="/register?type=doctor" replace />} />
                 <Route path="/register/organization" element={<Navigate to="/register?type=organization" replace />} />
@@ -264,6 +293,25 @@ const App = () => {
                 <Route path="/register/patient" element={<RegisterPatient />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/patient/login" element={<PatientLogin />} />
+                <Route path="/email/verify/*" element={<PatientEmailVerification />} />
+                <Route path="/email/verified" element={<PatientEmailVerification />} />
+                <Route path="/email-verification" element={<PatientEmailVerification />} />
+                <Route path="/email-verification/*" element={<PatientEmailVerification />} />
+                <Route path="/email-verification-success" element={<PatientEmailVerification />} />
+                <Route path="/verify-email" element={<PatientEmailVerification />} />
+                <Route path="/verify-email/*" element={<PatientEmailVerification />} />
+                <Route path="/auth/email/verify/*" element={<PatientEmailVerification />} />
+                <Route path="/auth/verify-email/*" element={<PatientEmailVerification />} />
+                <Route path="/patient/email/verify/*" element={<PatientEmailVerification />} />
+                <Route path="/patient/email/verified" element={<PatientEmailVerification />} />
+                <Route path="/patient/verify-email" element={<PatientEmailVerification />} />
+                <Route path="/patient/verify-email/*" element={<PatientEmailVerification />} />
+                <Route path="/onboard" element={<DoctorOnboard />} />
+                <Route path="/doctor/onboard" element={<DoctorOnboard />} />
+                <Route path="/doctor/login" element={<DoctorLogin />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                
                 <Route path="/dashboard" element={<AdminGuard><DashOverview /></AdminGuard>} />
                 <Route path="/dashboard/users" element={<AdminGuard><DashUsers /></AdminGuard>} />
                 <Route path="/dashboard/patients" element={<AdminGuard><DashPatients /></AdminGuard>} />
@@ -283,6 +331,7 @@ const App = () => {
                 <Route path="/dashboard/coverage-requests" element={<AdminGuard><CoverageRequests /></AdminGuard>} />
                 <Route path="/dashboard/payments" element={<AdminGuard><AdminPaymentDashboard /></AdminGuard>} />
                 <Route path="/dashboard/notifications" element={<AdminGuard><DashNotifications /></AdminGuard>} />
+                
                 <Route path="/patient" element={<PatientGuard><PatientDashboard /></PatientGuard>} />
                 <Route path="/patient/appointments" element={<PatientGuard><PatientAppointments /></PatientGuard>} />
                 <Route path="/patient/consultations" element={<PatientGuard><PatientConsultations /></PatientGuard>} />
@@ -290,17 +339,20 @@ const App = () => {
                 <Route path="/patient/prescriptions" element={<PatientGuard><PatientPrescriptions /></PatientGuard>} />
                 <Route path="/patient/payments" element={<PatientGuard><PatientPayments /></PatientGuard>} />
                 <Route path="/patient/settings" element={<PatientGuard><PatientSettings /></PatientGuard>} />
-                <Route path="/doctor" element={<DoctorPortalDashboard />} />
-                <Route path="/doctor/schedule" element={<DoctorSchedule />} />
-                <Route path="/doctor/consultations" element={<DoctorConsultations />} />
-                <Route path="/doctor/clinical" element={<DoctorClinical />} />
-                <Route path="/doctor/consultations/:id" element={<DoctorConsultationRoom />} />
-                <Route path="/doctor/patients" element={<DoctorPatients />} />
-                <Route path="/doctor/prescriptions" element={<DoctorPrescriptions />} />
-                <Route path="/doctor/investigations" element={<DoctorInvestigations />} />
-                <Route path="/doctor/referrals" element={<DoctorReferrals />} />
-                <Route path="/doctor/payout" element={<DoctorPayout />} /> {/* NEW ROUTE */}
-                <Route path="/doctor/settings" element={<DoctorSettings />} />
+                
+                {/* ✅ ALL DOCTOR ROUTES NOW WRAPPED WITH DoctorGuard */}
+                <Route path="/doctor" element={<DoctorGuard><DoctorPortalDashboard /></DoctorGuard>} />
+                <Route path="/doctor/schedule" element={<DoctorGuard><DoctorSchedule /></DoctorGuard>} />
+                <Route path="/doctor/consultations" element={<DoctorGuard><DoctorConsultations /></DoctorGuard>} />
+                <Route path="/doctor/clinical" element={<DoctorGuard><DoctorClinical /></DoctorGuard>} />
+                <Route path="/doctor/consultations/:id" element={<DoctorGuard><DoctorConsultationRoom /></DoctorGuard>} />
+                <Route path="/doctor/patients" element={<DoctorGuard><DoctorPatients /></DoctorGuard>} />
+                <Route path="/doctor/prescriptions" element={<DoctorGuard><DoctorPrescriptions /></DoctorGuard>} />
+                <Route path="/doctor/investigations" element={<DoctorGuard><DoctorInvestigations /></DoctorGuard>} />
+                <Route path="/doctor/referrals" element={<DoctorGuard><DoctorReferrals /></DoctorGuard>} />
+                <Route path="/doctor/payout" element={<DoctorGuard><DoctorPayout /></DoctorGuard>} />
+                <Route path="/doctor/settings" element={<DoctorGuard><DoctorSettings /></DoctorGuard>} />
+                
                 <Route path="/organization" element={<OrgDashboard />} />
                 <Route path="/organization/staff" element={<OrgStaff />} />
                 <Route path="/organization/usage" element={<OrgUsage />} />
@@ -319,6 +371,8 @@ const App = () => {
 
 // Wrapper that routes to the REAL DoctorPortal with the doctor's data
 const DoctorPortalWrapper = ({ doctorData, slug }: { doctorData: any; slug: string }) => {
+  const siteName = pickMiniSiteDisplayName(doctorData, "Mini-site");
+
   return (
     <Routes>
       <Route path="/" element={<DoctorPortal doctorSlug={slug} />} />
@@ -326,6 +380,9 @@ const DoctorPortalWrapper = ({ doctorData, slug }: { doctorData: any; slug: stri
       <Route path="/blogs" element={<MediCareBlogs doctorSlug={slug} />} />
       <Route path="/blogs/:postSlug" element={<MediCareBlogArticle doctorSlug={slug} />} />
       <Route path="/contact" element={<MediCareContact doctorSlug={slug} />} />
+      <Route path="/admin" element={<MiniSiteAdminGate siteName={siteName}><MediCareAdmin /></MiniSiteAdminGate>} />
+      <Route path="/admin/booking" element={<MiniSiteAdminGate siteName={siteName}><BookingAdmin /></MiniSiteAdminGate>} />
+      <Route path="/admin/services" element={<MiniSiteAdminGate siteName={siteName}><MediCareServicesAdmin /></MiniSiteAdminGate>} />
       <Route path="*" element={<DoctorPortal doctorSlug={slug} />} />
     </Routes>
   );

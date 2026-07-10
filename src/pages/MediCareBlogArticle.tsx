@@ -5,6 +5,7 @@ import { BLOG_POSTS, type BlogPost } from "@/data/blogs";
 import { supabase } from "@/integrations/supabase/client";
 import { useMediCareSettings } from "@/lib/medicareSettings";
 import { MedicareFooter, MedicareSimpleHeader, medicareThemeStyle } from "@/components/medicare/MediCareChrome";
+import { api, resolveApiAssetUrl } from "@/lib/api";
 
 type Article = BlogPost & {
   content?: string;
@@ -36,24 +37,76 @@ const splitContent = (content?: string) =>
     .map((part) => part.trim())
     .filter(Boolean);
 
-const MediCareBlogArticle = () => {
-  const { slug } = useParams();
-  const settings = useMediCareSettings();
+const asRecord = (value: unknown): Record<string, any> =>
+  value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, any> : {};
+
+const text = (value: unknown, fallback = "") => {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  const record = asRecord(value);
+  return String(record.name ?? record.title ?? record.label ?? fallback);
+};
+
+const dateLabel = (value: unknown) => {
+  if (!value) return "";
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString(undefined, { month: "short", day: "2-digit", year: "numeric" });
+};
+
+const normalizeMiniSiteArticle = (value: unknown): Article => {
+  const row = asRecord(value);
+  const category = row.category ?? row.post_category;
+  const minutes = Number(row.read_time_minutes ?? row.readTimeMinutes);
+  return {
+    id: text(row.id ?? row.uuid ?? row.slug, crypto.randomUUID()),
+    slug: text(row.slug ?? row.id ?? row.uuid, crypto.randomUUID()),
+    title: text(row.title, "Untitled article"),
+    excerpt: text(row.excerpt ?? row.summary ?? row.description),
+    content: text(row.content ?? row.body),
+    category: (text(category, "Wellness") as BlogPost["category"]) || "Wellness",
+    author: text(row.author_name ?? row.author?.name, "MediCare Team"),
+    authorRole: text(row.author_role ?? row.author?.role),
+    date: dateLabel(row.published_at ?? row.publish_date ?? row.created_at),
+    readTime: Number.isFinite(minutes) && minutes > 0 ? `${minutes} min read` : text(row.read_time, "5 min read"),
+    cover: resolveApiAssetUrl(text(row.cover_image_url ?? row.cover_image ?? row.image_url ?? row.hero_image_url)),
+    featured: row.is_featured === true || row.featured === true,
+  };
+};
+
+const MediCareBlogArticle = ({ doctorSlug }: { doctorSlug?: string } = {}) => {
+  const { slug, postSlug } = useParams();
+  const articleSlug = slug || postSlug || "";
+  const settings = useMediCareSettings(doctorSlug);
+  const basePath = doctorSlug ? "" : "/doctor-portal";
+  const blogsHref = `${basePath}/blogs` || "/blogs";
   const themeStyle = useMemo(
     () => medicareThemeStyle(settings),
     [settings.primaryColor, settings.accentColor],
   );
-  const [article, setArticle] = useState<Article | null>(() => BLOG_POSTS.find((post) => post.slug === slug) ?? null);
+  const [article, setArticle] = useState<Article | null>(() => BLOG_POSTS.find((post) => post.slug === articleSlug) ?? null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
+      if (doctorSlug && articleSlug) {
+        try {
+          const response = await api.medicare.public.post(doctorSlug, articleSlug);
+          if (!cancelled) setArticle(normalizeMiniSiteArticle(response.data));
+        } catch {
+          if (!cancelled) setArticle(null);
+        } finally {
+          if (!cancelled) setLoading(false);
+        }
+        return;
+      }
+
       const { data } = await supabase
         .from("blog_posts")
         .select("id, slug, title, excerpt, content, cover_image, category, author_name, author_role, read_time, featured, publish_date, published")
-        .eq("slug", slug || "")
+        .eq("slug", articleSlug)
         .eq("published", true)
         .maybeSingle();
 
@@ -74,7 +127,7 @@ const MediCareBlogArticle = () => {
           featured: !!data.featured,
         });
       } else {
-        setArticle(BLOG_POSTS.find((post) => post.slug === slug) ?? null);
+        setArticle(BLOG_POSTS.find((post) => post.slug === articleSlug) ?? null);
       }
       setLoading(false);
     })();
@@ -82,7 +135,7 @@ const MediCareBlogArticle = () => {
     return () => {
       cancelled = true;
     };
-  }, [slug]);
+  }, [articleSlug, doctorSlug]);
 
   useEffect(() => {
     document.title = article ? `${article.title} - ${settings.siteName || "MediCare"}` : `Blog - ${settings.siteName || "MediCare"}`;
@@ -96,10 +149,10 @@ const MediCareBlogArticle = () => {
   return (
     <div className="medicare-blog-article min-h-screen" style={themeStyle}>
       <style>{tokenStyles}</style>
-      <MedicareSimpleHeader settings={settings} activeHref="/doctor-portal/blogs" />
+      <MedicareSimpleHeader settings={settings} activeHref={blogsHref} basePath={basePath} />
 
       <main className="mx-auto max-w-4xl px-4 py-14 sm:px-6 sm:py-20">
-        <Link to="/doctor-portal/blogs" className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-[hsl(var(--mc-muted))] transition hover:text-[hsl(var(--mc-primary))]">
+        <Link to={blogsHref} className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-[hsl(var(--mc-muted))] transition hover:text-[hsl(var(--mc-primary))]">
           <ArrowLeft className="h-4 w-4" /> Back to Blogs
         </Link>
 
@@ -148,7 +201,7 @@ const MediCareBlogArticle = () => {
                   {related.map((post) => (
                     <Link
                       key={post.slug}
-                      to={`/doctor-portal/blogs/${post.slug}`}
+                      to={`${blogsHref}/${post.slug}`}
                       className="rounded-2xl border border-[hsl(var(--mc-border))] bg-white p-5 transition hover:border-[hsl(var(--mc-primary)/.45)] hover:shadow-[0_18px_40px_-30px_hsl(var(--mc-primary)/.45)]"
                     >
                       <span className="text-xs font-semibold text-[hsl(var(--mc-primary))]">{post.category}</span>
@@ -162,7 +215,7 @@ const MediCareBlogArticle = () => {
         )}
       </main>
 
-      <MedicareFooter settings={settings} />
+      <MedicareFooter settings={settings} basePath={basePath} />
     </div>
   );
 };

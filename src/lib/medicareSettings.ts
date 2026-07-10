@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { api, resolveApiAssetUrl } from "@/lib/api";
 
 /* =========================================================
    MediCare Landing-Page CMS — full settings schema
@@ -15,7 +16,7 @@ export type LucideIconName =
   | "Baby" | "Bone" | "Microscope" | "Syringe" | "Ambulance" | "Search"
   | "CalendarCheck" | "MonitorSmartphone" | "BellRing" | "Languages" | "ArrowRight";
 
-export type SocialPlatform = "facebook" | "twitter" | "instagram" | "linkedin" | "youtube" | "tiktok";
+export type SocialPlatform = "facebook" | "twitter" | "x" | "instagram" | "linkedin" | "youtube" | "tiktok" | "whatsapp" | "telegram";
 
 export type NavItem = { id: string; label: string; href: string; enabled: boolean; order: number };
 export type Partner = { id: string; name: string; logoDataUrl?: string | null };
@@ -26,6 +27,7 @@ export type Service = {
   ctaLabel?: string; ctaHref?: string;
   price_amount?: number | null;
   price_label?: string | null;
+  delivery_mode?: string | null;
   order: number; active: boolean;
 };
 export type TestimonialItem = {
@@ -54,6 +56,15 @@ export type DoctorEntry = {
 };
 
 export type MediCareSettings = {
+  miniSite?: {
+    slug?: string;
+    publicUrl?: string;
+    adminUrl?: string;
+    doctorUuid?: string;
+    doctorName?: string;
+    brandName?: string;
+  };
+
   /* Branding (kept for back-compat) */
   siteName: string;
   logoDataUrl: string | null;
@@ -407,6 +418,291 @@ export const defaultSettings: MediCareSettings = {
   ],
 };
 
+/* ---------- Mini-site API normalization ---------- */
+
+const asRecord = (value: unknown): Record<string, any> =>
+  value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, any> : {};
+
+const asArray = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
+
+const unwrapData = (value: unknown): unknown => {
+  const record = asRecord(value);
+  return Object.prototype.hasOwnProperty.call(record, "data") ? record.data : value;
+};
+
+const getPath = (record: Record<string, any>, path: string) =>
+  path.split(".").reduce<unknown>((current, key) => asRecord(current)[key], record);
+
+const firstText = (record: Record<string, any>, paths: string[]) => {
+  for (const path of paths) {
+    const value = getPath(record, path);
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  }
+  return undefined;
+};
+
+const firstNumber = (record: Record<string, any>, paths: string[]) => {
+  for (const path of paths) {
+    const value = getPath(record, path);
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string" && value.trim() && Number.isFinite(Number(value))) return Number(value);
+  }
+  return undefined;
+};
+
+const hasField = (record: Record<string, any>, path: string) => getPath(record, path) !== undefined;
+
+const normalizeIcon = (value: unknown): LucideIconName => {
+  const raw = String(value ?? "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  const aliases: Record<string, LucideIconName> = {
+    activity: "Activity",
+    ambulance: "Ambulance",
+    baby: "Baby",
+    bell: "BellRing",
+    bellring: "BellRing",
+    bot: "Bot",
+    brain: "Brain",
+    calendar: "CalendarCheck",
+    calendarcheck: "CalendarCheck",
+    check: "CheckCircle2",
+    checkcircle: "CheckCircle2",
+    checkcircle2: "CheckCircle2",
+    clock: "Clock",
+    file: "FileText",
+    filetext: "FileText",
+    flask: "FlaskConical",
+    flaskconical: "FlaskConical",
+    globe: "Globe2",
+    globe2: "Globe2",
+    heart: "HeartPulse",
+    heartpulse: "HeartPulse",
+    lab: "FlaskConical",
+    mail: "Mail",
+    mappin: "MapPin",
+    message: "MessageSquare",
+    messagesquare: "MessageSquare",
+    phone: "Phone",
+    pill: "Pill",
+    search: "Search",
+    shield: "ShieldCheck",
+    shieldcheck: "ShieldCheck",
+    smartphone: "Smartphone",
+    stethoscope: "Stethoscope",
+    video: "Video",
+    users: "Users",
+  };
+  return aliases[raw] ?? "Stethoscope";
+};
+
+const normalizePriceAmount = (record: Record<string, any>) => {
+  const amount = firstNumber(record, ["price_amount"]);
+  if (amount !== undefined) return amount;
+  const naira = firstNumber(record, ["price_naira"]);
+  if (naira !== undefined) return naira;
+  const kobo = firstNumber(record, ["price_kobo"]);
+  if (kobo !== undefined) return kobo / 100;
+  return null;
+};
+
+const genericMiniSiteNames = new Set(["medicare", "mini-site", "minisite", "doctor portal"]);
+
+export const pickMiniSiteDisplayName = (source: unknown, fallback = "Mini-site") => {
+  const root = asRecord(unwrapData(source));
+  const doctorName = firstText(root, [
+    "doctor_name",
+    "doctor.name",
+    "doctor.full_name",
+    "doctor.display_name",
+    "user.name",
+    "user.full_name",
+    "profile.name",
+    "profile.full_name",
+  ]);
+  const brandName = firstText(root, [
+    "mini_site.brand_name",
+    "miniSite.brandName",
+    "brand_name",
+    "site_name",
+    "siteName",
+    "name",
+  ]);
+
+  if (doctorName) return doctorName;
+  if (brandName && !genericMiniSiteNames.has(brandName.trim().toLowerCase())) return brandName;
+  return fallback;
+};
+
+const splitFooterLinks = (items: unknown[], group: "specialist" | "quick" | "support") =>
+  items
+    .map((item, index) => {
+      const record = asRecord(item);
+      return {
+        group: String(record.group ?? record.type ?? "").toLowerCase(),
+        link: {
+          id: String(record.id ?? record.uuid ?? `${group}-${index}`),
+          label: firstText(record, ["label", "title", "name"]) ?? "",
+          href: firstText(record, ["url", "href", "link"]) ?? "#",
+        },
+      };
+    })
+    .filter((item) => !item.group || item.group === group)
+    .map((item) => item.link);
+
+export function mergeRemoteMiniSiteSettings(current: MediCareSettings, remoteValue: unknown): MediCareSettings {
+  const remote = asRecord(unwrapData(remoteValue));
+  const miniSite = asRecord(remote.mini_site ?? remote.miniSite);
+  const hero = asRecord(remote.hero);
+  const about = asRecord(remote.about);
+  const servicesRoot = asRecord(remote.services);
+  const servicesBlock = asRecord(servicesRoot.block ?? servicesRoot);
+  const contact = asRecord(remote.contact);
+  const footerRoot = asRecord(remote.footer);
+  const footerBlock = asRecord(footerRoot.block ?? footerRoot);
+  const footerLinks = asArray(footerRoot.links ?? remote.footerLinks);
+
+  const serviceCards =
+    asArray(remote.servicesCards).length ? asArray(remote.servicesCards) :
+    asArray(servicesRoot.cards).length ? asArray(servicesRoot.cards) :
+    asArray(remote.service_cards);
+
+  const footerSocialLinks =
+    asArray(remote.footerSocialLinks).length ? asArray(remote.footerSocialLinks) :
+    asArray(footerRoot.social_links).length ? asArray(footerRoot.social_links) :
+    asArray(footerRoot.socialLinks);
+
+  const footerSpecialistLinks = asArray(remote.footerSpecialistLinks).length
+    ? asArray(remote.footerSpecialistLinks).map((item, index) => {
+        const record = asRecord(item);
+        return {
+          id: String(record.id ?? record.uuid ?? `specialist-${index}`),
+          label: firstText(record, ["label", "title", "name"]) ?? "",
+          href: firstText(record, ["url", "href", "link"]) ?? "#",
+        };
+      })
+    : splitFooterLinks(footerLinks, "specialist");
+  const footerQuickLinks = asArray(remote.footerQuickLinks).length
+    ? asArray(remote.footerQuickLinks).map((item, index) => {
+        const record = asRecord(item);
+        return {
+          id: String(record.id ?? record.uuid ?? `quick-${index}`),
+          label: firstText(record, ["label", "title", "name"]) ?? "",
+          href: firstText(record, ["url", "href", "link"]) ?? "#",
+        };
+      })
+    : splitFooterLinks(footerLinks, "quick");
+  const footerSupportLinks = asArray(remote.footerSupportLinks).length
+    ? asArray(remote.footerSupportLinks).map((item, index) => {
+        const record = asRecord(item);
+        return {
+          id: String(record.id ?? record.uuid ?? `support-${index}`),
+          label: firstText(record, ["label", "title", "name"]) ?? "",
+          href: firstText(record, ["url", "href", "link"]) ?? "#",
+        };
+      })
+    : splitFooterLinks(footerLinks, "support");
+
+  const displayName = pickMiniSiteDisplayName(remote, current.siteName || "Mini-site");
+  const brandName = firstText(remote, ["mini_site.brand_name", "brand_name", "site_name", "siteName"]);
+  const doctorName = firstText(remote, ["doctor_name", "doctor.name", "doctor.full_name", "user.name", "user.full_name"]);
+
+  return {
+    ...current,
+    miniSite: {
+      slug: firstText(remote, ["mini_site.slug", "slug"]) ?? current.miniSite?.slug,
+      publicUrl: firstText(remote, ["mini_site.public_url", "public_url"]) ?? current.miniSite?.publicUrl,
+      adminUrl: firstText(remote, ["mini_site.admin_url", "admin_url"]) ?? current.miniSite?.adminUrl,
+      doctorUuid: firstText(remote, ["doctor_uuid", "doctor.uuid", "doctor.id", "user.uuid", "user.id"]) ?? current.miniSite?.doctorUuid,
+      doctorName: doctorName ?? current.miniSite?.doctorName,
+      brandName: brandName ?? current.miniSite?.brandName,
+    },
+    siteName: displayName,
+    hero: {
+      ...current.hero,
+      titleLead: firstText(hero, ["headline", "titleLead"]) ?? current.hero.titleLead,
+      titleHighlight: firstText(hero, ["highlighted_headline", "titleHighlight"]) ?? current.hero.titleHighlight,
+      subtitle: firstText(hero, ["body", "subtitle"]) ?? current.hero.subtitle,
+      ctaLabel: firstText(hero, ["button_text", "ctaLabel"]) ?? current.hero.ctaLabel,
+      ctaHref: firstText(hero, ["button_link", "ctaHref"]) ?? current.hero.ctaHref,
+      bgImage: firstText(hero, ["image_url", "background_image_url", "bgImage"]) ?? current.hero.bgImage,
+    },
+    about: {
+      ...current.about,
+      label: firstText(about, ["section_label", "label"]) ?? current.about.label,
+      title: firstText(about, ["title"]) ?? current.about.title,
+      body: firstText(about, ["description", "body"]) ?? current.about.body,
+      image: resolveApiAssetUrl(firstText(about, ["image_url", "image"])) || current.about.image,
+      mission: {
+        ...current.about.mission,
+        title: firstText(about, ["mission_title"]) ?? current.about.mission.title,
+        body: firstText(about, ["mission_text"]) ?? current.about.mission.body,
+      },
+      vision: {
+        ...current.about.vision,
+        title: firstText(about, ["vision_title"]) ?? current.about.vision.title,
+        body: firstText(about, ["vision_text"]) ?? current.about.vision.body,
+      },
+      ctaLabel: firstText(about, ["cta_label"]) ?? current.about.ctaLabel,
+      ctaHref: firstText(about, ["cta_link"]) ?? current.about.ctaHref,
+      satisfaction: {
+        ...current.about.satisfaction,
+        value: firstText(about, ["satisfaction_value"]) ?? current.about.satisfaction.value,
+        label: firstText(about, ["satisfaction_label"]) ?? current.about.satisfaction.label,
+      },
+    },
+    services: {
+      ...current.services,
+      label: firstText(servicesBlock, ["section_label", "label"]) ?? current.services.label,
+      title: firstText(servicesBlock, ["section_title", "title"]) ?? current.services.title,
+      items: serviceCards.length
+        ? serviceCards.map((item, index) => {
+            const record = asRecord(item);
+            return {
+              id: String(record.id ?? record.uuid ?? index),
+              image: resolveApiAssetUrl(firstText(record, ["image_url", "image"])) || null,
+              icon: normalizeIcon(record.icon),
+              title: firstText(record, ["title", "name"]) ?? "",
+              description: firstText(record, ["description", "body", "summary"]) ?? "",
+              ctaLabel: firstText(record, ["button_label", "cta_label", "ctaLabel"]) ?? "",
+              ctaHref: firstText(record, ["button_link", "cta_link", "ctaHref"]) ?? "",
+              price_amount: normalizePriceAmount(record),
+              price_label: firstText(record, ["price_label"]) ?? "",
+              delivery_mode: firstText(record, ["delivery_mode"]) ?? "in_clinic",
+              order: Number(record.sort_order ?? record.order ?? index),
+              active: hasField(record, "is_visible") ? record.is_visible !== false : record.visible !== false,
+            };
+          })
+        : current.services.items,
+    },
+    contact: {
+      ...current.contact,
+      email: firstText(contact, ["email"]) ?? current.contact.email,
+      phone: firstText(contact, ["phone"]) ?? current.contact.phone,
+      address: firstText(contact, ["address"]) ?? current.contact.address,
+    },
+    footer: {
+      ...current.footer,
+      description: firstText(footerBlock, ["description"]) ?? current.footer.description,
+      copyright: firstText(footerBlock, ["copyright"]) ?? current.footer.copyright,
+      availabilityText: firstText(footerBlock, ["availability_text", "availabilityText"]) ?? current.footer.availabilityText,
+      bgColor: firstText(footerBlock, ["background_color", "bgColor"]) ?? current.footer.bgColor,
+      socials: footerSocialLinks.length
+        ? footerSocialLinks.map((item, index) => {
+            const record = asRecord(item);
+            return {
+              id: String(record.id ?? record.uuid ?? index),
+              platform: String(record.platform ?? "facebook").toLowerCase() as SocialPlatform,
+              href: firstText(record, ["url", "href", "link"]) ?? "",
+            };
+          })
+        : current.footer.socials,
+      specialistLinks: footerSpecialistLinks.length ? footerSpecialistLinks : current.footer.specialistLinks,
+      quickLinks: footerQuickLinks.length ? footerQuickLinks : current.footer.quickLinks,
+      supportLinks: footerSupportLinks.length ? footerSupportLinks : current.footer.supportLinks,
+    },
+  };
+}
+
 /* ---------- Deep merge helper ---------- */
 
 function deepMerge<T>(base: T, patch: any): T {
@@ -455,19 +751,36 @@ export function resetSettings() {
   window.dispatchEvent(new CustomEvent("medicare:settings"));
 }
 
-export function useMediCareSettings(): MediCareSettings {
+export function useMediCareSettings(doctorSlug?: string): MediCareSettings {
   const [s, setS] = useState<MediCareSettings>(() =>
-    typeof window === "undefined" ? defaultSettings : loadSettings(),
+    typeof window === "undefined" ? defaultSettings : doctorSlug ? defaultSettings : loadSettings(),
   );
   useEffect(() => {
-    const update = () => setS(loadSettings());
+    let active = true;
+    const hydrateRemote = async () => {
+      if (!doctorSlug) return;
+      try {
+        const response = await api.medicare.public.bundle(doctorSlug);
+        if (active) setS(mergeRemoteMiniSiteSettings(defaultSettings, response.data));
+      } catch {
+        if (active) setS(defaultSettings);
+      }
+    };
+
+    const update = () => {
+      if (doctorSlug) void hydrateRemote();
+      else setS(loadSettings());
+    };
+
+    update();
     window.addEventListener("medicare:settings", update);
     window.addEventListener("storage", update);
     return () => {
+      active = false;
       window.removeEventListener("medicare:settings", update);
       window.removeEventListener("storage", update);
     };
-  }, []);
+  }, [doctorSlug]);
   return s;
 }
 

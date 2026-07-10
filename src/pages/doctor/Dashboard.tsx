@@ -1,86 +1,192 @@
-import { PortalLayout } from "@/components/portal/PortalLayout";
-import { PageHeader, StatCard, SectionCard } from "@/components/portal/PortalUI";
-import { doctorNav } from "./nav";
-import { doctorMock } from "@/data/portalMock";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { CalendarClock, Users, FileEdit, Activity, Video, Bell, Clock } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Activity, CalendarClock, Clock, FileEdit, Loader2, Users, Video } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { EmptyState, PageHeader, SectionCard, StatCard } from "@/components/portal/PortalUI";
+import { PortalLayout } from "@/components/portal/PortalLayout";
+import { useAuth } from "@/hooks/useAuth";
+import { doctorPortalApi, type DoctorPortalDashboard } from "@/lib/doctorPortalApi";
+import { doctorNav } from "./nav";
+
+const initials = (name: string) =>
+  name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() || "PT";
+
+const labelForStatus = (status: string) => {
+  const normalized = status.replace(/_/g, " ").toLowerCase();
+  if (normalized === "in progress") return "In Progress";
+  if (normalized === "completed") return "Done";
+  return normalized || "Scheduled";
+};
 
 const DoctorDashboard = () => {
-  // Get upcoming appointments (next 5)
-  const upcomingAppointments = doctorMock.todaySchedule.slice(0, 5);
+  const { user } = useAuth();
+  const [dashboard, setDashboard] = useState<DoctorPortalDashboard | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadDashboard = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await doctorPortalApi.dashboard(user?.name ?? user?.email ?? "Doctor");
+      setDashboard(response);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load dashboard.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDashboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const schedule = dashboard?.todaySchedule ?? [];
+  const upcomingAppointments = schedule.slice(0, 5);
+  const nextAppointment = schedule.find((appointment) => appointment.status !== "completed") ?? schedule[0];
+  const nextAppointmentUrl = nextAppointment
+    ? `/doctor/consultations/${nextAppointment.consultationUuid ?? nextAppointment.appointmentUuid}`
+    : "/doctor/consultations";
 
   return (
     <PortalLayout portalName="Doctor EMR" nav={doctorNav}>
       <PageHeader
-        title={`Good morning, ${doctorMock.profile.name.split(" ").slice(-1)[0]}`}
-        description={`${doctorMock.profile.specialty} • License ${doctorMock.profile.license}`}
-        action={<Button asChild><Link to="/doctor/consultations/c_001"><Video className="h-4 w-4" /> Start Next Consult</Link></Button>}
+        title={dashboard ? `Good morning, ${dashboard.profile.name.split(" ").slice(-1)[0] || "Doctor"}` : "Doctor Dashboard"}
+        description={
+          dashboard
+            ? `${dashboard.profile.specialty} - License ${dashboard.profile.license}`
+            : "Your EMR dashboard and appointment activity."
+        }
+        action={
+          <Button asChild className="hidden sm:inline-flex" disabled={!nextAppointment}>
+            <Link to={nextAppointmentUrl}>
+              <Video className="h-4 w-4" />
+              Start Next Consult
+            </Link>
+          </Button>
+        }
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Today" value={doctorMock.stats.todayAppointments} icon={CalendarClock} trend="6 scheduled" />
-        <StatCard label="This Week" value={doctorMock.stats.weekConsultations} icon={Activity} accent="secondary" />
-        <StatCard label="Total Patients" value={doctorMock.stats.activePatients} icon={Users} />
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <SectionCard title="Today's Schedule" description={new Date().toDateString()}>
-            <div className="space-y-2">
-              {doctorMock.todaySchedule.map((c) => (
-                <div key={c.id} className="flex items-center gap-4 p-3 rounded-lg border border-border/60 hover:bg-muted/40 transition-colors">
-                  <div className="w-14 text-center shrink-0">
-                    <p className="text-sm font-bold font-display">{c.time}</p>
-                  </div>
-                  <Avatar className="h-9 w-9"><AvatarFallback className="bg-primary/10 text-primary text-xs">{c.patient.split(" ").map(s=>s[0]).join("")}</AvatarFallback></Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{c.patient}</p>
-                    <p className="text-xs text-muted-foreground truncate">{c.reason}</p>
-                  </div>
-                  <Badge variant={c.status === "in_progress" ? "default" : "outline"} className="capitalize hidden sm:inline-flex">
-                    {c.status === "in_progress" ? "In Progress" : c.status === "completed" ? "Done" : "Scheduled"}
-                  </Badge>
-                  <Button size="sm" asChild><Link to={`/doctor/consultations/${c.id}`}><Video className="h-3.5 w-3.5" /> Start</Link></Button>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
+      {loading ? (
+        <div className="grid min-h-[360px] place-items-center">
+          <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
         </div>
-
-        {/* Upcoming Schedule Reminders */}
-        <SectionCard title="Upcoming Reminders" description="Next appointments" action={<Clock className="h-4 w-4 text-muted-foreground" />}>
-          {upcomingAppointments.length > 0 ? (
-            <ul className="space-y-3">
-              {upcomingAppointments.map((appt) => (
-                <li key={`reminder-${appt.id}`} className="flex items-start gap-3 border-l-2 border-primary/60 pl-3 py-1">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{appt.patient}</p>
-                    <p className="text-xs text-muted-foreground truncate">{appt.reason}</p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <Badge variant="outline" className="text-[10px]">
-                      {appt.time}
-                    </Badge>
-                    <p className="text-[9px] text-muted-foreground mt-0.5">
-                      {appt.status === "in_progress" ? "🔴 In progress" : appt.status === "completed" ? "✅ Done" : "⏳ Upcoming"}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted-foreground">No upcoming appointments</p>
-          )}
-          <div className="mt-3 pt-2 border-t border-border/40">
-            <Button variant="ghost" size="sm" className="w-full text-xs" asChild>
-              <Link to="/doctor/consultations">View full schedule →</Link>
+      ) : error ? (
+        <EmptyState
+          icon={Activity}
+          title="Could not load doctor dashboard"
+          description={error}
+          action={
+            <Button onClick={loadDashboard}>
+              Try again
             </Button>
+          }
+        />
+      ) : dashboard ? (
+        <>
+          <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <StatCard label="Today" value={dashboard.stats.todayAppointments} icon={CalendarClock} trend={`${schedule.length} scheduled`} />
+            <StatCard label="This Week" value={dashboard.stats.weekConsultations} icon={Activity} accent="secondary" />
+            <StatCard label="Total Patients" value={dashboard.stats.activePatients} icon={Users} />
+            <StatCard label="Pending Notes" value={dashboard.stats.pendingNotes} icon={FileEdit} accent="muted" />
           </div>
-        </SectionCard>
-      </div>
+
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <SectionCard title="Today's Schedule" description={new Date().toDateString()}>
+                {schedule.length > 0 ? (
+                  <div className="space-y-3">
+                    {schedule.map((appointment) => (
+                      <div
+                        key={appointment.id}
+                        className="flex items-center gap-3 rounded-lg border border-border/60 p-3 transition-colors hover:bg-muted/40"
+                      >
+                        <div className="w-14 shrink-0 text-center">
+                          <p className="font-display text-sm font-bold">{appointment.time || "--:--"}</p>
+                        </div>
+
+                        <Avatar className="h-9 w-9 shrink-0">
+                          <AvatarFallback className="bg-primary/10 text-xs text-primary">
+                            {initials(appointment.patientName)}
+                          </AvatarFallback>
+                        </Avatar>
+
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{appointment.patientName}</p>
+                          <p className="truncate text-xs text-muted-foreground">{appointment.reason}</p>
+                        </div>
+
+                        <Badge variant={appointment.status === "in_progress" ? "default" : "outline"} className="hidden shrink-0 capitalize sm:inline-flex">
+                          {labelForStatus(appointment.status)}
+                        </Badge>
+
+                        <Button size="sm" className="shrink-0" asChild>
+                          <Link to={`/doctor/consultations/${appointment.consultationUuid ?? appointment.appointmentUuid}`}>
+                            <Video className="h-3.5 w-3.5" />
+                            <span className="ml-1">Open</span>
+                          </Link>
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={CalendarClock}
+                    title="No appointments today"
+                    description="Confirmed appointments will appear here."
+                    action={
+                      <Button variant="outline" asChild>
+                        <Link to="/doctor/schedule">View schedule</Link>
+                      </Button>
+                    }
+                  />
+                )}
+              </SectionCard>
+            </div>
+
+            <div>
+              <SectionCard title="Upcoming Reminders" description="Next appointments" action={<Clock className="h-4 w-4 text-muted-foreground" />}>
+                {upcomingAppointments.length > 0 ? (
+                  <ul className="space-y-3">
+                    {upcomingAppointments.map((appointment) => (
+                      <li key={`reminder-${appointment.id}`} className="flex items-start gap-3 border-l-2 border-primary/60 py-1 pl-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{appointment.patientName}</p>
+                          <p className="truncate text-xs text-muted-foreground">{appointment.reason}</p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <Badge variant="outline" className="text-[10px]">
+                            {appointment.time || "--:--"}
+                          </Badge>
+                          <p className="mt-0.5 text-[9px] capitalize text-muted-foreground">
+                            {labelForStatus(appointment.status)}
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No upcoming appointments</p>
+                )}
+                <div className="mt-3 border-t border-border/40 pt-2">
+                  <Button variant="ghost" size="sm" className="w-full text-xs" asChild>
+                    <Link to="/doctor/consultations">View full schedule</Link>
+                  </Button>
+                </div>
+              </SectionCard>
+            </div>
+          </div>
+        </>
+      ) : null}
     </PortalLayout>
   );
 };

@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { api } from "@/lib/api";
+import { normalizeAppointment, type DoctorPortalAppointment } from "@/lib/doctorPortalApi";
 import {
   ArrowLeft, Mic, MicOff, Video, VideoOff, PhoneOff, ScreenShare, Plus, Trash2,
   Save, Send, Download, Check, Loader2, FileText, Move, Minimize2, Maximize2,
@@ -307,7 +309,21 @@ const units = [
 
 const ConsultationRoom = () => {
   const { id } = useParams();
-  const consult = doctorMock.todaySchedule.find((c) => c.id === id) ?? doctorMock.todaySchedule[0];
+  const fallbackConsult = doctorMock.todaySchedule.find((c) => c.id === id) ?? doctorMock.todaySchedule[0];
+  const [currentAppointment, setCurrentAppointment] = useState<DoctorPortalAppointment | null>(null);
+  const [roomLoading, setRoomLoading] = useState(false);
+  const [actionBusy, setActionBusy] = useState<string | null>(null);
+  const consult = currentAppointment
+    ? {
+        id: currentAppointment.appointmentUuid,
+        time: currentAppointment.time,
+        patient: currentAppointment.patientName,
+        reason: currentAppointment.reason,
+        status: currentAppointment.status as typeof fallbackConsult.status,
+      }
+    : fallbackConsult;
+  const appointmentUuid = currentAppointment?.appointmentUuid;
+  const consultationUuid = currentAppointment?.consultationUuid ?? id;
 
   // Floating video state
   const [isFloating, setIsFloating] = useState(true);
@@ -424,6 +440,49 @@ const ConsultationRoom = () => {
     hospital: mockDoctorData.hospital,
     signature: mockDoctorData.signature,
   });
+
+  useEffect(() => {
+    if (!id) return;
+
+    const loadRoom = async () => {
+      setRoomLoading(true);
+      try {
+        const detail = await api.doctorPortal.appointments.detail(id);
+        const appointment = normalizeAppointment(detail);
+        setCurrentAppointment(appointment);
+      } catch {
+        try {
+          const detail = await api.doctorPortal.consultations.detail(id);
+          const data = (detail as any).data ?? detail;
+          const appointment = normalizeAppointment((data as any).appointment ?? data);
+          setCurrentAppointment({
+            ...appointment,
+            consultationUuid: appointment.consultationUuid ?? id,
+          });
+        } catch {
+          setCurrentAppointment(null);
+        }
+      } finally {
+        setRoomLoading(false);
+      }
+    };
+
+    loadRoom();
+  }, [id]);
+
+  useEffect(() => {
+    if (!currentAppointment) return;
+    const [firstName = "", ...rest] = currentAppointment.patientName.split(" ");
+    setPatientInfo((current) => ({
+      ...current,
+      firstName,
+      lastName: rest.join(" ") || current.lastName,
+      patientId: currentAppointment.patientUuid ?? current.patientId,
+      gender: currentAppointment.gender ?? current.gender,
+      phone: currentAppointment.patientPhone ?? current.phone,
+      email: currentAppointment.patientEmail ?? current.email,
+    }));
+  }, [currentAppointment]);
 
   // Payment Agency
   const [paymentAgency, setPaymentAgency] = useState<"MB" | "WCB" | "Other" | "">("");
@@ -545,6 +604,11 @@ const ConsultationRoom = () => {
     angiography: false, otherProcedure: ""
   });
 
+  const [referralSpecialist, setReferralSpecialist] = useState("");
+  const [referralFacility, setReferralFacility] = useState("");
+  const [referralReason, setReferralReason] = useState("");
+  const [referralNotes, setReferralNotes] = useState("");
+
   // Form input fields
   const [otherCandSSource, setOtherCandSSource] = useState("");
   const [chlamydiaSource, setChlamydiaSource] = useState("");
@@ -664,6 +728,242 @@ const ConsultationRoom = () => {
         toast({ title: "Signature uploaded", description: "Your signature has been uploaded successfully." });
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const requireConsultationUuid = () => {
+    if (!consultationUuid) {
+      toast({
+        title: "Consultation unavailable",
+        description: "This appointment is missing the consultation record needed to continue.",
+        variant: "destructive",
+      });
+      return null;
+    }
+    return consultationUuid;
+  };
+
+  const keyToLabel = (value: string) =>
+    value
+      .replace(/([A-Z])/g, " $1")
+      .replace(/^./, (letter) => letter.toUpperCase())
+      .trim();
+
+  const selectedLabels = (record: Record<string, unknown>) =>
+    Object.entries(record)
+      .filter(([, value]) => value === true)
+      .map(([key]) => keyToLabel(key));
+
+  const handleSaveClinicalNotes = async (completeAppointment = false) => {
+    const targetConsultationUuid = requireConsultationUuid();
+    if (!targetConsultationUuid) return;
+    if (!signature) {
+      toast({ title: "Signature required", description: "Please upload your signature before saving notes.", variant: "destructive" });
+      return;
+    }
+
+    const body = notesViewMode === "structured"
+      ? {
+          notes_mode: "structured",
+          type: "follow_up",
+          presenting_complaint: noteData.pc,
+          history_of_presenting_complaint: noteData.hpc,
+          medical_social_history: noteData.medicalSocialHistory,
+          medication_allergy: noteData.medicationAllergy,
+          examination: noteData.examination,
+          investigation_results: noteData.investigationResults,
+          diagnosis: noteData.diagnosis,
+          treatment: noteData.treatment,
+          plan_referral: noteData.planReferral,
+          notes_signed_on: signatureDate,
+        }
+      : {
+          notes_mode: "free_text",
+          clinical_notes: freeTextNotes,
+        };
+
+    setActionBusy(completeAppointment ? "complete" : "notes");
+    try {
+      await api.doctorPortal.consultations.saveClinicalNotes(targetConsultationUuid, body);
+      if (completeAppointment && appointmentUuid) {
+        await api.doctorPortal.appointments.complete(appointmentUuid, {
+          type: "follow_up",
+          diagnosis: noteData.diagnosis,
+          reason_for_visit: consult.reason,
+          clinical_notes: notesViewMode === "free" ? freeTextNotes : noteData.examination || noteData.treatment,
+          summary: noteData.treatment || freeTextNotes,
+        });
+      }
+      toast({
+        title: completeAppointment ? "Consultation completed" : "Notes saved",
+        description: completeAppointment ? "The appointment has been completed." : "Clinical notes were saved to the EMR.",
+      });
+    } catch (error) {
+      toast({
+        title: "Unable to save notes",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setActionBusy(null);
+    }
+  };
+
+  const handleSendPrescription = async () => {
+    const targetConsultationUuid = requireConsultationUuid();
+    if (!targetConsultationUuid) return;
+    if (!signature) {
+      toast({ title: "Signature required", description: "Please upload your signature before sending.", variant: "destructive" });
+      return;
+    }
+    if (!selectedPharmacy) {
+      toast({ title: "Pharmacy required", description: "Please select a pharmacy before sending.", variant: "destructive" });
+      return;
+    }
+    if (meds.some((med) => !med.name.trim())) {
+      toast({ title: "Missing medication details", description: "Please fill in all medication names.", variant: "destructive" });
+      return;
+    }
+
+    setActionBusy("prescription");
+    try {
+      await api.doctorPortal.consultations.createPrescription(targetConsultationUuid, {
+        pharmacy_name: selectedPharmacy.replace(/-/g, " "),
+        refills_allowed: Number(refills) || 0,
+        prescribed_on: signatureDate,
+        medications: meds.map((med) => ({
+          drug_name: med.name,
+          drug_id: null,
+          dosage_form: med.dosageForm,
+          strength: med.strength,
+          unit: med.unit,
+          route: med.route,
+          frequency: med.frequency,
+          duration: med.duration,
+          instructions: med.instructions,
+        })),
+      });
+      toast({ title: "Prescription sent", description: "Prescription document was created in the EMR." });
+    } catch (error) {
+      toast({
+        title: "Unable to send prescription",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setActionBusy(null);
+    }
+  };
+
+  const handleSendLabRequisition = async () => {
+    const targetConsultationUuid = requireConsultationUuid();
+    if (!targetConsultationUuid) return;
+    if (!signature) {
+      toast({ title: "Signature required", description: "Please upload your signature before sending to lab.", variant: "destructive" });
+      return;
+    }
+
+    const tests = selectedLabels(labTests).map((testName) => ({
+      test_name: testName,
+      lab_test_id: null,
+      category_name: "Laboratory",
+      instructions: labNotes,
+    }));
+
+    if (tests.length === 0 && !labTests.otherLabTest) {
+      toast({ title: "No lab test selected", description: "Please select at least one lab test.", variant: "destructive" });
+      return;
+    }
+
+    setActionBusy("lab");
+    try {
+      await api.doctorPortal.consultations.createLabRequisition(targetConsultationUuid, {
+        payment_agency: paymentAgency || otherPaymentAgency || "MB",
+        laboratory_name: selectedLab || "Laboratory",
+        sample_sources: [specimenType, collectionDate, collectionTime].filter(Boolean),
+        clinical_notes: labNotes,
+        requested_on: signatureDate,
+        tests: tests.length ? tests : [{ test_name: labTests.otherLabTest, lab_test_id: null, category_name: "Laboratory" }],
+      });
+      toast({ title: "Lab requisition sent", description: "Lab requisition was created in the EMR." });
+    } catch (error) {
+      toast({
+        title: "Unable to send lab requisition",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setActionBusy(null);
+    }
+  };
+
+  const handleSendDiagnosticRequest = async () => {
+    const targetConsultationUuid = requireConsultationUuid();
+    if (!targetConsultationUuid) return;
+    if (!signature) {
+      toast({ title: "Signature required", description: "Please upload your signature before sending.", variant: "destructive" });
+      return;
+    }
+
+    const procedures = selectedLabels(diagnosticTests).map((procedureName) => ({
+      procedure_name: procedureName,
+      imaging_procedure_id: null,
+      modality_name: procedureName.includes("MRI") ? "MRI" : procedureName.includes("CT") ? "CT" : procedureName.includes("X Ray") ? "X-Ray" : "Imaging",
+      contrast: diagnosticTests.ctContrast || diagnosticTests.mriContrast || "Without Contrast",
+    }));
+
+    if (procedures.length === 0) {
+      toast({ title: "No diagnostic procedure selected", description: "Please select at least one imaging procedure.", variant: "destructive" });
+      return;
+    }
+
+    setActionBusy("diagnostic");
+    try {
+      await api.doctorPortal.consultations.createDiagnosticRequest(targetConsultationUuid, {
+        clinical_notes: noteData.investigationResults || labNotes,
+        requested_on: signatureDate,
+        procedures,
+      });
+      toast({ title: "Diagnostic imaging request sent", description: "Diagnostic request was created in the EMR." });
+    } catch (error) {
+      toast({
+        title: "Unable to send diagnostic request",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setActionBusy(null);
+    }
+  };
+
+  const handleSendReferral = async () => {
+    const targetConsultationUuid = requireConsultationUuid();
+    if (!targetConsultationUuid) return;
+    if (!signature) {
+      toast({ title: "Signature required", description: "Please upload your signature before sending referral.", variant: "destructive" });
+      return;
+    }
+
+    setActionBusy("referral");
+    try {
+      await api.doctorPortal.consultations.createReferral(targetConsultationUuid, {
+        referral_specialist_id: null,
+        specialist_name: referralSpecialist || "Specialist",
+        referral_facility_id: null,
+        facility_name: referralFacility || "Facility",
+        reason: referralReason || noteData.planReferral || "Referral from consultation",
+        additional_notes: referralNotes,
+        referred_on: signatureDate,
+      });
+      toast({ title: "Referral sent", description: "Referral was created in the EMR." });
+    } catch (error) {
+      toast({
+        title: "Unable to send referral",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setActionBusy(null);
     }
   };
 
@@ -1003,15 +1303,16 @@ const ConsultationRoom = () => {
                       {autoSave === "saved" && <><Check className="h-3 w-3 text-primary" /> All changes saved</>}
                       {autoSave === "idle" && "No changes"}
                     </span>
-                    <Button onClick={() => {
-                      if (!signature) {
-                        toast({ title: "Signature required", description: "Please upload your signature before saving notes.", variant: "destructive" });
-                        return;
-                      }
-                      toast({ title: "Notes saved", description: "Clinical notes saved to patient record." });
-                    }}>
-                      <Save className="h-3.5 w-3.5" /> Save Notes
-                    </Button>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <Button variant="outline" onClick={() => handleSaveClinicalNotes(false)} disabled={!!actionBusy}>
+                        {actionBusy === "notes" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                        Save Notes
+                      </Button>
+                      <Button onClick={() => handleSaveClinicalNotes(true)} disabled={!!actionBusy || !appointmentUuid}>
+                        {actionBusy === "complete" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                        Complete Appointment
+                      </Button>
+                    </div>
                   </div>
                 </TabsContent>
 
@@ -1256,21 +1557,10 @@ const ConsultationRoom = () => {
                   {/* Actions */}
                   <div className="flex gap-3">
                     <Button variant="outline" className="flex-1" onClick={() => toast({ title: "Prescription generated", description: "PDF created for download." })}><FileText className="h-4 w-4 mr-2" /> Generate</Button>
-                    <Button className="flex-1" onClick={() => {
-                      if (!signature) {
-                        toast({ title: "Signature required", description: "Please upload your signature before sending.", variant: "destructive" });
-                        return;
-                      }
-                      if (!selectedPharmacy || selectedPharmacy === "other-pharmacy" && !selectedPharmacy.includes("Enter pharmacy")) {
-                        toast({ title: "Pharmacy required", description: "Please select a pharmacy before sending.", variant: "destructive" });
-                        return;
-                      }
-                      if (meds.some(m => !m.name)) {
-                        toast({ title: "Missing medication details", description: "Please fill in all medication names.", variant: "destructive" });
-                        return;
-                      }
-                      toast({ title: "Prescription sent", description: `Sent to ${selectedPharmacy === "other-pharmacy" ? selectedPharmacy : selectedPharmacy.replace(/-/g, ' ')}.` });
-                    }}><Send className="h-4 w-4 mr-2" /> Send to Pharmacy</Button>
+                    <Button className="flex-1" onClick={handleSendPrescription} disabled={!!actionBusy}>
+                      {actionBusy === "prescription" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                      Send to Pharmacy
+                    </Button>
                   </div>
                 </TabsContent>
 
@@ -1606,14 +1896,9 @@ const ConsultationRoom = () => {
 
                     {/* Actions */}
                     <div className="flex flex-wrap gap-3 pt-4 border-t border-border/60 mt-4">
-                      <Button className="flex-1" onClick={() => {
-                        if (!signature) {
-                          toast({ title: "Signature required", description: "Please upload your signature before sending to lab.", variant: "destructive" });
-                          return;
-                        }
-                        toast({ title: "Lab requisition sent", description: "All selected tests have been sent to the lab." });
-                      }}>
-                        <Send className="h-4 w-4 mr-2" /> Send to Lab
+                      <Button className="flex-1" onClick={handleSendLabRequisition} disabled={!!actionBusy}>
+                        {actionBusy === "lab" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                        Send to Lab
                       </Button>
                       <Button variant="outline" className="flex-1">
                         <Download className="h-4 w-4 mr-2" /> Download
@@ -1901,14 +2186,9 @@ const ConsultationRoom = () => {
 
                     {/* Actions */}
                     <div className="flex flex-wrap gap-3 pt-4 border-t border-border/60 mt-4">
-                      <Button className="flex-1" onClick={() => {
-                        if (!signature) {
-                          toast({ title: "Signature required", description: "Please upload your signature before sending.", variant: "destructive" });
-                          return;
-                        }
-                        toast({ title: "Diagnostic imaging request sent", description: "All selected imaging requests have been sent." });
-                      }}>
-                        <Send className="h-4 w-4 mr-2" /> Send Request
+                      <Button className="flex-1" onClick={handleSendDiagnosticRequest} disabled={!!actionBusy}>
+                        {actionBusy === "diagnostic" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                        Send Request
                       </Button>
                       <Button variant="outline" className="flex-1">
                         <Download className="h-4 w-4 mr-2" /> Download
@@ -1921,7 +2201,7 @@ const ConsultationRoom = () => {
                 <TabsContent value="ref" className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Field label="Specialist">
-                      <Select>
+                      <Select value={referralSpecialist} onValueChange={setReferralSpecialist}>
                         <SelectTrigger><SelectValue placeholder="Select specialist" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="cardio">Cardiologist</SelectItem>
@@ -1938,7 +2218,7 @@ const ConsultationRoom = () => {
                       </Select>
                     </Field>
                     <Field label="Facility">
-                      <Select>
+                      <Select value={referralFacility} onValueChange={setReferralFacility}>
                         <SelectTrigger><SelectValue placeholder="Select facility" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="luth">Lagos University Teaching Hospital</SelectItem>
@@ -1952,10 +2232,10 @@ const ConsultationRoom = () => {
                     </Field>
                   </div>
                   <Field label="Reason for Referral">
-                    <Textarea rows={4} placeholder="Patient with chest pain, refer for stress test. Include relevant history and findings..." />
+                    <Textarea rows={4} value={referralReason} onChange={(e) => setReferralReason(e.target.value)} placeholder="Patient with chest pain, refer for stress test. Include relevant history and findings..." />
                   </Field>
                   <Field label="Additional Notes">
-                    <Textarea rows={3} placeholder="Any other relevant information for the specialist..." />
+                    <Textarea rows={3} value={referralNotes} onChange={(e) => setReferralNotes(e.target.value)} placeholder="Any other relevant information for the specialist..." />
                   </Field>
                   
                   <div className="border border-border/60 rounded-lg p-4 bg-muted/5">
@@ -1996,13 +2276,10 @@ const ConsultationRoom = () => {
                   </div>
 
                   <div className="flex gap-3">
-                    <Button className="flex-1" onClick={() => {
-                      if (!signature) {
-                        toast({ title: "Signature required", description: "Please upload your signature before sending referral.", variant: "destructive" });
-                        return;
-                      }
-                      toast({ title: "Referral sent" });
-                    }}><Send className="h-4 w-4 mr-2" /> Send Referral</Button>
+                    <Button className="flex-1" onClick={handleSendReferral} disabled={!!actionBusy}>
+                      {actionBusy === "referral" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                      Send Referral
+                    </Button>
                     <Button variant="outline" className="flex-1"><Download className="h-4 w-4 mr-2" /> Download</Button>
                   </div>
                 </TabsContent>

@@ -7,10 +7,10 @@ import {
   Star, Sparkles, FileText, Layers, Megaphone, Phone as PhoneIcon, Search,
   Home, Info, Heart, Wrench, Video, MessageSquare, ChevronRight, ChevronDown, X,
   Facebook, Twitter, Instagram, Linkedin, Newspaper, Mail, MapPin,
-  CalendarClock, Loader2, Building2,
+  CalendarClock, Loader2, Building2, CheckCircle2, AlertTriangle,
 } from "lucide-react";
 import {
-  defaultSettings, loadSettings, resetSettings, saveSettings,
+  defaultSettings, loadSettings, mergeRemoteMiniSiteSettings, resetSettings, saveSettings,
   type MediCareSettings, type LucideIconName, type Service, type Feature,
   type TestimonialItem, type Partner, type NavItem, type SocialLink, type FooterLink,
   type HospitalLocation,
@@ -25,7 +25,7 @@ import {
   type AvailabilitySettings,
   type WeeklyWindow,
 } from "@/lib/miniSiteAvailability";
-import { ApiError, api as medicareApi } from "@/lib/api";
+import { ApiError, api as medicareApi, getApiErrorMessage } from "@/lib/api";
 import { MediaPicker } from "@/components/medicare-admin/MediaPicker";
 import { ImageUploader } from "@/components/medicare-admin/ImageUploader";
 import { Icon, ICON_NAMES } from "@/components/medicare-admin/icons";
@@ -189,13 +189,14 @@ const syncServiceCards = async (items: Service[]) => {
   const current = await medicareApi.medicare.self.services.cards.list();
   await deleteRemoteCollection(current.data ?? [], (id) => medicareApi.medicare.self.services.cards.delete(id));
   for (const item of [...items].sort((a, b) => a.order - b.order)) {
+    const priceKobo = item.price_amount == null ? null : Math.round(Number(item.price_amount) * 100);
     await medicareApi.medicare.self.services.cards.create({
       title: item.title,
       icon: item.icon,
       description: item.description,
-      price_amount: item.price_amount ?? null,
-      price_currency: "NGN",
+      price_kobo: priceKobo != null && Number.isFinite(priceKobo) ? priceKobo : null,
       price_label: item.price_label ?? null,
+      delivery_mode: item.delivery_mode || "in_clinic",
       is_visible: item.active,
     });
   }
@@ -297,6 +298,60 @@ const ConfirmDialog = ({
     </div>
   );
 
+type SaveDialogState = {
+  status: "saving" | "success" | "error";
+  title: string;
+  message: string;
+};
+
+const SaveStatusDialog = ({
+  state,
+  onClose,
+}: {
+  state: SaveDialogState | null;
+  onClose: () => void;
+}) => {
+  if (!state) return null;
+
+  const isSaving = state.status === "saving";
+  const isSuccess = state.status === "success";
+
+  return (
+    <div className="fixed inset-0 z-[160] grid place-items-center bg-slate-950/60 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-2xl border border-white/20 bg-white p-6 text-center shadow-2xl">
+        <div
+          className={`mx-auto grid h-14 w-14 place-items-center rounded-full ${
+            isSaving
+              ? "bg-blue-50 text-blue-600"
+              : isSuccess
+                ? "bg-emerald-50 text-emerald-600"
+                : "bg-rose-50 text-rose-600"
+          }`}
+        >
+          {isSaving ? (
+            <Loader2 className="h-7 w-7 animate-spin" />
+          ) : isSuccess ? (
+            <CheckCircle2 className="h-7 w-7" />
+          ) : (
+            <AlertTriangle className="h-7 w-7" />
+          )}
+        </div>
+        <h3 className="mt-4 text-lg font-bold text-slate-950">{state.title}</h3>
+        <p className="mt-2 text-sm leading-6 text-slate-600">{state.message}</p>
+        {!isSaving && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-5 inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+          >
+            OK
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const IconPicker = ({ value, onChange }: { value: LucideIconName; onChange: (n: LucideIconName) => void }) => (
   <select value={value} onChange={(e) => onChange(e.target.value as LucideIconName)} className={inputCls}>
     {ICON_NAMES.map((n) => <option key={n} value={n}>{n}</option>)}
@@ -340,6 +395,11 @@ const PAGE_GROUPS: PageGroup[] = [
     icon: Home,
     sections: [
       { id: "home", label: "Home Page" },
+      { id: "branding", label: "Branding" },
+      { id: "partners", label: "Partners" },
+      { id: "whyChoose", label: "Why Choose Us" },
+      { id: "media", label: "Media Library" },
+      { id: "seo", label: "SEO" },
     ],
   },
 
@@ -391,14 +451,14 @@ const PAGE_GROUPS: PageGroup[] = [
       { id: "contact", label: "Contact Info + Footer" },
     ],
   },
-  // {
-  //   id: "hospital",
-  //   label: "Hospital",
-  //   icon: Building2,
-  //   sections: [
-  //     { id: "hospital", label: "Hospital Locations" },
-  //   ],
-  // },
+  {
+    id: "hospital",
+    label: "Hospital",
+    icon: Building2,
+    sections: [
+      { id: "hospital", label: "Hospital Locations" },
+    ],
+  },
 ];
 
 /* =========================================================
@@ -412,6 +472,8 @@ const MediCareAdmin = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [confirm, setConfirm] = useState<null | { title: string; message: string; onConfirm: () => void }>(null);
   const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveDialog, setSaveDialog] = useState<SaveDialogState | null>(null);
 
   useEffect(() => {
     document.title = "MediCare — Admin";
@@ -442,7 +504,7 @@ const MediCareAdmin = () => {
           footerSupportLinks: supportLinks.data,
         };
 
-        setS((current) => mergeRemoteMiniSite(current, remote));
+        setS((current) => mergeRemoteMiniSiteSettings(current, remote));
       } catch {
         // Local settings remain in use when the API is unavailable.
       }
@@ -458,20 +520,43 @@ const MediCareAdmin = () => {
   const setSettings = (updater: (s: MediCareSettings) => MediCareSettings) => { setS(updater); setDirty(true); };
 
   const onSave = async () => {
+    if (saving) return;
+    setSaving(true);
+    setSaveDialog({
+      status: "saving",
+      title: "Saving Medicare site",
+      message: "Syncing your CMS sections now. This can take up to 1 minute.",
+    });
+
     try {
       saveSettings(s);
-    } catch {
-      toast.error("Save failed — storage may be full. Try smaller media.");
+    } catch (error) {
+      setSaveDialog({
+        status: "error",
+        title: "Save failed",
+        message: getApiErrorMessage(error, "Storage may be full. Try smaller media."),
+      });
+      setSaving(false);
       return;
     }
+
     try {
       await syncMiniSiteToApi(s);
-      toast.success("Saved locally and synced to MediCare CMS");
       setDirty(false);
+      setSaveDialog({
+        status: "success",
+        title: "MediCare site saved",
+        message: "Saved locally and synced to the MediCare CMS.",
+      });
     } catch (error) {
       setDirty(true);
-      const message = error instanceof Error ? error.message : "Remote sync failed.";
-      toast.error(`Saved locally, but remote sync failed: ${message}`);
+      setSaveDialog({
+        status: "error",
+        title: "MediCare sync failed",
+        message: `Saved locally, but remote sync failed. ${getApiErrorMessage(error, "Please check the fields and try again.")}`,
+      });
+    } finally {
+      setSaving(false);
     }
   };
   const onReset = () => setConfirm({
@@ -580,7 +665,7 @@ const MediCareAdmin = () => {
               <button onClick={() => setSidebarOpen(true)} className="lg:hidden grid place-items-center h-9 w-9 rounded-lg hover:bg-slate-100">
                 <MenuIcon className="h-4 w-4" />
               </button>
-              <h1 className="font-bold text-slate-900 truncate">MediCare CMS</h1>
+              <h1 className="font-bold text-slate-900 truncate">{s.siteName || "Mini-site"} CMS</h1>
               {dirty && <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-amber-50 text-amber-700 px-2.5 py-1 text-[11px] font-semibold"><span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> Unsaved changes</span>}
             </div>
             <div className="flex items-center gap-2">
@@ -591,7 +676,11 @@ const MediCareAdmin = () => {
               <button onClick={onReset} className="hidden sm:inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold hover:bg-slate-50">
                 <RotateCcw className="h-4 w-4" /> Reset
               </button>
-              <button onClick={onSave} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700">
+              <button
+                onClick={onSave}
+                disabled={saving}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
                 <Save className="h-4 w-4" /> Save
               </button>
             </div>
@@ -632,6 +721,7 @@ const MediCareAdmin = () => {
         onConfirm={() => confirm?.onConfirm()}
         onCancel={() => setConfirm(null)}
       />
+      <SaveStatusDialog state={saveDialog} onClose={() => setSaveDialog(null)} />
     </div>
   );
 };
@@ -1514,6 +1604,34 @@ type BlogRow = {
   publish_date: string;
 };
 
+const normalizeBlogRow = (value: unknown): BlogRow => {
+  const row = asRecord(value);
+  const category = asRecord(row.category ?? row.post_category);
+  const readTimeMinutes = Number(row.read_time_minutes ?? row.readTimeMinutes);
+  return {
+    id: String(row.id ?? row.uuid ?? row.slug ?? uid("post")),
+    slug: String(row.slug ?? row.id ?? row.uuid ?? ""),
+    title: String(row.title ?? "Untitled post"),
+    excerpt: typeof row.excerpt === "string" ? row.excerpt : "",
+    content: typeof row.content === "string" ? row.content : typeof row.body === "string" ? row.body : "",
+    cover_image: String(row.cover_image_url ?? row.cover_image ?? row.image_url ?? row.hero_image_url ?? ""),
+    category: String(category.name ?? row.category_name ?? row.category ?? "Wellness"),
+    author_name: typeof row.author_name === "string" ? row.author_name : "",
+    author_role: typeof row.author_role === "string" ? row.author_role : "",
+    read_time: Number.isFinite(readTimeMinutes) && readTimeMinutes > 0 ? `${readTimeMinutes} min read` : String(row.read_time ?? "5 min read"),
+    featured: row.is_featured === true || row.featured === true,
+    published: row.is_published !== false && row.published !== false && row.status !== "draft",
+    sort_order: Number(row.sort_order ?? 0),
+    publish_date: String(row.published_at ?? row.publish_date ?? row.created_at ?? new Date().toISOString()),
+  };
+};
+
+const readTimeMinutesFromLabel = (value: unknown) => {
+  const match = String(value ?? "").match(/\d+/);
+  const minutes = match ? Number(match[0]) : 5;
+  return Number.isFinite(minutes) && minutes > 0 ? minutes : 5;
+};
+
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
@@ -1543,14 +1661,16 @@ const BlogEditor = () => {
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("blog_posts")
-      .select("*")
-      .order("featured", { ascending: false })
-      .order("publish_date", { ascending: false });
-    if (error) toast.error(error.message);
-    else setPosts((data as BlogRow[]) ?? []);
-    setLoading(false);
+    try {
+      const response = await medicareApi.medicare.self.posts.list({ per_page: 100 });
+      const rows = Array.isArray(response.data) ? response.data : Array.isArray((response.data as any)?.data) ? (response.data as any).data : [];
+      setPosts(rows.map(normalizeBlogRow));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not load mini-site posts");
+      setPosts([]);
+    } finally {
+      setLoading(false);
+    }
   };
   useEffect(() => { load(); }, []);
 
@@ -1571,39 +1691,45 @@ const BlogEditor = () => {
     const payload = {
       title,
       slug,
-      excerpt: editing.excerpt ?? "",
-      content: editing.content ?? "",
-      cover_image: editing.cover_image ?? null,
-      category: editing.category ?? null,
+      read_time_minutes: readTimeMinutesFromLabel(editing.read_time),
       author_name: editing.author_name ?? null,
       author_role: editing.author_role ?? null,
-      read_time: editing.read_time ?? null,
-      featured: !!editing.featured,
-      published: editing.published !== false,
-      sort_order: editing.sort_order ?? 0,
+      excerpt: editing.excerpt ?? "",
+      content: editing.content ?? "",
+      is_featured: !!editing.featured,
+      is_published: editing.published !== false,
     };
-    const { error } = editing.id
-      ? await supabase.from("blog_posts").update(payload).eq("id", editing.id)
-      : await supabase.from("blog_posts").insert(payload);
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success(editing.id ? "Post updated" : "Post created");
-    setEditing(null);
-    load();
+    try {
+      if (editing.id) await medicareApi.medicare.self.posts.update(editing.id, payload);
+      else await medicareApi.medicare.self.posts.create(payload);
+      toast.success(editing.id ? "Post updated" : "Post created");
+      setEditing(null);
+      await load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const remove = async (p: BlogRow) => {
-    const { error } = await supabase.from("blog_posts").delete().eq("id", p.id);
-    if (error) return toast.error(error.message);
-    toast.success("Post deleted");
-    setConfirmDel(null);
-    load();
+    try {
+      await medicareApi.medicare.self.posts.delete(p.id);
+      toast.success("Post deleted");
+      setConfirmDel(null);
+      await load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Delete failed");
+    }
   };
 
   const togglePublish = async (p: BlogRow) => {
-    const { error } = await supabase.from("blog_posts").update({ published: !p.published }).eq("id", p.id);
-    if (error) return toast.error(error.message);
-    load();
+    try {
+      await medicareApi.medicare.self.posts.update(p.id, { is_published: !p.published });
+      await load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update post");
+    }
   };
 
   return (
@@ -1966,7 +2092,7 @@ const ServicesEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => {
       <Card>
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-slate-900">Service cards</h3>
-          <button onClick={() => setI((arr) => [...arr, { id: uid("s"), icon: "Stethoscope", title: "New service", description: "", price_amount: null, price_currency: "NGN", price_label: "", order: arr.length, active: true }])}
+          <button onClick={() => setI((arr) => [...arr, { id: uid("s"), icon: "Stethoscope", title: "New service", description: "", price_amount: null, price_label: "", delivery_mode: "in_clinic", order: arr.length, active: true }])}
             className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-blue-700">
             <Plus className="h-3.5 w-3.5" /> Add service
           </button>
@@ -2004,6 +2130,21 @@ const ServicesEditor = ({ s, setSettings, askDelete }: EPropsWithDelete) => {
                     />
                   </Field>
                 </div>
+              </div>
+              <div className="mt-3">
+                <Field label="Delivery mode">
+                  <select
+                    className={inputCls}
+                    value={it.delivery_mode || "in_clinic"}
+                    onChange={(e) => setI((arr) => arr.map((x) => x.id === it.id ? { ...x, delivery_mode: e.target.value } : x))}
+                  >
+                    <option value="in_clinic">In clinic</option>
+                    <option value="phone">Phone</option>
+                    <option value="video">Video</option>
+                    <option value="home_visit">Home visit</option>
+                    <option value="lab">Lab</option>
+                  </select>
+                </Field>
               </div>
               
               <div className="mt-3 flex items-center justify-end gap-1 border-t border-slate-200 pt-3">
